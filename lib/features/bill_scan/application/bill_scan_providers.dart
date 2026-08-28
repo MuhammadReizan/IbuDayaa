@@ -5,5 +5,5 @@ import '../../../core/demo/demo_scenario.dart';
 
 /// Exposes the energy insight simulation data.
 final energyInsightProvider = Provider<DemoEnergyInsight?>((ref) {
-  return ref.watch(demoRepositoryProvider).current.energyInsight;
+  return ref.watch(currentScenarioProvider).energyInsight;
 });

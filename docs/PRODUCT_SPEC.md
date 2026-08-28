@@ -112,7 +112,7 @@ minimal jargon, explain every number.
 | Feature | Purpose | Status |
 | --- | --- | --- |
 | Energy bill scan ("Scan Tagihan") | Capture/upload a PLN bill photo as the entry point to energy insight. | Capture/upload UI `IMPLEMENTED` (P1 real picker); result is `DEMO_SIMULATION`. No OCR. |
-| AI Energy Insight ("Analisis AI Energi") | Explain a usage spike, attribute added cost to appliances ("ilustrasi"), recommend Solar Hub scheduling. | `DEMO_SIMULATION`. Appliance-level attribution is `FUTURE_IMPLEMENTATION`. |
+| AI Energy Insight ("Analisis Energi") | Explain a usage spike, attribute added cost to appliances ("ilustrasi"), recommend Solar Hub scheduling. | `DEMO_SIMULATION`. Appliance-level attribution is `FUTURE_IMPLEMENTATION`. |
 | **Simulasi Pembiayaan** | Set an amount (≤ Rp 2.000.000), business purpose, and tenor (3/6/12), then **calculate** an indicative installment and see the result (principal, tenor, flat rate, total cost, total repayment, monthly installment + disclaimer). **No application is submitted** (CR-2). | Installment math `IMPLEMENTED` (flat **2%/month**, decision #6). The flow ends at the result — **not** approval, submission, underwriting, disbursement, or a regulated product. |
 | Impact / Profile ("Profil Saya" — Ibu Clara) | Cumulative impact (kWh used, kWh shared, CO₂ avoided, group size) and settings. | Values `DEMO_SIMULATION` ("data komunitas"). |
 | Messages ("Pesan") | Group and 1:1 demo threads. | `P1`. Read-only; no messaging backend. |

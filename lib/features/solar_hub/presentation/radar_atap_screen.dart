@@ -22,7 +22,7 @@ class RadarAtapScreen extends ConsumerWidget {
       onBack: () => context.pop(),
       bottomBar: PrimaryButton(
         label: 'Lanjut ke Rekomendasi Solar Hub',
-        onPressed: () => context.pushReplacement(AppRoute.solarBooking),
+        onPressed: () => context.pushReplacement(AppRoute.solarBookingPath),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -54,11 +54,11 @@ class RadarAtapScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          Text('Hasil Pemindaian', style: text.titleMedium),
+          Text('Perkiraan Hasil Pemindaian', style: text.titleMedium),
           const SizedBox(height: AppSpacing.md),
           _MetricRow(
             icon: Icons.straighten,
-            label: 'Estimasi area potensial',
+            label: 'Perkiraan area potensial',
             value: '${scan.estimatedPotentialAreaM2.toStringAsFixed(0)} m²',
           ),
           const SizedBox(height: AppSpacing.md),

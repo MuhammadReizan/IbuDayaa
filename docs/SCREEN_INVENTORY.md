@@ -16,7 +16,7 @@
 | SC-00 | Splash / Bootstrap | Shell | P0 |
 | SC-01 | Home (Beranda) | Shell | P0 |
 | SC-02 | Scan Tagihan Listrik | Bill scan | P0 |
-| SC-03 | Analisis AI Energi | Bill scan | P0 |
+| SC-03 | Analisis Energi | Bill scan | P0 |
 | SC-04 | Solar Hub — Scan Atap | Solar Hub | P0 |
 | SC-05 | Radar Atap — Kelayakan Awal | Solar Hub | P0 |
 | SC-06 | Solar Hub Booking | Solar Hub | P0 |
@@ -110,7 +110,11 @@ Shared, non-screen widgets (loading / empty / error / confirm dialog) are in
 
 ---
 
-## SC-03 — Analisis AI Energi  `P0`
+## SC-03 — Analisis Energi  `P0`
+
+> Title is **"Analisis Energi"** (not "Analisis AI Energi"): the MVP output is
+> deterministic bundled demo data, not a trained model. AI/ML remains on the
+> roadmap (see PRODUCT_SPEC "AI Energy Insight"), just not in this build.
 
 - **Purpose:** explain a usage spike, attribute added cost to appliances, and
   route to Solar Hub scheduling.

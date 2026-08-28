@@ -39,7 +39,7 @@
 
 - **On Scan Tagihan:** **Tap "Ambil Foto Tagihan"** (or "Unggah dari Galeri").
   A short "menganalisis…" appears.
-- **On Analisis AI Energi:** point at the spike window (18.00–21.00), "Biaya
+- **On Analisis Energi:** point at the spike window (18.00–21.00), "Biaya
   tambahan Rp 45.200/bln" (note the **"estimasi"** label), and the appliance
   list (note the **"ilustrasi"** label).
 - **Say:** "The prototype reads her bill and attributes the spike to appliances,

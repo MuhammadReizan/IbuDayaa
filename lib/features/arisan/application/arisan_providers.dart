@@ -4,18 +4,18 @@ import '../../../core/demo/demo_providers.dart';
 import '../../../core/demo/demo_scenario.dart';
 
 final arisanGroupProvider = Provider<DemoArisanGroup>((ref) {
-  return ref.watch(demoRepositoryProvider).current.arisan;
+  return ref.watch(currentScenarioProvider).arisan;
 });
 
 final energyQuotaProvider = Provider<DemoEnergyQuota>((ref) {
-  return ref.watch(demoRepositoryProvider).current.quota;
+  return ref.watch(currentScenarioProvider).quota;
 });
 
 final quotaOffersProvider = Provider<List<DemoQuotaOffer>>((ref) {
-  return ref.watch(demoRepositoryProvider).allOffers;
+  return ref.watch(demoSessionProvider).allOffers;
 });
 
 final unreadMessagesCountProvider = Provider<int>((ref) {
-  final threads = ref.watch(demoRepositoryProvider).current.threads;
+  final threads = ref.watch(currentScenarioProvider).threads;
   return threads.fold(0, (sum, t) => sum + t.unreadCount);
 });

@@ -44,12 +44,20 @@ class _FinancingInputScreenState extends ConsumerState<FinancingInputScreen> {
         onPressed: !isEligible
             ? null
             : () {
-                final simulation = LoanSimulation.compute(
-                  principalIdr: _amount.toInt(),
-                  purpose: _purpose,
-                  tenorMonths: _tenor,
-                  params: params,
-                );
+                final LoanSimulation simulation;
+                try {
+                  simulation = LoanSimulation.compute(
+                    principalIdr: _amount.toInt(),
+                    purpose: _purpose,
+                    tenorMonths: _tenor,
+                    params: params,
+                  );
+                } on LoanSimulationException catch (e) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(e.error.message)));
+                  return;
+                }
                 context.push(AppRoute.financingResultPath, extra: simulation);
               },
       ),

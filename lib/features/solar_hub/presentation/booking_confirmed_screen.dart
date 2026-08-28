@@ -17,8 +17,12 @@ class BookingConfirmedScreen extends StatelessWidget {
     final TextTheme text = Theme.of(context).textTheme;
 
     return AppScaffold(
-      // No back button, hardware back should also go to Home if possible,
-      // handled by router or PopScope.
+      // No back button; the only way forward is "Kembali ke Beranda", which
+      // resets the navigation stack to Home.
+      bottomBar: PrimaryButton(
+        label: 'Kembali ke Beranda',
+        onPressed: () => context.go(AppRoute.homePath),
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -48,11 +52,6 @@ class BookingConfirmedScreen extends StatelessWidget {
                 _DetailRow(label: 'Jadwal', value: booking.slotLabel),
               ],
             ),
-          ),
-          const Spacer(),
-          PrimaryButton(
-            label: 'Kembali ke Beranda',
-            onPressed: () => context.go(AppRoute.home),
           ),
         ],
       ),

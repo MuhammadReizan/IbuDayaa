@@ -15,8 +15,13 @@ class MessagesScreen extends ConsumerWidget {
     final List<DemoMessageThread> threads = ref.watch(messageThreadsProvider);
     final TextTheme text = Theme.of(context).textTheme;
 
+    // scrollable: false — the body is a ListView, which must get a bounded
+    // height from the Scaffold rather than an unbounded one from a
+    // SingleChildScrollView.
     return AppScaffold(
       title: 'Pesan',
+      scrollable: false,
+      padding: EdgeInsets.zero,
       body: threads.isEmpty
           ? const EmptyState(
               icon: Icons.chat_bubble_outline,
@@ -24,6 +29,7 @@ class MessagesScreen extends ConsumerWidget {
               message: 'Pesan dari komunitas atau admin akan muncul di sini.',
             )
           : ListView.builder(
+              padding: EdgeInsets.zero,
               itemCount: threads.length,
               itemBuilder: (context, index) {
                 final thread = threads[index];

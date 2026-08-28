@@ -8,6 +8,7 @@ import '../../../core/demo/demo_scenario.dart';
 import '../../../core/design/components/components.dart';
 import '../../../core/design/tokens.dart';
 import '../application/arisan_providers.dart';
+import '../domain/arisan_rules.dart';
 
 /// SC-13: Bagikan Kuota
 class ShareQuotaScreen extends ConsumerStatefulWidget {
@@ -22,10 +23,35 @@ class _ShareQuotaScreenState extends ConsumerState<ShareQuotaScreen> {
   String _slotLabel = 'Sabtu, 08.00–10.00';
   final TextEditingController _noteController = TextEditingController();
 
+  bool _submitting = false;
+
   @override
   void dispose() {
     _noteController.dispose();
     super.dispose();
+  }
+
+  void _shareQuota() {
+    if (_submitting) return; // guard against double-tap
+    _submitting = true;
+
+    final outcome = ref
+        .read(demoRepositoryProvider)
+        .shareQuota(
+          kwh: _amount,
+          slotLabel: _slotLabel,
+          note: _noteController.text.trim(),
+        );
+
+    if (!mounted) return;
+    if (outcome.isSuccess) {
+      context.pushReplacement(AppRoute.offerPublishedPath);
+    } else {
+      _submitting = false;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(outcome.error!.message)));
+    }
   }
 
   @override
@@ -38,18 +64,7 @@ class _ShareQuotaScreenState extends ConsumerState<ShareQuotaScreen> {
       onBack: () => context.pop(),
       bottomBar: PrimaryButton(
         label: 'Tinjau & Bagikan',
-        onPressed: _amount > quota.availableKwh
-            ? null
-            : () {
-                ref
-                    .read(demoRepositoryProvider)
-                    .shareQuota(
-                      kwh: _amount,
-                      slotLabel: _slotLabel,
-                      note: _noteController.text.trim(),
-                    );
-                context.pushReplacement(AppRoute.offerPublishedPath);
-              },
+        onPressed: _amount > quota.availableKwh ? null : _shareQuota,
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

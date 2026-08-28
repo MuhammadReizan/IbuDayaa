@@ -5,7 +5,7 @@ import '../../../core/demo/demo_scenario.dart';
 import '../../credit_score/application/credit_score_provider.dart';
 
 final loanParamsProvider = Provider<DemoLoanParams>((ref) {
-  return ref.watch(demoRepositoryProvider).current.loanParams;
+  return ref.watch(currentScenarioProvider).loanParams;
 });
 
 final borrowingCeilingProvider = Provider<int>((ref) {

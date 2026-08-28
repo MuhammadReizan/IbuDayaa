@@ -67,7 +67,7 @@ class FinancingResultScreen extends StatelessWidget {
                 ),
                 const Divider(height: AppSpacing.xl),
                 _DetailRow(
-                  label: 'Estimasi Bagi Hasil (Flat)',
+                  label: 'Asumsi Biaya Simulasi',
                   value:
                       '${simulation.flatMonthlyRatePct.toStringAsFixed(1)}% per bulan',
                 ),

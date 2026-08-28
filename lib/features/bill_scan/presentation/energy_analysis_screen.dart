@@ -9,7 +9,10 @@ import '../../../core/design/tokens.dart';
 import '../../../core/format/money.dart';
 import '../application/bill_scan_providers.dart';
 
-/// SC-03: Analisis AI Energi (docs/SCREEN_INVENTORY.md §SC-03)
+/// SC-03: Analisis Energi (docs/SCREEN_INVENTORY.md §SC-03)
+///
+/// The insight is deterministic bundled demo output, not a trained model, so
+/// the user-facing title is "Analisis Energi" (product honesty — AGENTS.MD).
 class EnergyAnalysisScreen extends ConsumerWidget {
   const EnergyAnalysisScreen({super.key});
 
@@ -19,7 +22,7 @@ class EnergyAnalysisScreen extends ConsumerWidget {
 
     if (insight == null) {
       return AppScaffold(
-        title: 'Analisis AI Energi',
+        title: 'Analisis Energi',
         onBack: () => context.pop(),
         body: EmptyState(
           icon: Icons.analytics_outlined,
@@ -27,7 +30,7 @@ class EnergyAnalysisScreen extends ConsumerWidget {
           message: 'Scan tagihan listrik Anda untuk melihat analisis energi.',
           action: PrimaryButton(
             label: 'Scan Tagihan',
-            onPressed: () => context.pushReplacement(AppRoute.scanTagihan),
+            onPressed: () => context.pushReplacement(AppRoute.scanTagihanPath),
             expand: false,
           ),
         ),
@@ -37,11 +40,11 @@ class EnergyAnalysisScreen extends ConsumerWidget {
     final TextTheme text = Theme.of(context).textTheme;
 
     return AppScaffold(
-      title: 'Analisis AI Energi',
+      title: 'Analisis Energi',
       onBack: () => context.pop(),
       bottomBar: PrimaryButton(
         label: 'Lihat Jadwal Solar Hub',
-        onPressed: () => context.push(AppRoute.solarBooking),
+        onPressed: () => context.push(AppRoute.solarBookingPath),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

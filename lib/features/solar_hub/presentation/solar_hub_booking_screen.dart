@@ -55,7 +55,7 @@ class _SolarHubBookingScreenState extends ConsumerState<SolarHubBookingScreen> {
     setState(() => _isSubmitting = false);
 
     // Pass booking ID or just let SC-07 fetch latest
-    context.pushReplacement(AppRoute.bookingConfirmed, extra: booking);
+    context.pushReplacement(AppRoute.bookingConfirmedPath, extra: booking);
   }
 
   @override

@@ -25,7 +25,7 @@ class _ScanTagihanScreenState extends State<ScanTagihanScreen> {
     if (!mounted) return;
 
     // Navigate to SC-03
-    context.pushReplacement(AppRoute.energyAnalysis);
+    context.pushReplacement(AppRoute.energyAnalysisPath);
   }
 
   @override

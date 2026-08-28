@@ -12,7 +12,7 @@ Rehearsed in `DEMO_SCRIPT.md`:
 Splash / seed load
   > Home (Beranda)  — "Hi Ibu Clara"
     > Scan Tagihan  (tap "Ambil Foto Tagihan" / "Unggah dari Galeri")
-      > Analisis AI Energi  (DEMO_SIMULATION spike + appliance attribution "ilustrasi")
+      > Analisis Energi  (DEMO_SIMULATION spike + appliance attribution "ilustrasi")
         > (CTA) Lihat Jadwal Solar Hub
   > Solar Hub tab  ("Scan Sekarang")
       > Radar Atap — Kelayakan Awal  (DEMO_SIMULATION: assessment + verification notice)
@@ -65,7 +65,7 @@ state.
 3. `?` **Unggah dari Galeri**: same, with the gallery picker (P1) or the same
    fallback.
 4. Short analysis loading state.
-5. Screen **Analisis AI Energi** (`DEMO_SIMULATION` from the scenario):
+5. Screen **Analisis Energi** (`DEMO_SIMULATION` from the scenario):
    - spike window (e.g. 18.00–21.00);
    - added monthly cost (e.g. Rp 45.200) — qualifier "estimasi";
    - ranked "Alat penyumbang biaya" list — qualifier "ilustrasi";
@@ -74,7 +74,7 @@ state.
 6. `!` Back during loading → return to Scan Tagihan, no state kept.
 7. `!` Scenario has no insight → empty state "Belum ada analisis…" + scan CTA.
 
-**Success end state:** on Analisis AI Energi, able to jump to Solar Hub.
+**Success end state:** on Analisis Energi, able to jump to Solar Hub.
 
 ---
 

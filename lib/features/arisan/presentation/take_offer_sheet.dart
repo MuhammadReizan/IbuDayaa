@@ -4,6 +4,7 @@ import '../../../core/demo/demo_providers.dart';
 import '../../../core/demo/demo_scenario.dart';
 import '../../../core/design/components/components.dart';
 import '../../../core/design/tokens.dart';
+import '../domain/arisan_rules.dart';
 
 /// SC-14: Ambil Kuota (Bottom Sheet)
 class TakeOfferSheet extends ConsumerStatefulWidget {
@@ -17,11 +18,34 @@ class TakeOfferSheet extends ConsumerStatefulWidget {
 
 class _TakeOfferSheetState extends ConsumerState<TakeOfferSheet> {
   final TextEditingController _noteController = TextEditingController();
+  bool _submitting = false;
 
   @override
   void dispose() {
     _noteController.dispose();
     super.dispose();
+  }
+
+  void _confirmTake() {
+    if (_submitting) return; // guard against double-tap
+    _submitting = true;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final outcome = ref
+        .read(demoRepositoryProvider)
+        .takeOffer(widget.offer.id, note: _noteController.text.trim());
+
+    navigator.pop();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          outcome.isSuccess
+              ? 'Berhasil mengambil kuota dari ${widget.offer.ownerName}'
+              : outcome.error!.message,
+        ),
+      ),
+    );
   }
 
   @override
@@ -77,25 +101,7 @@ class _TakeOfferSheetState extends ConsumerState<TakeOfferSheet> {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          PrimaryButton(
-            label: 'Konfirmasi Ambil',
-            onPressed: () {
-              ref
-                  .read(demoRepositoryProvider)
-                  .takeOffer(
-                    widget.offer.id,
-                    note: _noteController.text.trim(),
-                  );
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Berhasil mengambil kuota dari ${widget.offer.ownerName}',
-                  ),
-                ),
-              );
-            },
-          ),
+          PrimaryButton(label: 'Konfirmasi Ambil', onPressed: _confirmTake),
         ],
       ),
     );

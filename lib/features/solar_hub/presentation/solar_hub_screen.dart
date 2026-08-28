@@ -27,7 +27,7 @@ class _SolarHubScreenState extends State<SolarHubScreen> {
     setState(() => _isScanning = false);
 
     // Navigate to SC-05
-    context.push(AppRoute.radarAtap);
+    context.push(AppRoute.radarAtapPath);
   }
 
   @override

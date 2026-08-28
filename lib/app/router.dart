@@ -57,12 +57,10 @@ abstract final class AppRoute {
   static const String bookingConfirmed = 'bookingConfirmed';
   static const String bookingConfirmedPath = '/booking-confirmed';
 
-  // Stub routes — destination screens not yet implemented.
   static const String arisan = 'arisan';
   static const String arisanPath = '/arisan';
-  static const String pembiayaan = 'pembiayaan';
-  static const String pembiayaanPath = '/pembiayaan';
 
+  // Canonical financing entry route (Simulasi Pembiayaan input → result).
   static const String financing = 'financing';
   static const String financingPath = '/financing';
 
@@ -170,10 +168,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoute.bookingConfirmedPath,
         name: AppRoute.bookingConfirmed,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
-          final booking = state.extra as DemoSolarBooking;
-          return BookingConfirmedScreen(booking: booking);
-        },
+        // Requires a DemoSolarBooking in `extra`; a direct/refreshed hit with
+        // no valid data falls back to Home instead of a cast crash.
+        redirect: (context, state) =>
+            state.extra is DemoSolarBooking ? null : AppRoute.homePath,
+        builder: (context, state) =>
+            BookingConfirmedScreen(booking: state.extra as DemoSolarBooking),
       ),
 
       GoRoute(
@@ -210,18 +210,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoute.financingResultPath,
         name: AppRoute.financingResult,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
-          final simulation = state.extra as LoanSimulation;
-          return FinancingResultScreen(simulation: simulation);
-        },
-      ),
-      // Stubs for unimplemented destination features.
-      GoRoute(
-        path: AppRoute.pembiayaanPath,
-        name: AppRoute.pembiayaan,
-        parentNavigatorKey: _rootNavigatorKey,
+        // Requires a LoanSimulation in `extra`; otherwise send the user back to
+        // the financing input screen rather than crashing on the cast.
+        redirect: (context, state) =>
+            state.extra is LoanSimulation ? null : AppRoute.financingPath,
         builder: (context, state) =>
-            const _StubScreen(title: 'Simulasi Pembiayaan'),
+            FinancingResultScreen(simulation: state.extra as LoanSimulation),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
@@ -234,35 +228,3 @@ final routerProvider = Provider<GoRouter>((ref) {
     ),
   );
 });
-
-// ---------------------------------------------------------------------------
-// Minimal stub screen shown for unimplemented destination features.
-// PROTOTYPE_DECISION — replaced when the feature slice lands.
-// ---------------------------------------------------------------------------
-
-class _StubScreen extends StatelessWidget {
-  const _StubScreen({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(onPressed: () => context.pop()),
-        title: Text(title),
-      ),
-      body: SafeArea(
-        child: EmptyState(
-          icon: Icons.construction_outlined,
-          title: title,
-          message: 'Fitur ini akan hadir segera.',
-          action: TextButton(
-            onPressed: () => context.go(AppRoute.homePath),
-            child: const Text('Kembali ke Beranda'),
-          ),
-        ),
-      ),
-    );
-  }
-}

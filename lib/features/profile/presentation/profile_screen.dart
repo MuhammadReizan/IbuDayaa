@@ -12,7 +12,7 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final DemoScenario scenario = ref.watch(demoRepositoryProvider).current;
+    final DemoScenario scenario = ref.watch(currentScenarioProvider);
     final DemoUser user = scenario.user;
     final DemoImpactMetrics impact = scenario.impact;
     final TextTheme text = Theme.of(context).textTheme;
@@ -190,17 +190,21 @@ class _ImpactCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: color, size: 24),
-          const Spacer(),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             value,
             style: text.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           Text(
             title,
             style: text.bodySmall?.copyWith(color: AppColors.textSecondary),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

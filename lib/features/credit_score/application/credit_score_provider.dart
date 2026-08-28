@@ -36,7 +36,7 @@ final creditScoringEngineProvider = Provider<CreditScoringEngine>(
 /// The demo scenario is the single source of truth for the raw signal values
 /// (correction #3 — do not hardcode them here).
 final creditScoreInputsProvider = Provider<CreditScoreInputs>((ref) {
-  final scenario = ref.watch(demoRepositoryProvider).current;
+  final scenario = ref.watch(currentScenarioProvider);
   final seed = scenario.creditInputs;
   return CreditScoreInputs(
     energyUsageConsistency: seed.energyUsageConsistency,

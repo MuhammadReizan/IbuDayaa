@@ -75,7 +75,7 @@
 | --- | --- | --- | --- |
 | B01 | Home dashboard — greeting ("Hi Ibu Clara"), monthly saving, % energy from Solar Hub, score tile, Arisan status, quick actions, power-usage alerts | P0 | Launch pad; all tiles from demo data. |
 | B02 | Bill scan capture/upload screen ("Scan Tagihan") | P0 | Buttons work; no OCR. |
-| B03 | AI Energy Insight ("Analisis AI Energi") — spike window, added-cost figure, appliance attribution ("ilustrasi"), main insight, link to Solar Hub | P0 | `DEMO_SIMULATION`. |
+| B03 | AI Energy Insight ("Analisis Energi") — spike window, added-cost figure, appliance attribution ("ilustrasi"), main insight, link to Solar Hub | P0 | `DEMO_SIMULATION`. |
 | B04 | **Simulasi Pembiayaan (input)** — amount slider (cap Rp 2.000.000), business purpose, tenor (3/6/12), **Hitung Simulasi** | P0 | No application submission (CR-2). |
 | B05 | **Hasil Simulasi Pembiayaan** — principal, tenor, simulated flat rate, estimated total cost, estimated total repayment, estimated monthly installment, visible disclaimer | P0 | Installment math `IMPLEMENTED` (flat 2%/mo, decision #6). Flow **ends here** — no "Pengajuan Terkirim", no approval/disbursement. Optional secondary CTA may only be "Saya Tertarik" (partner integration = `FUTURE_IMPLEMENTATION`); preferred P0 omits it. |
 | B06 | Profile / Impact ("Profil Saya", persona **Ibu Clara**) — identity card, impact metrics, settings list | P0 | Demo data. |

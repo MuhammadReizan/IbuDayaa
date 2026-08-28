@@ -32,7 +32,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
-    final scenario = ref.watch(demoRepositoryProvider).current;
+    final scenario = ref.watch(currentScenarioProvider);
     final impact = scenario.impact;
     final arisan = scenario.arisanSummary;
     final solar = scenario.solarDaySummary;
@@ -268,7 +268,7 @@ class _QuickActionGrid extends StatelessWidget {
           _QuickActionDef(
             icon: Icons.account_balance_wallet_outlined,
             label: 'Simulasi\nPembiayaan',
-            route: AppRoute.pembiayaanPath,
+            route: AppRoute.financingPath,
           ),
         ];
 

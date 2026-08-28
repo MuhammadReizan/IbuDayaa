@@ -55,7 +55,7 @@ Define once in `core/design/tokens.dart`; never inline a hex in a widget.
 | Role | Size / weight | Use |
 | --- | --- | --- |
 | `displayScore` | 40 / 700 | the big credit-score number, "Rp 245.000" hero |
-| `headlineSmall` | 22 / 700 | screen titles ("Analisis AI Energi") |
+| `headlineSmall` | 22 / 700 | screen titles ("Analisis Energi") |
 | `titleMedium` | 16 / 600 | card titles, section headers |
 | `bodyLarge` | 15 / 400 | primary body |
 | `bodyMedium` | 14 / 400 | secondary body |
