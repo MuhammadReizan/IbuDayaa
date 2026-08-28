@@ -1,0 +1,174 @@
+{
+  "meta": {
+    "label": "Skenario Demo — Ibu Clara",
+    "generatedAt": "2026-08-01T09:00:00"
+  },
+  "user": {
+    "id": "IDB-2404-1287",
+    "displayName": "Ibu Clara",
+    "greetingName": "Ibu Clara",
+    "role": "Anggota IbuDaya",
+    "phone": "+62 812-3456-7890",
+    "city": "Palembang",
+    "joinedAt": "2024-04-01T00:00:00"
+  },
+  "impact": {
+    "totalEnergyUsedKwh": 128.0,
+    "energySharedKwh": 32.0,
+    "co2AvoidedKg": 96.0,
+    "arisanGroupSize": 12,
+    "monthlySavingIdr": 245000,
+    "solarSharePct": 45
+  },
+  "creditInputs": {
+    "energyUsageConsistency": 0.857,
+    "paymentHistory": 0.80,
+    "businessActivity": 0.90,
+    "communityParticipation": 0.667
+  },
+  "loanParams": {
+    "minIdr": 500000,
+    "maxDemoFinancingIdr": 2000000,
+    "flatMonthlyRatePct": 2.0,
+    "eligibleScoreThreshold": 65
+  },
+  "arisanSummary": {
+    "groupName": "Arisan Energi Melati",
+    "memberCount": 12,
+    "myContributionStatus": "lunas",
+    "myTurnPosition": 4
+  },
+  "solarDaySummary": {
+    "capacityPct": 86,
+    "statusLabel": "Aktif"
+  },
+  "energyInsight": {
+    "spikeDetected": true,
+    "spikeWindowLabel": "18.00–21.00",
+    "addedMonthlyCostIdr": 45200,
+    "mainInsight": "Pemakaian daya malam hari cukup tinggi. Pertimbangkan memindahkan penggunaan alat berat ke slot Solar Hub pagi hari.",
+    "contributors": [
+      { "applianceKind": "oven", "name": "Oven", "costIdr": 18500, "tip": "Gunakan di slot Solar Hub 10.00–12.00 untuk hemat daya." },
+      { "applianceKind": "sewingMachine", "name": "Mesin Jahit", "costIdr": 14200, "tip": null },
+      { "applianceKind": "refrigerator", "name": "Kulkas", "costIdr": 8300, "tip": null },
+      { "applianceKind": "blender", "name": "Blender", "costIdr": 4200, "tip": null }
+    ]
+  },
+  "roofScan": {
+    "suitability": "sangatBaik",
+    "estimatedPotentialAreaM2": 60.0,
+    "roofOrientationLabel": "Menghadap timur–barat",
+    "sunExposurePotentialLabel": "Tinggi",
+    "verificationNotice": "Ini estimasi awal. Perlu verifikasi teknis di lokasi sebelum pemasangan.",
+    "tip": "Atap dengan orientasi timur–barat memiliki paparan sinar matahari yang optimal sepanjang hari untuk Solar Hub komunitas."
+  },
+  "solarDay": {
+    "capacityPct": 86,
+    "recommendedSlotId": "slot-2",
+    "recommendationReason": "Cuaca cerah dan energi Solar Hub cukup tersedia di jam ini.",
+    "slots": [
+      { "id": "slot-1", "label": "08.00–10.00", "availability": "open" },
+      { "id": "slot-2", "label": "10.00–12.00", "availability": "open" },
+      { "id": "slot-3", "label": "13.00–15.00", "availability": "full" },
+      { "id": "slot-4", "label": "15.00–17.00", "availability": "open" }
+    ],
+    "appliances": [
+      { "kind": "oven",         "name": "Oven",       "approxPowerKw": 1.5 },
+      { "kind": "sewingMachine","name": "Mesin Jahit", "approxPowerKw": 0.1 },
+      { "kind": "refrigerator", "name": "Kulkas",      "approxPowerKw": 0.15 },
+      { "kind": "blender",      "name": "Blender",     "approxPowerKw": 0.35 }
+    ]
+  },
+  "arisan": {
+    "id": "ars-001",
+    "name": "Arisan Energi Melati",
+    "myContributionStatus": "lunas",
+    "myTurnPosition": 4,
+    "nextTurnDate": "2026-10-01T00:00:00",
+    "members": [
+      { "id": "IDB-2404-1287", "name": "Ibu Clara",  "isCurrentUser": true },
+      { "id": "m-002",         "name": "Siti Rahma",  "isCurrentUser": false },
+      { "id": "m-003",         "name": "Ibu Lina",    "isCurrentUser": false },
+      { "id": "m-004",         "name": "Ibu Putri",   "isCurrentUser": false },
+      { "id": "m-005",         "name": "Ibu Dewi",    "isCurrentUser": false },
+      { "id": "m-006",         "name": "Ibu Ratna",   "isCurrentUser": false },
+      { "id": "m-007",         "name": "Ibu Wati",    "isCurrentUser": false },
+      { "id": "m-008",         "name": "Ibu Sari",    "isCurrentUser": false },
+      { "id": "m-009",         "name": "Ibu Yuni",    "isCurrentUser": false },
+      { "id": "m-010",         "name": "Ibu Rini",    "isCurrentUser": false },
+      { "id": "m-011",         "name": "Ibu Ani",     "isCurrentUser": false },
+      { "id": "m-012",         "name": "Ibu Endang",  "isCurrentUser": false }
+    ],
+    "rotation": [
+      { "date": "2026-07-01T00:00:00", "memberId": "m-002", "memberName": "Siti Rahma" },
+      { "date": "2026-08-01T00:00:00", "memberId": "m-003", "memberName": "Ibu Lina" },
+      { "date": "2026-09-01T00:00:00", "memberId": "m-004", "memberName": "Ibu Putri" },
+      { "date": "2026-10-01T00:00:00", "memberId": "IDB-2404-1287", "memberName": "Ibu Clara" }
+    ],
+    "ledger": [
+      {
+        "id": "LED-001", "type": "contribution", "memberId": "IDB-2404-1287",
+        "memberName": "Ibu Clara", "amountIdr": 150000, "amountKwh": null,
+        "timestamp": "2026-08-01T10:00:00", "status": "settled", "note": null
+      },
+      {
+        "id": "LED-002", "type": "contribution", "memberId": "m-002",
+        "memberName": "Siti Rahma", "amountIdr": 150000, "amountKwh": null,
+        "timestamp": "2026-08-01T09:30:00", "status": "settled", "note": null
+      },
+      {
+        "id": "LED-003", "type": "payout", "memberId": "m-003",
+        "memberName": "Ibu Lina", "amountIdr": 1800000, "amountKwh": null,
+        "timestamp": "2026-08-02T08:00:00", "status": "settled", "note": "Giliran Ibu Lina"
+      }
+    ]
+  },
+  "quota": {
+    "availableKwh": 12.0,
+    "neededKwh": 5.0,
+    "myTurnSlotLabel": "Jumat, 10.00–12.00"
+  },
+  "offers": [
+    {
+      "id": "off-001", "ownerMemberId": "m-002", "ownerName": "Siti Rahma",
+      "amountKwh": 5.0, "slotLabel": "Sabtu, 08.00–10.00",
+      "note": "Saya punya sisa kuota hari Sabtu.", "status": "open",
+      "createdAt": "2026-07-30T14:00:00"
+    },
+    {
+      "id": "off-002", "ownerMemberId": "m-003", "ownerName": "Ibu Lina",
+      "amountKwh": 3.0, "slotLabel": "Minggu, 10.00–12.00",
+      "note": null, "status": "open",
+      "createdAt": "2026-07-31T09:00:00"
+    }
+  ],
+  "threads": [
+    {
+      "id": "th-001", "kind": "group", "title": "Arisan Energi Melati",
+      "lastPreview": "Ibu Lina: Terima kasih semua anggota sudah lunas bulan ini!",
+      "lastAt": "2026-08-01T10:30:00", "unreadCount": 2,
+      "messages": [
+        { "id": "msg-001", "senderId": "m-003", "senderName": "Ibu Lina", "isCurrentUser": false, "isSystem": false, "text": "Selamat pagi, anggota Arisan Energi Melati!", "sentAt": "2026-08-01T08:00:00" },
+        { "id": "msg-002", "senderId": "m-002", "senderName": "Siti Rahma", "isCurrentUser": false, "isSystem": false, "text": "Pagi! Semangat hari ini 🌞", "sentAt": "2026-08-01T08:05:00" },
+        { "id": "msg-003", "senderId": "IDB-2404-1287", "senderName": "Ibu Clara", "isCurrentUser": true, "isSystem": false, "text": "Pagi semua! Sudah bayar iuran nih.", "sentAt": "2026-08-01T09:00:00" },
+        { "id": "msg-004", "senderId": "m-003", "senderName": "Ibu Lina", "isCurrentUser": false, "isSystem": false, "text": "Terima kasih semua anggota sudah lunas bulan ini!", "sentAt": "2026-08-01T10:30:00" }
+      ]
+    },
+    {
+      "id": "th-002", "kind": "admin", "title": "Solar Hub Admin",
+      "lastPreview": "Admin: Slot Solar Hub Sabtu tersedia, silakan booking.",
+      "lastAt": "2026-07-31T16:00:00", "unreadCount": 1,
+      "messages": [
+        { "id": "msg-010", "senderId": "admin", "senderName": "Admin IbuDaya", "isCurrentUser": false, "isSystem": true, "text": "Slot Solar Hub Sabtu tersedia, silakan booking.", "sentAt": "2026-07-31T16:00:00" }
+      ]
+    },
+    {
+      "id": "th-003", "kind": "system", "title": "Tips IbuDaya",
+      "lastPreview": "Hemat energi: gunakan alat listrik di jam pagi Solar Hub.",
+      "lastAt": "2026-07-29T07:00:00", "unreadCount": 0,
+      "messages": [
+        { "id": "msg-020", "senderId": "system", "senderName": "Tips IbuDaya", "isCurrentUser": false, "isSystem": true, "text": "Hemat energi: gunakan alat listrik di jam pagi Solar Hub untuk biaya lebih rendah.", "sentAt": "2026-07-29T07:00:00" }
+      ]
+    }
+  ]
+}
