@@ -47,6 +47,16 @@ dependencies:
   # across restarts and app updates. Required for offline-first storage; there
   # is no server and no other way to get a writable, backed-up path.
   path_provider: ^2.1.5
+  # Live viewfinder with the scan frame for PLN bills and roofs. image_picker
+  # alone only launches the system camera, which cannot draw the guide frame.
+  camera: ^0.11.2+1
+  # "Unggah dari Galeri" — pick an existing photo of a bill or roof.
+  image_picker: ^1.2.1
+  # On-device OCR that reads kWh and rupiah off the bill photo. Runs offline;
+  # no image leaves the phone.
+  google_mlkit_text_recognition: ^0.16.0
+  # SHA-256 for hashing PINs in local mode. Supabase Auth replaces this later.
+  crypto: ^3.0.7
 
 dev_dependencies:
   flutter_test:

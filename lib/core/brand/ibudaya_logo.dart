@@ -136,44 +136,46 @@ class IbuDayaLogo extends StatelessWidget {
       children: [
         IbuDayaMark(size: height, variant: variant),
         const SizedBox(width: AppSpacing.sm),
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            RichText(
-              text: TextSpan(
-                style: TextStyle(
-                  fontFamily: null,
-                  fontSize: height * 0.62,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.6,
-                  height: 1.0,
-                  color: wordColor,
-                ),
-                children: [
-                  const TextSpan(text: 'Ibu'),
-                  TextSpan(
-                    text: 'Daya',
-                    style: TextStyle(color: accent),
+        Flexible(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              RichText(
+                text: TextSpan(
+                  style: TextStyle(
+                    fontFamily: null,
+                    fontSize: height * 0.62,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.6,
+                    height: 1.0,
+                    color: wordColor,
                   ),
-                ],
-              ),
-            ),
-            if (tagline != null) ...[
-              const SizedBox(height: 2),
-              Text(
-                tagline!,
-                style: TextStyle(
-                  fontSize: height * 0.30,
-                  fontWeight: FontWeight.w500,
-                  height: 1.0,
-                  color: variant == BrandVariant.onDark
-                      ? AppColors.textOnDarkDim
-                      : AppColors.textSecondary,
+                  children: [
+                    const TextSpan(text: 'Ibu'),
+                    TextSpan(
+                      text: 'Daya',
+                      style: TextStyle(color: accent),
+                    ),
+                  ],
                 ),
               ),
+              if (tagline != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  tagline!,
+                  style: TextStyle(
+                    fontSize: height * 0.30,
+                    fontWeight: FontWeight.w500,
+                    height: 1.0,
+                    color: variant == BrandVariant.onDark
+                        ? AppColors.textOnDarkDim
+                        : AppColors.textSecondary,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ],
     );

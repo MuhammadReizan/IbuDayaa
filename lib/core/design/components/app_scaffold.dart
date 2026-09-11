@@ -59,7 +59,9 @@ class AppScaffold extends StatelessWidget {
       backgroundColor: backgroundColor ?? AppColors.background,
       appBar: hasBar
           ? AppBar(
-              titleSpacing: onBack != null ? 0 : AppSpacing.xl - 4,
+              centerTitle: true,
+              automaticallyImplyLeading: false,
+              titleSpacing: AppSpacing.sm,
               leadingWidth: 52,
               leading: onBack != null
                   ? Padding(
@@ -115,9 +117,8 @@ class _RoundIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: tooltip,
+    return Tooltip(
+      message: tooltip ?? '',
       child: Material(
         color: AppColors.surface,
         shape: const CircleBorder(side: BorderSide(color: AppColors.outline)),

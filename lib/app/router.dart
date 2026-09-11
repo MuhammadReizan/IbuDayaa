@@ -2,275 +2,251 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../core/data/app_data_controller.dart';
-import '../core/data/models.dart';
-import '../core/design/components/state_views.dart';
-import '../features/about/presentation/about_screen.dart';
-import '../features/appliances/presentation/appliance_edit_screen.dart';
-import '../features/appliances/presentation/appliances_screen.dart';
-import '../features/arisan/presentation/arisan_create_screen.dart';
-import '../features/arisan/presentation/arisan_screen.dart';
-import '../features/arisan/presentation/quota_share_screen.dart';
-import '../features/arisan/presentation/quota_trading_screen.dart';
-import '../features/bills/presentation/bill_add_screen.dart';
-import '../features/bills/presentation/bills_screen.dart';
-import '../features/bills/presentation/energy_analysis_screen.dart';
-import '../features/credit_score/presentation/credit_score_screen.dart';
-import '../features/financing/presentation/financing_screen.dart';
-import '../features/home/presentation/home_screen.dart';
-import '../features/notifications/presentation/notifications_screen.dart';
-import '../features/onboarding/presentation/onboarding_screen.dart';
-import '../features/profile/presentation/profile_screen.dart';
-import '../features/settings/presentation/app_settings_screen.dart';
-import '../features/shell/presentation/app_shell.dart';
-import '../features/solar_hub/presentation/roof_check_screen.dart';
-import '../features/solar_hub/presentation/session_add_screen.dart';
-import '../features/solar_hub/presentation/solar_hub_screen.dart';
-import 'splash_screen.dart';
+import '../core/models/models.dart';
+import '../core/paths.dart';
+import '../core/state/app_state.dart';
+import '../features/admin/admin_home_screen.dart';
+import '../features/admin/admin_loans_screen.dart';
+import '../features/admin/admin_members_screen.dart';
+import '../features/admin/admin_more_screen.dart';
+import '../features/admin/announce_screen.dart';
+import '../features/admin/arisan_admin_screen.dart';
+import '../features/admin/coop_settings_screen.dart';
+import '../features/admin/hub_settings_screen.dart';
+import '../features/admin/member_detail_screen.dart';
+import '../features/admin/payments_review_screen.dart';
+import '../features/arisan/arisan_screen.dart';
+import '../features/arisan/quota_market_screen.dart';
+import '../features/arisan/quota_post_screen.dart';
+import '../features/auth/login_screen.dart';
+import '../features/auth/register_admin_screen.dart';
+import '../features/auth/register_choice_screen.dart';
+import '../features/auth/register_member_screen.dart';
+import '../features/auth/welcome_screen.dart';
+import '../features/credit_score/presentation/score_screen.dart';
+import '../features/energy/appliance_form_screen.dart';
+import '../features/energy/appliances_screen.dart';
+import '../features/energy/energy_analysis_screen.dart';
+import '../features/energy/energy_form_screen.dart';
+import '../features/energy/energy_records_screen.dart';
+import '../features/energy/scan_bill_screen.dart';
+import '../features/home/member_home_screen.dart';
+import '../features/loans/loan_apply_screen.dart';
+import '../features/loans/loan_detail_screen.dart';
+import '../features/loans/loans_screen.dart';
+import '../features/messages/messages_screen.dart';
+import '../features/messages/notifications_screen.dart';
+import '../features/messages/thread_screen.dart';
+import '../features/profile/about_screen.dart';
+import '../features/profile/change_pin_screen.dart';
+import '../features/profile/edit_profile_screen.dart';
+import '../features/profile/profile_screen.dart';
+import '../features/shell/shells.dart';
+import '../features/solar/booking_screen.dart';
+import '../features/solar/bookings_screen.dart';
+import '../features/solar/roof_scan_screen.dart';
+import '../features/solar/solar_hub_screen.dart';
 
-/// Stable route names + paths. Navigate with these constants, never string
-/// literals scattered across widgets.
-abstract final class AppRoute {
-  static const String splashPath = '/';
+final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
-  static const String onboarding = 'onboarding';
-  static const String onboardingPath = '/onboarding';
+const _authPaths = {
+  Paths.welcome,
+  Paths.login,
+  Paths.register,
+  Paths.registerMember,
+  Paths.registerAdmin,
+};
 
-  // Bottom-nav branches.
-  static const String home = 'home';
-  static const String homePath = '/home';
-  static const String solar = 'solar';
-  static const String solarPath = '/solar';
-  static const String arisan = 'arisan';
-  static const String arisanPath = '/arisan';
-  static const String profile = 'profile';
-  static const String profilePath = '/profile';
+/// Paths both roles may open. Everything else under `/a/` is admin-only, and
+/// everything outside it is member-only.
+const _sharedPrefixes = [
+  '/thread/',
+  Paths.notifications,
+  '/profile/',
+  Paths.about,
+];
 
-  // Bills.
-  static const String bills = 'bills';
-  static const String billsPath = '/bills';
-  static const String billAdd = 'billAdd';
-  static const String billAddPath = '/bills/add';
-  static const String energyAnalysis = 'energyAnalysis';
-  static const String energyAnalysisPath = '/energy-analysis';
+String homeFor(Profile me) => me.isAdmin ? Paths.adminHome : Paths.memberHome;
 
-  // Appliances.
-  static const String appliances = 'appliances';
-  static const String appliancesPath = '/appliances';
-  static const String applianceEdit = 'applianceEdit';
-  static const String applianceEditPath = '/appliances/edit';
-
-  // Solar hub.
-  static const String roofCheck = 'roofCheck';
-  static const String roofCheckPath = '/roof-check';
-  static const String sessionAdd = 'sessionAdd';
-  static const String sessionAddPath = '/session/add';
-
-  // Arisan.
-  static const String arisanCreate = 'arisanCreate';
-  static const String arisanCreatePath = '/arisan/create';
-  static const String quotaTrading = 'quotaTrading';
-  static const String quotaTradingPath = '/quota';
-  static const String quotaShare = 'quotaShare';
-  static const String quotaSharePath = '/quota/share';
-
-  // Money.
-  static const String creditScore = 'creditScore';
-  static const String creditScorePath = '/credit-score';
-  static const String financing = 'financing';
-  static const String financingPath = '/financing';
-
-  // Support.
-  static const String notifications = 'notifications';
-  static const String notificationsPath = '/notifications';
-  static const String about = 'about';
-  static const String aboutPath = '/about';
-  static const String appSettings = 'appSettings';
-  static const String appSettingsPath = '/settings';
+/// Pure so it can be tested without a router.
+String? guard(Profile? me, String location) {
+  final isAuth = _authPaths.contains(location) || location == Paths.splash;
+  if (me == null) {
+    return isAuth && location != Paths.splash ? null : Paths.welcome;
+  }
+  if (isAuth) return homeFor(me);
+  if (_sharedPrefixes.any(location.startsWith)) return null;
+  final adminArea = location.startsWith('/a/');
+  if (me.isAdmin && !adminArea) return Paths.adminHome;
+  if (!me.isAdmin && adminArea) return Paths.memberHome;
+  return null;
 }
 
-final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(
-  debugLabel: 'root',
-);
-
+/// Rebuilt never; re-evaluates redirects when the signed-in account changes.
 final routerProvider = Provider<GoRouter>((ref) {
-  return GoRouter(
-    navigatorKey: _rootNavigatorKey,
-    initialLocation: AppRoute.splashPath,
-    // Nothing but the splash and onboarding is reachable until a profile
-    // exists, so no screen ever has to cope with a null user.
-    redirect: (context, state) {
-      final loc = state.matchedLocation;
-      if (loc == AppRoute.splashPath) return null;
+  final session = ValueNotifier<String?>(ref.read(appStateProvider).me?.id);
+  ref.listen(appStateProvider, (_, next) => session.value = next.me?.id);
+  ref.onDispose(session.dispose);
 
-      final data = ref.read(appDataProvider).value;
-      if (data == null) return null; // still loading; splash handles it
-
-      final onboarding = loc == AppRoute.onboardingPath;
-      if (!data.isOnboarded && !onboarding) return AppRoute.onboardingPath;
-      if (data.isOnboarded && onboarding) return AppRoute.homePath;
-      return null;
-    },
+  final me = ref.read(appStateProvider).me;
+  final router = GoRouter(
+    navigatorKey: _rootKey,
+    initialLocation: me == null ? Paths.welcome : homeFor(me),
+    refreshListenable: session,
+    redirect: (context, state) =>
+        guard(ref.read(appStateProvider).me, state.matchedLocation),
     routes: [
+      GoRoute(path: Paths.splash, redirect: (_, _) => Paths.welcome),
+      GoRoute(path: Paths.welcome, builder: (_, _) => const WelcomeScreen()),
+      GoRoute(path: Paths.login, builder: (_, _) => const LoginScreen()),
       GoRoute(
-        path: AppRoute.splashPath,
-        builder: (context, state) => const SplashScreen(),
+        path: Paths.register,
+        builder: (_, _) => const RegisterChoiceScreen(),
       ),
       GoRoute(
-        path: AppRoute.onboardingPath,
-        name: AppRoute.onboarding,
-        builder: (context, state) => const OnboardingScreen(),
+        path: Paths.registerMember,
+        builder: (_, s) =>
+            RegisterMemberScreen(initialCode: s.uri.queryParameters['kode']),
+      ),
+      GoRoute(
+        path: Paths.registerAdmin,
+        builder: (_, _) => const RegisterAdminScreen(),
       ),
 
+      // -- Member ------------------------------------------------------------
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) =>
-            AppShell(navigationShell: navigationShell),
+        builder: (_, _, shell) => MemberShell(shell: shell),
         branches: [
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoute.homePath,
-                name: AppRoute.home,
-                builder: (context, state) => const HomeScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoute.solarPath,
-                name: AppRoute.solar,
-                builder: (context, state) => const SolarHubScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoute.arisanPath,
-                name: AppRoute.arisan,
-                builder: (context, state) => const ArisanScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoute.profilePath,
-                name: AppRoute.profile,
-                builder: (context, state) => const ProfileScreen(),
-              ),
-            ],
+          _branch(Paths.memberHome, const MemberHomeScreen()),
+          _branch(Paths.memberSolar, const SolarHubScreen()),
+          _branch(Paths.memberMessages, const MessagesScreen()),
+          _branch(Paths.memberProfile, const ProfileScreen()),
+        ],
+      ),
+      _page(Paths.scan, (_) => const ScanBillScreen()),
+      _page(Paths.energy, (_) => const EnergyRecordsScreen()),
+      _page(
+        Paths.energyAdd,
+        (s) => EnergyFormScreen(draft: s.extra as EnergyDraft?),
+      ),
+      _page(Paths.energyAnalysis, (_) => const EnergyAnalysisScreen()),
+      _page(Paths.appliances, (_) => const AppliancesScreen()),
+      _page(
+        Paths.applianceEdit,
+        (s) => ApplianceFormScreen(existing: s.extra as Appliance?),
+      ),
+      _page(Paths.roof, (_) => const RoofScanScreen()),
+      _page(
+        Paths.booking,
+        (s) => BookingScreen(applianceName: s.uri.queryParameters['alat']),
+      ),
+      _page(Paths.bookings, (_) => const BookingsScreen()),
+      _page(Paths.arisan, (_) => const ArisanScreen()),
+      _page(Paths.quota, (_) => const QuotaMarketScreen()),
+      _page(
+        Paths.quotaNew,
+        (s) => QuotaPostScreen(
+          kind: s.uri.queryParameters['jenis'] == 'butuh'
+              ? QuotaKind.need
+              : QuotaKind.share,
+        ),
+      ),
+      _page(Paths.score, (_) => const ScoreScreen()),
+      _page(Paths.loanApply, (_) => const LoanApplyScreen()),
+      _page(
+        Paths.loans,
+        (_) => const LoansScreen(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            parentNavigatorKey: _rootKey,
+            builder: (_, s) =>
+                LoanDetailScreen(loanId: s.pathParameters['id']!),
           ),
         ],
       ),
 
-      // Pushed over the shell.
-      GoRoute(
-        path: AppRoute.billsPath,
-        name: AppRoute.bills,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const BillsScreen(),
+      // -- Shared ------------------------------------------------------------
+      _page(
+        '/thread/:id',
+        (s) => ThreadScreen(threadId: s.pathParameters['id']!),
       ),
-      GoRoute(
-        path: AppRoute.billAddPath,
-        name: AppRoute.billAdd,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) =>
-            BillAddScreen(existing: state.extra as Bill?),
-      ),
-      GoRoute(
-        path: AppRoute.energyAnalysisPath,
-        name: AppRoute.energyAnalysis,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const EnergyAnalysisScreen(),
-      ),
+      _page(Paths.notifications, (_) => const NotificationsScreen()),
+      _page(Paths.profileEdit, (_) => const EditProfileScreen()),
+      _page(Paths.changePin, (_) => const ChangePinScreen()),
+      _page(Paths.about, (_) => const AboutScreen()),
 
-      GoRoute(
-        path: AppRoute.appliancesPath,
-        name: AppRoute.appliances,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const AppliancesScreen(),
+      // -- Admin -------------------------------------------------------------
+      StatefulShellRoute.indexedStack(
+        builder: (_, _, shell) => AdminShell(shell: shell),
+        branches: [
+          _branch(Paths.adminHome, const AdminHomeScreen()),
+          _branch(
+            Paths.adminLoans,
+            const AdminLoansScreen(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                parentNavigatorKey: _rootKey,
+                builder: (_, s) => LoanDetailScreen(
+                  loanId: s.pathParameters['id']!,
+                  adminView: true,
+                ),
+              ),
+            ],
+          ),
+          _branch(
+            Paths.adminMembers,
+            const AdminMembersScreen(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                parentNavigatorKey: _rootKey,
+                builder: (_, s) =>
+                    MemberDetailScreen(memberId: s.pathParameters['id']!),
+              ),
+            ],
+          ),
+          _branch(Paths.adminMore, const AdminMoreScreen()),
+        ],
       ),
-      GoRoute(
-        path: AppRoute.applianceEditPath,
-        name: AppRoute.applianceEdit,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) =>
-            ApplianceEditScreen(existing: state.extra as Appliance?),
+      _page(Paths.adminPayments, (_) => const PaymentsReviewScreen()),
+      _page(
+        Paths.adminArisan,
+        (_) => const ArisanAdminScreen(),
+        routes: [
+          GoRoute(
+            path: 'new',
+            parentNavigatorKey: _rootKey,
+            builder: (_, _) => const ArisanCreateScreen(),
+          ),
+        ],
       ),
-
-      GoRoute(
-        path: AppRoute.roofCheckPath,
-        name: AppRoute.roofCheck,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const RoofCheckScreen(),
-      ),
-      GoRoute(
-        path: AppRoute.sessionAddPath,
-        name: AppRoute.sessionAdd,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const SessionAddScreen(),
-      ),
-
-      GoRoute(
-        path: AppRoute.arisanCreatePath,
-        name: AppRoute.arisanCreate,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const ArisanCreateScreen(),
-      ),
-      GoRoute(
-        path: AppRoute.quotaTradingPath,
-        name: AppRoute.quotaTrading,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const QuotaTradingScreen(),
-      ),
-      GoRoute(
-        path: AppRoute.quotaSharePath,
-        name: AppRoute.quotaShare,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const QuotaShareScreen(),
-      ),
-
-      GoRoute(
-        path: AppRoute.creditScorePath,
-        name: AppRoute.creditScore,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const CreditScoreScreen(),
-      ),
-      GoRoute(
-        path: AppRoute.financingPath,
-        name: AppRoute.financing,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const FinancingScreen(),
-      ),
-
-      GoRoute(
-        path: AppRoute.notificationsPath,
-        name: AppRoute.notifications,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const NotificationsScreen(),
-      ),
-      GoRoute(
-        path: AppRoute.aboutPath,
-        name: AppRoute.about,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const AboutScreen(),
-      ),
-      GoRoute(
-        path: AppRoute.appSettingsPath,
-        name: AppRoute.appSettings,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const AppSettingsScreen(),
-      ),
+      _page(Paths.adminHub, (_) => const HubSettingsScreen()),
+      _page(Paths.adminAnnounce, (_) => const AnnounceScreen()),
+      _page(Paths.adminSettings, (_) => const CoopSettingsScreen()),
+      _page(Paths.adminMessages, (_) => const MessagesScreen(standalone: true)),
     ],
-    errorBuilder: (context, state) => Scaffold(
-      body: SafeArea(
-        child: ErrorStateView(
-          message: 'Halaman tidak ditemukan.',
-          onRetry: () => context.go(AppRoute.homePath),
-        ),
-      ),
-    ),
   );
+  ref.onDispose(router.dispose);
+  return router;
 });
+
+StatefulShellBranch _branch(
+  String path,
+  Widget screen, {
+  List<RouteBase> routes = const [],
+}) => StatefulShellBranch(
+  routes: [GoRoute(path: path, builder: (_, _) => screen, routes: routes)],
+);
+
+GoRoute _page(
+  String path,
+  Widget Function(GoRouterState) build, {
+  List<RouteBase> routes = const [],
+}) => GoRoute(
+  path: path,
+  parentNavigatorKey: _rootKey,
+  builder: (_, s) => build(s),
+  routes: routes,
+);

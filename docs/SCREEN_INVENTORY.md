@@ -1,3 +1,5 @@
+> **DOKUMEN V1 — sudah digantikan.** Redesign v2 (role anggota/admin, pinjaman ditinjau admin koperasi, scan OCR, lokal lalu Supabase) dijelaskan di `CLAUDE.md`, `docs/SCREENS.md`, dan `docs/SUPABASE.md`. Isi di bawah hanya untuk riwayat.
+
 # IbuDaya — Screen Inventory
 
 > One entry per screen. Fields: **Purpose**, **Primary action**, **Required

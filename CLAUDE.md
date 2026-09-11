@@ -2,54 +2,55 @@
 
 ## Product
 
-IbuDaya is an **offline-first Android app** that women-led micro-businesses in
-Indonesia use to track what their electricity actually costs them, log the
-energy they take from a shared community solar hub, and keep their arisan
-(rotating savings circle) as a transparent book.
+IbuDaya is an Android app used by a **cooperative (koperasi)** and its
+members — women-led micro-businesses in Indonesia — to:
 
-It is a real, usable app — not a demo. A fresh install starts **empty**: the
-person records their own bills, appliances, hub sessions, and arisan
-transactions, and every figure on screen is computed from those records.
+1. **Scan PLN bills/tokens** (camera + on-device ML Kit OCR, always checked by
+   the member) and see what each appliance costs.
+2. **Book the cooperative's Solar Hub** within slot capacity and a monthly
+   member quota; **share quota** with other members (Perdagangan Energi).
+3. **Estimate a roof's solar potential** (Radar Atap) from the member's own
+   measurements.
+4. Run **Arisan Energi** (dues submitted by members, confirmed by an admin).
+5. Get a transparent **Skor Kredit Energi** and **apply for a loan** that a
+   **cooperative admin reviews, approves/rejects, disburses and tracks**.
+6. **Message** the admin, the arisan group, or other members; get notifications.
 
-Three pillars:
-1. Communal Solar Hub — log energy taken from the shared installation.
-2. Energy Score — IbuDaya's own internal score from recorded behaviour.
-3. Energy Arisan — the circle's ledger, plus quota-sharing agreements.
+Two roles: `member` and `admin`. An admin registers and creates the
+cooperative, which gets a 6-character invite code; members register with that
+code. Login is phone number + 6-digit PIN.
 
-The competition brief in `/docs` is the origin of the product idea, but the
-shipped app is narrower and more honest than the brief's pitch. Where the two
-disagree, **the honesty rules below win.**
+The backend is **local-first today** (one JSON database file on the phone) and
+moves to **Supabase** later — see `docs/SUPABASE.md` and
+`supabase/migrations/`. Laravel is not part of the plan.
 
 ## Honesty rules (non-negotiable)
 
-These exist because the users are financially vulnerable. Breaking one causes
-real harm, not just a bad review.
+The users are financially vulnerable. Breaking one of these causes real harm.
 
-- **No lending.** IbuDaya has no OJK licence and no licensed partner. It must
-  never offer, submit, approve, or disburse a loan. The financing screen is a
-  calculator; words like "Ajukan", "Pengajuan", "Disetujui" are banned there.
-- **No AI claims.** There is no trained model. Every number is arithmetic over
-  user-entered data, and the formula is shown. Never label a rule "AI".
-- **No invented data.** Nothing is seeded at install. If a value has not been
-  recorded, show an empty state — never a placeholder dressed as insight.
-- **Say "belum cukup data".** The score is withheld until there are at least
-  `kMinBillsForScore` bills. A confident number built on one entry is a lie.
-- **Label assumptions.** The grid CO₂ factor is an assumption and is stated as
-  one wherever it appears.
-- **Quota sharing moves no electricity.** It records an agreement between
-  members. Never imply an energy transfer.
-- **No data leaves the device.** No network calls, no accounts, no analytics.
-
-`test/widget/app_flow_test.dart` and `test/unit/data/insights_test.dart` guard
-several of these; keep them passing.
+- **No AI claims.** There is no trained model. The score is a fixed rule set
+  (`RuleBasedCreditScoringEngine`) with its four factors shown on screen; OCR
+  is "scan", not "AI". Never write "AI", "kecerdasan buatan", or an accuracy %.
+- **People decide loans.** The app never approves anything. Copy says "Skor
+  Anda mendukung pengajuan ini" / "Menunggu review admin", and
+  `LoanDecisionNotice` appears wherever a loan is discussed.
+- **Server-style rules in repositories.** Authorization, eligibility, capacity,
+  quota and loan status transitions are enforced in the repository layer (and
+  in SQL functions for Supabase), never only in the UI.
+- **Score needs history.** Withheld until `kMinMonthsForScore` months recorded.
+- **Label assumptions.** CO₂ factor (0.87 kg/kWh), roof assumptions, hub
+  sun-curve split and appliance estimates are stated where they appear.
+- **OCR is a suggestion.** Scanned numbers are always editable before saving.
+- **Quota sharing moves no electricity.** It records an agreement.
+- **Sample data is opt-in and labelled.** A fresh install is empty; "Coba
+  dengan data contoh" creates a clearly marked sample cooperative.
 
 ## Tech Stack
 
 - Flutter · Dart · Material 3
-- Riverpod for state management
-- GoRouter for navigation
-- `path_provider` for the storage location
-- Feature-first project structure
+- Riverpod (state) · GoRouter (navigation, `StatefulShellRoute` per role)
+- `path_provider`, `camera`, `image_picker`, `google_mlkit_text_recognition`,
+  `crypto` — each justified in `pubspec.yaml`
 
 Do not introduce another state management or routing framework. Do not add a
 dependency without explaining why.
@@ -57,71 +58,65 @@ dependency without explaining why.
 ## Architecture
 
 ```
-UI → derived providers → AppDataController → AppStore → JSON file on device
+UI (lib/features/**)
+  → appStateProvider (AppState: me + CoopSnapshot)   lib/core/state/app_state.dart
+  → selectors (pure extension on CoopSnapshot)        lib/core/state/selectors.dart
+  → AppActions (every mutation, then refresh)         lib/core/state/actions.dart
+  → Repository interfaces                             lib/core/repositories/repositories.dart
+  → Local*Repository → LocalDatabase (JSON file)      lib/core/repositories/local/, lib/core/db/
 ```
 
-- `lib/core/data/models.dart` — the user's records, all immutable + JSON.
-- `lib/core/data/app_data.dart` — the single root document.
-- `lib/core/data/app_store.dart` — `AppStore` interface; `FileAppStore` writes
-  atomically (temp file + rename). Swap this for a synced implementation later
-  without touching anything above it.
-- `lib/core/data/app_data_controller.dart` — owns the document; every mutation
-  publishes new state then persists.
-- `lib/core/data/derived_providers.dart` — read-only views. Screens watch these,
-  never the raw document.
-- `lib/core/data/insights.dart` — all derived arithmetic.
+- `lib/core/models/` — immutable rows with `fromRow`/`toRow` (snake_case,
+  identical to the Supabase columns).
+- `lib/core/logic/` — pure arithmetic: bill parser, loan math & status machine,
+  roof estimator, hub capacity, quota ledger, energy insights, credit signals.
+- `LocalSnapshotRepository.load` mirrors RLS: a member sees her own rows; an
+  admin sees her whole cooperative.
+- Side effects that will be DB triggers in Supabase (notifications, system
+  messages in the support thread) live in the local repositories.
+- `lib/app/router.dart` — `guard()` is the role gate; keep it pure and tested.
 
-Widgets must not touch the store directly.
+**Riverpod pause gotcha:** routes that are off-screen have paused
+subscriptions; a *derived provider chain* that changed meanwhile is flushed
+during the resuming build and throws. Screens therefore watch only
+`appStateProvider` and derive with selectors. Do not add derived `Provider`s
+that screens watch. `test/widget/app_flow_test.dart` guards push → save → pop.
 
-**Riverpod pause gotcha:** subscriptions pause while a route is off-screen, and
-a provider that changed meanwhile is flushed *during* the resuming build, which
-trips a setState-during-build assertion. `keepDerivedProvidersWarm()` is called
-once from `IbuDayaApp` to prevent this. Add any new derived provider to the
-`_derived` list there.
+Widgets must not touch repositories or the database directly — go through
+`actionsProvider`.
 
 ## UI Rules
 
-- Indonesian is the only user-facing language.
-- Preserve IbuDaya's green visual identity.
-- Use the design system in `lib/core/design`. Never inline a hex, radius, or
-  spacing value in feature code.
-- Use SafeArea where required; avoid RenderFlex overflow.
-- Support widths from 360 dp upward. A label must never be squeezed narrower
-  than its longest word (guarded by `responsiveness_test`-style assertions).
-- Minimum interactive target ~48 logical pixels.
-- Write for someone with limited digital literacy: short sentences, concrete
-  words, no jargon.
-- Every screen needs loading / empty / error / success states where relevant.
-- Destructive actions need a confirmation dialog.
-- Do not redesign unrelated screens while implementing one feature.
+- Indonesian is the only user-facing language; short, concrete sentences.
+- Green identity; use `lib/core/design` tokens and components (`ui_kit.dart`,
+  `SuccessPanel`, `AppScaffold` with centred titles). Never inline a hex,
+  radius or spacing value in feature code.
+- Support 360 dp width; minimum tap target 48 dp.
+- Every screen handles empty / error / success states; mutations go through
+  `runAction` so failures show a readable message.
+- Destructive or money-related actions need a confirmation dialog.
 
 ## Coding Rules
 
-- Prefer small reusable widgets.
-- Immutable state; `copyWith` for updates.
-- Comment only where the reasoning is not obvious from the code.
-- No secrets, credentials, or API keys in the repository.
+- Small reusable widgets; immutable state; `copyWith` for updates.
+- Comment only where the reasoning is not obvious.
+- No secrets, credentials or API keys in the repository (Supabase keys come
+  from `--dart-define`).
 
 ## Workflow
-
-Before changing code:
-1. Inspect the existing implementation.
-2. State which files will change.
-3. Preserve existing working behaviour.
 
 After changing code:
 1. `dart format lib/ test/`
 2. `flutter analyze`
 3. `flutter test`
-4. Fix everything the change broke.
-5. Summarise exactly what changed.
+4. Fix everything the change broke, then summarise exactly what changed.
 
 Never mark a task complete while `flutter analyze` fails.
 
-## Known limits (things that need outside work, not code)
+## Known limits
 
-- Multi-device arisan, chat, and real member-to-member quota transfer need a
-  backend. The repository interfaces are ready; the server is not built.
-- Real lending needs an OJK-licensed partner.
-- Automatic bill reading needs OCR; automatic energy data needs metering
-  hardware. Today the user types both.
+- Until Supabase is connected, data lives on one phone: admin and members only
+  "meet" when they use the same device (e.g. the sample cooperative).
+- The Supabase migration is written but not yet run against a live project;
+  the `submit-loan` Edge Function and Supabase repositories are not built.
+- Lending must be run by a legally registered savings-and-loan cooperative.

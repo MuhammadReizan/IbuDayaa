@@ -1,39 +1,44 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import '../core/db/local_database.dart';
 import '../core/error/app_error_box.dart';
+import '../core/repositories/local/local_auth_repository.dart';
+import '../core/repositories/local/local_snapshot_repository.dart';
+import '../core/state/app_state.dart';
 import 'app.dart';
 
-/// App entry point. Sets up locale data, app-level error handling, and the
-/// `ProviderScope`, then runs the app. See docs/ARCHITECTURE.md §8.
+/// Opens the on-device database, restores the last session, and starts the
+/// app already knowing who is signed in — so the first frame is the right
+/// home screen, not a spinner.
+///
+/// Supabase mode replaces the two local repositories here with
+/// `Supabase.initialize` and the hosted implementations.
 Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Indonesian date formatting symbols (number formatting needs no init).
   await initializeDateFormatting('id_ID');
 
-  // Calm placeholder instead of the default red/grey error rectangle.
-  ErrorWidget.builder = (FlutterErrorDetails details) =>
-      AppErrorBox(details: details);
-
-  // Framework errors: log (debug console) but keep the app running so a
-  // friendly surface can be shown rather than a hard crash.
-  final FlutterExceptionHandler? previousOnError = FlutterError.onError;
-  FlutterError.onError = (FlutterErrorDetails details) {
-    previousOnError?.call(details);
-    if (kDebugMode) {
-      FlutterError.presentError(details);
-    }
+  ErrorWidget.builder = (details) => AppErrorBox(details: details);
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('Uncaught error: $error\n$stack');
+    return true;
   };
 
-  runZonedGuarded(() => runApp(const ProviderScope(child: IbuDayaApp())), (
-    Object error,
-    StackTrace stack,
-  ) {
-    debugPrint('Uncaught error: $error\n$stack');
-  });
+  final db = await LocalDatabase.open(FileDbStorage());
+  final me = await LocalAuthRepository(db, DateTime.now).restoreSession();
+  final initial = me == null
+      ? const AppState()
+      : await loadAppState(LocalSnapshotRepository(db, DateTime.now), me);
+
+  runApp(
+    ProviderScope(
+      overrides: [
+        localDatabaseProvider.overrideWithValue(db),
+        initialAppStateProvider.overrideWithValue(initial),
+      ],
+      child: const IbuDayaApp(),
+    ),
+  );
 }

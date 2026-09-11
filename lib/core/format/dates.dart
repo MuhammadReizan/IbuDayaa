@@ -38,6 +38,42 @@ const List<String> _idDaysShort = [
   'Min',
 ];
 
+const List<String> _idMonthsLong = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember',
+];
+
+/// `"September 2026"` — locale-free.
+String monthYearLabel(DateTime d) => '${_idMonthsLong[d.month - 1]} ${d.year}';
+
+/// `"Sep 2026"` — locale-free.
+String shortMonthYear(DateTime d) => '${_idMonthsShort[d.month - 1]} ${d.year}';
+
+/// `"Sep"` — chart axis labels.
+String monthAbbr(DateTime d) => _idMonthsShort[d.month - 1];
+
+/// `"11 September 2026"` — locale-free.
+String formatLongDate(DateTime d) =>
+    '${d.day} ${_idMonthsLong[d.month - 1]} ${d.year}';
+
+/// `"08.40"`.
+String formatClock(DateTime d) =>
+    '${d.hour.toString().padLeft(2, '0')}.${d.minute.toString().padLeft(2, '0')}';
+
+/// `"11 Sep 2026, 08.40"`.
+String formatDateTime(DateTime d) =>
+    '${formatShortDate(d)} ${d.year}, ${formatClock(d)}';
+
 /// `"10 Mei"` — locale-free.
 String formatShortDate(DateTime d) => '${d.day} ${_idMonthsShort[d.month - 1]}';
 

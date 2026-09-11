@@ -1,0 +1,524 @@
+import 'dart:async';
+
+import 'package:camera/camera.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../../core/design/components/components.dart';
+import '../../core/design/tokens.dart';
+import '../../core/logic/bill_parser.dart';
+import '../../core/models/models.dart';
+import '../../core/paths.dart';
+import '../../core/storage/device_services.dart';
+import 'energy_form_screen.dart';
+
+/// Photographs a PLN bill or token receipt, reads it on the device, and hands
+/// the numbers to the form for the member to check.
+class ScanBillScreen extends ConsumerStatefulWidget {
+  const ScanBillScreen({super.key});
+
+  @override
+  ConsumerState<ScanBillScreen> createState() => _ScanBillScreenState();
+}
+
+class _ScanBillScreenState extends ConsumerState<ScanBillScreen> {
+  bool _reading = false;
+
+  Future<void> _process(String path) async {
+    setState(() => _reading = true);
+    String? raw;
+    try {
+      raw = await ref.read(receiptTextReaderProvider).read(path);
+    } catch (e) {
+      debugPrint('OCR failed: $e');
+    }
+    String? kept;
+    try {
+      kept = await ref.read(photoStoreProvider).keep(path, folder: 'bills');
+    } catch (e) {
+      debugPrint('Photo copy failed: $e');
+    }
+    if (!mounted) return;
+
+    final parsed = raw == null ? null : parsePlnReceipt(raw);
+    context.pushReplacement(
+      Paths.energyAdd,
+      extra: EnergyDraft(
+        kind: parsed?.kind ?? EnergyKind.postpaid,
+        periodMonth: parsed?.periodMonth,
+        kwh: parsed?.kwh,
+        totalIdr: parsed?.totalIdr,
+        customerId: parsed?.customerId,
+        photoPath: kept,
+        source: RecordSource.scan,
+        rawText: raw,
+        readFailed: raw == null,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CaptureView(
+      title: 'Scan Tagihan',
+      hint: 'Letakkan tagihan atau struk token PLN di dalam bingkai',
+      frameAspect: 0.72,
+      busy: _reading,
+      busyLabel: 'Membaca angka di tagihan…',
+      onCaptured: _process,
+      tips: const [
+        'Tempat terang, tanpa bayangan',
+        'Seluruh struk masuk bingkai',
+        'Tahan HP sampai tulisan jelas',
+      ],
+      secondaryAction: TextButton(
+        onPressed: () => context.pushReplacement(Paths.energyAdd),
+        child: const Text(
+          'Isi manual tanpa foto',
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
+    );
+  }
+}
+
+const Duration _cameraTimeout = Duration(seconds: 8);
+
+/// Live viewfinder with a guide frame, shutter, gallery and flash. Falls back
+/// to the gallery when there is no camera or permission was refused. Shared by
+/// the bill scan and the roof check.
+class CaptureView extends StatefulWidget {
+  const CaptureView({
+    super.key,
+    required this.title,
+    required this.hint,
+    required this.onCaptured,
+    this.frameAspect = 0.75,
+    this.busy = false,
+    this.busyLabel = 'Memproses…',
+    this.tips = const [],
+    this.secondaryAction,
+  });
+
+  final String title;
+  final String hint;
+  final Future<void> Function(String path) onCaptured;
+
+  /// Frame width ÷ height.
+  final double frameAspect;
+  final bool busy;
+  final String busyLabel;
+  final List<String> tips;
+  final Widget? secondaryAction;
+
+  @override
+  State<CaptureView> createState() => _CaptureViewState();
+}
+
+class _CaptureViewState extends State<CaptureView>
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+  CameraController? _controller;
+  String? _error;
+  bool _torch = false;
+  bool _shooting = false;
+  late final AnimationController _sweep = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _init();
+  }
+
+  @override
+  void didUpdateWidget(covariant CaptureView old) {
+    super.didUpdateWidget(old);
+    if (widget.busy && !_sweep.isAnimating) {
+      _sweep.repeat(reverse: true);
+    } else if (!widget.busy && _sweep.isAnimating) {
+      _sweep.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _sweep.dispose();
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final c = _controller;
+    if (state == AppLifecycleState.inactive) {
+      _controller = null;
+      c?.dispose();
+      if (mounted) setState(() {});
+    } else if (state == AppLifecycleState.resumed && c == null) {
+      _init();
+    }
+  }
+
+  Future<void> _init() async {
+    try {
+      // Some devices never answer when the camera service is busy; fall back
+      // to the gallery instead of spinning forever.
+      final cams = await availableCameras().timeout(_cameraTimeout);
+      if (cams.isEmpty) {
+        if (mounted) {
+          setState(() => _error = 'Kamera tidak ditemukan di HP ini.');
+        }
+        return;
+      }
+      final back = cams.firstWhere(
+        (c) => c.lensDirection == CameraLensDirection.back,
+        orElse: () => cams.first,
+      );
+      final controller = CameraController(
+        back,
+        ResolutionPreset.high,
+        enableAudio: false,
+      );
+      try {
+        await controller.initialize().timeout(_cameraTimeout);
+      } catch (_) {
+        await controller.dispose();
+        rethrow;
+      }
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+      setState(() {
+        _controller = controller;
+        _error = null;
+      });
+    } on CameraException catch (e) {
+      if (!mounted) return;
+      setState(
+        () => _error = e.code.contains('Denied')
+            ? 'Izin kamera ditolak. Aktifkan di Pengaturan HP, atau pilih foto '
+                  'dari galeri.'
+            : 'Kamera tidak bisa dibuka. Pilih foto dari galeri.',
+      );
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error = 'Kamera tidak bisa dibuka. Pilih foto dari galeri.',
+        );
+      }
+    }
+  }
+
+  Future<void> _shoot() async {
+    final c = _controller;
+    if (c == null || !c.value.isInitialized || _shooting || widget.busy) return;
+    setState(() => _shooting = true);
+    try {
+      final file = await c.takePicture();
+      if (_torch) {
+        await c.setFlashMode(FlashMode.off);
+        _torch = false;
+      }
+      await widget.onCaptured(file.path);
+    } catch (e) {
+      if (mounted) {
+        showAppSnack(context, 'Gagal mengambil foto. Coba lagi.', error: true);
+      }
+    } finally {
+      if (mounted) setState(() => _shooting = false);
+    }
+  }
+
+  Future<void> _gallery() async {
+    if (widget.busy) return;
+    try {
+      final file = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 90,
+      );
+      if (file != null) await widget.onCaptured(file.path);
+    } catch (_) {
+      if (mounted) {
+        showAppSnack(context, 'Galeri tidak bisa dibuka.', error: true);
+      }
+    }
+  }
+
+  Future<void> _toggleTorch() async {
+    final c = _controller;
+    if (c == null) return;
+    try {
+      await c.setFlashMode(_torch ? FlashMode.off : FlashMode.torch);
+      setState(() => _torch = !_torch);
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final c = _controller;
+
+    return Scaffold(
+      backgroundColor: AppColors.scannerDark,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        centerTitle: true,
+        title: Text(
+          widget.title,
+          style: text.titleLarge?.copyWith(color: Colors.white),
+        ),
+        leading: IconButton(
+          tooltip: 'Kembali',
+          icon: const Icon(Icons.close_rounded),
+          onPressed: () => context.pop(),
+        ),
+        actions: [
+          if (c != null)
+            IconButton(
+              tooltip: _torch ? 'Matikan lampu' : 'Nyalakan lampu',
+              onPressed: _toggleTorch,
+              icon: Icon(
+                _torch ? Icons.flash_on_rounded : Icons.flash_off_rounded,
+              ),
+            ),
+        ],
+      ),
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, box) {
+                  final maxW = box.maxWidth * 0.84;
+                  final maxH = box.maxHeight * 0.82;
+                  var w = maxW;
+                  var h = w / widget.frameAspect;
+                  if (h > maxH) {
+                    h = maxH;
+                    w = h * widget.frameAspect;
+                  }
+                  final frame = Rect.fromCenter(
+                    center: Offset(box.maxWidth / 2, box.maxHeight / 2),
+                    width: w,
+                    height: h,
+                  );
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (c != null && c.value.isInitialized)
+                        ClipRect(
+                          child: FittedBox(
+                            fit: BoxFit.cover,
+                            child: SizedBox(
+                              width:
+                                  c.value.previewSize?.height ?? box.maxWidth,
+                              height:
+                                  c.value.previewSize?.width ?? box.maxHeight,
+                              child: CameraPreview(c),
+                            ),
+                          ),
+                        )
+                      else if (_error != null)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.xxl),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.no_photography_outlined,
+                                  color: AppColors.textOnDarkDim,
+                                  size: 48,
+                                ),
+                                const SizedBox(height: AppSpacing.md),
+                                Text(
+                                  _error!,
+                                  textAlign: TextAlign.center,
+                                  style: text.bodyMedium?.copyWith(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      else
+                        const Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.accentLeaf,
+                          ),
+                        ),
+                      if (_error == null)
+                        AnimatedBuilder(
+                          animation: _sweep,
+                          builder: (_, _) => CustomPaint(
+                            painter: ScanFramePainter(
+                              frame: frame,
+                              progress: widget.busy ? _sweep.value : null,
+                            ),
+                          ),
+                        ),
+                      Positioned(
+                        left: AppSpacing.gutter,
+                        right: AppSpacing.gutter,
+                        top: AppSpacing.sm,
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                              vertical: AppSpacing.sm,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.45),
+                              borderRadius: AppRadius.pillBr,
+                            ),
+                            child: Text(
+                              widget.busy ? widget.busyLabel : widget.hint,
+                              textAlign: TextAlign.center,
+                              style: text.labelMedium?.copyWith(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            if (widget.tips.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.gutter,
+                  AppSpacing.sm,
+                  AppSpacing.gutter,
+                  0,
+                ),
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: AppSpacing.md,
+                  runSpacing: AppSpacing.xs,
+                  children: [
+                    for (final t in widget.tips)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.check_circle_rounded,
+                            size: 14,
+                            color: AppColors.accentLeaf,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            t,
+                            style: text.labelSmall?.copyWith(
+                              color: AppColors.textOnDarkDim,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: AppSpacing.lg),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _RoundButton(
+                  icon: Icons.photo_library_rounded,
+                  label: 'Galeri',
+                  onTap: widget.busy ? null : _gallery,
+                ),
+                Semantics(
+                  button: true,
+                  label: 'Ambil foto',
+                  child: GestureDetector(
+                    onTap: _shoot,
+                    child: Container(
+                      width: 76,
+                      height: 76,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 4),
+                      ),
+                      padding: const EdgeInsets.all(5),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: c == null || widget.busy
+                              ? Colors.white.withValues(alpha: 0.3)
+                              : AppColors.accentLeaf,
+                        ),
+                        child: widget.busy || _shooting
+                            ? const Padding(
+                                padding: EdgeInsets.all(AppSpacing.lg),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 3,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : null,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 64),
+              ],
+            ),
+            ?widget.secondaryAction,
+            const SizedBox(height: AppSpacing.sm),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RoundButton extends StatelessWidget {
+  const _RoundButton({required this.icon, required this.label, this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 64,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Material(
+            color: Colors.white.withValues(alpha: 0.14),
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onTap,
+              child: SizedBox.square(
+                dimension: 52,
+                child: Icon(icon, color: Colors.white),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            label,
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+}

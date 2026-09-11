@@ -7,7 +7,9 @@ plugins {
 
 android {
     namespace = "com.baswaramusi.ibudaya"
-    compileSdk = flutter.compileSdkVersion
+    // google_mlkit_text_recognition compiles against SDK 36. compileSdk only
+    // affects the build, not which Android versions the app runs on.
+    compileSdk = 36
     // path_provider_android needs 27.x; NDK releases are backward compatible,
     // so pinning the highest required version satisfies every plugin.
     ndkVersion = "27.0.12077973"

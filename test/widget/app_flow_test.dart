@@ -1,173 +1,196 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:ibudaya/app/app.dart';
-import 'package:ibudaya/core/data/app_data.dart';
-import 'package:ibudaya/core/data/app_data_controller.dart';
-import 'package:ibudaya/core/data/app_store.dart';
-import 'package:ibudaya/core/data/sample_data.dart';
+import 'package:ibudaya/app/router.dart';
+import 'package:ibudaya/core/db/local_database.dart';
+import 'package:ibudaya/core/models/models.dart';
+import 'package:ibudaya/core/paths.dart';
+import 'package:ibudaya/core/repositories/local/local_auth_repository.dart';
+import 'package:ibudaya/core/repositories/local/local_snapshot_repository.dart';
+import 'package:ibudaya/core/repositories/local/sample_seeder.dart';
+import 'package:ibudaya/core/state/app_state.dart';
+import 'package:ibudaya/features/credit_score/data/rule_based_credit_scoring_engine.dart';
+import 'package:ibudaya/features/energy/energy_form_screen.dart';
+import 'package:ibudaya/features/home/member_home_screen.dart';
 
-import '../support/fixtures.dart';
+final _now = DateTime(2026, 9, 11, 10);
+DateTime _clock() => _now;
 
-void main() {
-  Future<void> boot(WidgetTester tester, {AppData? seed}) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          appStoreProvider.overrideWithValue(
-            MemoryAppStore(seed ?? AppData.empty),
-          ),
-        ],
-        child: const IbuDayaApp(),
-      ),
-    );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-    await tester.pumpAndSettle();
+/// Boots the real app on an in-memory database holding the sample
+/// cooperative, optionally already signed in.
+Future<void> pumpApp(
+  WidgetTester tester, {
+  String? signedInAs,
+  Size size = const Size(412, 915),
+}) async {
+  tester.view.physicalSize = size * 3;
+  tester.view.devicePixelRatio = 3;
+  addTearDown(tester.view.reset);
+
+  final db = await LocalDatabase.open(MemoryDbStorage());
+  await SampleSeeder(db, _clock, const RuleBasedCreditScoringEngine()).seed();
+  var initial = const AppState();
+  if (signedInAs != null) {
+    final me = await LocalAuthRepository(
+      db,
+      _clock,
+    ).login(phone: signedInAs, pin: SampleSeeder.pin);
+    initial = await loadAppState(LocalSnapshotRepository(db, _clock), me);
   }
 
-  testWidgets('a fresh install lands on onboarding, not a dashboard', (
-    tester,
-  ) async {
-    await boot(tester);
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        localDatabaseProvider.overrideWithValue(db),
+        clockProvider.overrideWithValue(_clock),
+        initialAppStateProvider.overrideWithValue(initial),
+      ],
+      child: const IbuDayaApp(),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
 
-    expect(find.text('Selamat datang di IbuDaya'), findsOneWidget);
-    // No bottom nav until there is a profile.
-    expect(find.byType(NavigationBar), findsNothing);
-  });
+GoRouter routerOf(WidgetTester tester) => ProviderScope.containerOf(
+  tester.element(find.byType(IbuDayaApp)),
+).read(routerProvider);
 
-  testWidgets('onboarding creates the profile and persists it', (tester) async {
-    await boot(tester);
+Future<void> tapText(WidgetTester tester, String text) async {
+  final f = find.text(text).last;
+  await tester.ensureVisible(f);
+  await tester.pumpAndSettle();
+  await tester.tap(f);
+  await tester.pumpAndSettle();
+}
 
+void main() {
+  setUpAll(() => initializeDateFormatting('id_ID'));
+
+  testWidgets('member signs in with phone and PIN pad', (tester) async {
+    await pumpApp(tester);
+    expect(find.text('Masuk'), findsOneWidget);
+
+    await tapText(tester, 'Masuk');
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Misal: Ibu Sari'),
-      'Ibu Rina',
+      find.byType(TextFormField),
+      SampleSeeder.memberPhone,
     );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Misal: Katering Sari Rasa'),
-      'Warung Rina',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Misal: Palembang'),
-      'Medan',
-    );
-    await tester.pumpAndSettle();
+    await tapText(tester, 'Lanjut');
 
-    await tester.ensureVisible(find.text('Mulai Pakai IbuDaya'));
-    await tester.tap(find.text('Mulai Pakai IbuDaya'));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.textContaining('Ibu Rina'), findsWidgets);
-    expect(find.text('Warung Rina'), findsWidgets);
-  });
-
-  testWidgets('an onboarded user with no records is asked for a bill, '
-      'not shown fake numbers', (tester) async {
-    await boot(tester, seed: AppData(profile: testProfile()));
-
-    expect(find.text('Mulai dari tagihan pertama'), findsOneWidget);
-    // No invented rupiah hero on an empty account.
-    expect(find.textContaining('Rp 245.000'), findsNothing);
-  });
-
-  testWidgets('recording a bill updates the dashboard and survives a reload', (
-    tester,
-  ) async {
-    final store = MemoryAppStore(AppData(profile: testProfile(tariff: 1000)));
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [appStoreProvider.overrideWithValue(store)],
-        child: const IbuDayaApp(),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Catat Tagihan Pertama'));
-    await tester.pumpAndSettle();
-
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Misal: 128'),
-      '120',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Misal: 185000'),
-      '120000',
-    );
-    await tester.pumpAndSettle();
-
-    await tester.ensureVisible(find.text('Simpan'));
-    await tester.tap(find.text('Simpan'));
-    await tester.pumpAndSettle();
-
-    // The written document is what a relaunch would read back.
-    final persisted = await store.load();
-    expect(persisted.bills.single.kwh, 120);
-    expect(persisted.bills.single.totalIdr, 120000);
-  });
-
-  testWidgets('the score withholds a number until there is enough history', (
-    tester,
-  ) async {
-    await boot(
-      tester,
-      seed: AppData(
-        profile: testProfile(),
-        bills: [testBill(id: 'b0', monthsAgo: 0, kwh: 100)],
-      ),
-    );
-
-    await tester.ensureVisible(find.text('Lihat'));
-    await tester.tap(find.text('Lihat'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Belum cukup data'), findsOneWidget);
-    expect(find.text('Faktor Penentu Skor Anda'), findsNothing);
-  });
-
-  testWidgets('sample data produces a score with its four factors', (
-    tester,
-  ) async {
-    await boot(tester, seed: buildSampleData(testProfile()));
-
-    await tester.ensureVisible(find.text('Lihat Detail'));
-    await tester.tap(find.text('Lihat Detail'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Faktor Penentu Skor Anda'), findsOneWidget);
-    expect(find.text('Belum cukup data'), findsNothing);
-    expect(find.textContaining('bukan skor BI Checking'), findsOneWidget);
-  });
-
-  testWidgets('the financing screen calculates but never offers a loan', (
-    tester,
-  ) async {
-    await boot(tester, seed: buildSampleData(testProfile()));
-
-    final action = find.text('Hitung\nCicilan');
-    await tester.ensureVisible(action);
-    await tester.pumpAndSettle();
-    await tester.tap(action);
-    await tester.pumpAndSettle();
-
-    expect(find.text('IbuDaya bukan pemberi pinjaman'), findsOneWidget);
-    for (final banned in ['Ajukan', 'Pengajuan', 'Disetujui', 'disetujui']) {
-      expect(
-        find.textContaining(banned),
-        findsNothing,
-        reason: 'financing must never use "$banned"',
-      );
+    for (final d in SampleSeeder.pin.split('')) {
+      await tester.tap(find.text(d));
+      await tester.pump();
     }
+    await tester.pumpAndSettle();
+
+    expect(find.text('Halo, Ibu Clara'), findsOneWidget);
+    expect(find.text('Status Penggunaan Daya'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
-  testWidgets('the shell has no Pesan tab it cannot deliver', (tester) async {
-    await boot(tester, seed: AppData(profile: testProfile()));
+  testWidgets('a wrong PIN says how many tries are left', (tester) async {
+    await pumpApp(tester);
+    await tapText(tester, 'Masuk');
+    await tester.enterText(
+      find.byType(TextFormField),
+      SampleSeeder.memberPhone,
+    );
+    await tapText(tester, 'Lanjut');
+    for (final d in '258147'.split('')) {
+      await tester.tap(find.text(d));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Sisa percobaan'), findsOneWidget);
+  });
 
-    expect(find.text('Beranda'), findsWidgets);
-    expect(find.text('Solar Hub'), findsWidgets);
-    expect(find.text('Arisan'), findsWidgets);
-    expect(find.text('Profil'), findsWidgets);
-    expect(find.text('Pesan'), findsNothing);
+  testWidgets('scan result is checked, saved, and analysed', (tester) async {
+    await pumpApp(tester, signedInAs: SampleSeeder.memberPhone);
+    routerOf(tester).push(
+      Paths.energyAdd,
+      extra: const EnergyDraft(
+        kwh: 131,
+        totalIdr: 189000,
+        source: RecordSource.scan,
+        rawText: 'PEMAKAIAN 131 KWH\nTOTAL BAYAR RP 189.000',
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Hasil Scan'), findsOneWidget);
+    expect(find.text('Terbaca: kWh, total'), findsOneWidget);
+
+    await tapText(tester, 'Simpan');
+    expect(find.text('Analisis Energi'), findsOneWidget);
+    expect(find.text('131'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('push → save → pop keeps earlier screens healthy', (
+    tester,
+  ) async {
+    await pumpApp(tester, signedInAs: SampleSeeder.memberPhone);
+
+    await tapText(tester, 'Alat Usaha');
+    await tapText(tester, 'Tambah alat');
+    await tapText(tester, 'Blender');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Blender'),
+      'Blender Kedua',
+    );
+    await tapText(tester, 'Simpan');
+
+    expect(find.text('Blender Kedua'), findsOneWidget);
+    await tester.tap(find.byTooltip('Kembali'));
+    await tester.pumpAndSettle();
+
+    // The home list was scrolled to reach the shortcut, so check the route
+    // and the screen rather than its first row.
+    expect(
+      routerOf(tester).routerDelegate.currentConfiguration.uri.path,
+      Paths.memberHome,
+    );
+    expect(find.byType(MemberHomeScreen), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('admin reviews, approves and disburses a loan', (tester) async {
+    await pumpApp(tester, signedInAs: SampleSeeder.adminPhone);
+    expect(find.text('Dasbor Admin'), findsOneWidget);
+
+    await tester.tap(find.text('Pengajuan'));
+    await tester.pumpAndSettle();
+    await tapText(tester, 'Siti Rahma');
+    expect(find.text('Review Pengajuan'), findsOneWidget);
+
+    await tapText(tester, 'Mulai review');
+    expect(find.text('Sedang direview'), findsOneWidget);
+
+    await tapText(tester, 'Setujui');
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Setujui'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    // Status pill and the timeline entry.
+    expect(find.text('Disetujui admin'), findsWidgets);
+
+    await tapText(tester, 'Catat dana dicairkan');
+    await tapText(tester, 'Ya, sudah dicairkan');
+    expect(find.text('Dana dicairkan'), findsWidgets);
+    expect(find.text('Cicilan'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a member cannot reach admin screens', (tester) async {
+    await pumpApp(tester, signedInAs: SampleSeeder.memberPhone);
+    routerOf(tester).go(Paths.adminSettings);
+    await tester.pumpAndSettle();
+    expect(find.text('Pengaturan Koperasi'), findsNothing);
+    expect(find.text('Halo, Ibu Clara'), findsOneWidget);
   });
 }
