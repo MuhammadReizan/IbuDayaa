@@ -2,8 +2,41 @@ import 'package:flutter/material.dart';
 
 import '../tokens.dart';
 
-/// Primary call-to-action. Full-width by default; shows a spinner when [loading].
-/// See docs/DESIGN_SYSTEM.md §6.
+/// Adds a subtle press-down scale to any button child.
+class _PressScale extends StatefulWidget {
+  const _PressScale({required this.enabled, required this.child});
+
+  final bool enabled;
+  final Widget child;
+
+  @override
+  State<_PressScale> createState() => _PressScaleState();
+}
+
+class _PressScaleState extends State<_PressScale> {
+  bool _down = false;
+
+  void _set(bool v) {
+    if (widget.enabled && _down != v) setState(() => _down = v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      onPointerDown: (_) => _set(true),
+      onPointerUp: (_) => _set(false),
+      onPointerCancel: (_) => _set(false),
+      child: AnimatedScale(
+        scale: _down ? 0.97 : 1.0,
+        duration: AppDurations.micro,
+        curve: Curves.easeOut,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+/// Primary call-to-action. Full-width by default, with a soft coloured glow.
 class PrimaryButton extends StatelessWidget {
   const PrimaryButton({
     super.key,
@@ -22,12 +55,14 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool enabled = onPressed != null && !loading;
+
     final Widget child = loading
         ? const SizedBox(
             height: 20,
             width: 20,
             child: CircularProgressIndicator(
-              strokeWidth: 2,
+              strokeWidth: 2.4,
               color: AppColors.onPrimary,
             ),
           )
@@ -37,16 +72,23 @@ class PrimaryButton extends StatelessWidget {
                   children: [
                     Icon(icon, size: 20),
                     const SizedBox(width: AppSpacing.sm),
-                    Text(label),
+                    Flexible(
+                      child: Text(label, overflow: TextOverflow.ellipsis),
+                    ),
                   ],
                 )
-              : Text(label));
+              : Text(label, overflow: TextOverflow.ellipsis));
 
-    final Widget button = FilledButton(
-      onPressed: loading ? null : onPressed,
-      child: child,
+    final Widget button = DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: AppRadius.buttonBr,
+        boxShadow: enabled ? AppShadows.button : AppShadows.none,
+      ),
+      child: FilledButton(onPressed: loading ? null : onPressed, child: child),
     );
-    return expand ? SizedBox(width: double.infinity, child: button) : button;
+
+    final Widget wrapped = _PressScale(enabled: enabled, child: button);
+    return expand ? SizedBox(width: double.infinity, child: wrapped) : wrapped;
   }
 }
 
@@ -57,19 +99,33 @@ class SecondaryButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.expand = true,
+    this.icon,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final bool expand;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
-    final Widget button = OutlinedButton(
-      onPressed: onPressed,
-      child: Text(label),
+    final Widget child = icon != null
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 20),
+              const SizedBox(width: AppSpacing.sm),
+              Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
+            ],
+          )
+        : Text(label, overflow: TextOverflow.ellipsis);
+
+    final Widget button = OutlinedButton(onPressed: onPressed, child: child);
+    final Widget wrapped = _PressScale(
+      enabled: onPressed != null,
+      child: button,
     );
-    return expand ? SizedBox(width: double.infinity, child: button) : button;
+    return expand ? SizedBox(width: double.infinity, child: wrapped) : wrapped;
   }
 }
 
@@ -79,13 +135,22 @@ class TextLinkButton extends StatelessWidget {
     super.key,
     required this.label,
     required this.onPressed,
+    this.icon,
   });
 
   final String label;
   final VoidCallback? onPressed;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(onPressed: onPressed, child: Text(label));
+    if (icon == null) {
+      return TextButton(onPressed: onPressed, child: Text(label));
+    }
+    return TextButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 18),
+      label: Text(label),
+    );
   }
 }

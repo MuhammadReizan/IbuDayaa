@@ -67,7 +67,12 @@ Shared, non-screen widgets (loading / empty / error / confirm dialog) are in
   Pembiayaan).
 - **Required data:** user greeting name; month saving (Rp); % energy from Solar
   Hub; credit score + band; Arisan status (Lunas/…); power-usage alerts list
-  (title, severity, time window); optional "Jadwal AI Hari Ini" items.
+  (title, severity, time window); optional schedule item.
+
+> The schedule row ships as **"Jadwal Hemat Hari Ini"**, not the screenshot's
+> "Jadwal AI Hari Ini". Same product-honesty rule that renamed SC-03: no model
+> runs in this build, so no row is branded AI. The panel header carries a
+> "simulasi" qualifier because the readings are seeded, not metered.
 - **States:**
   - success (all tiles populated from seed);
   - partial (a tile's data missing → that tile shows its own empty text, page

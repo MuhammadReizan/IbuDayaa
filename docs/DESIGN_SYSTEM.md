@@ -1,94 +1,101 @@
 # IbuDaya — Design System
 
-> **There is no authoritative Figma/design source (decision #4).** The prototype
-> screenshots are the *provisional* visual source. **Every** inferred value below
-> — colour, typography, spacing, radius, shadow, component style — is a
-> `PROTOTYPE_DECISION` and must be centralised so it can be replaced later
-> without touching screen code. The **structure** (tokens, components, states) is
-> fixed; the **values** are tunable in one file (`core/design/tokens.dart`).
+> **v2 — full visual redesign applied.** The master mockup
+> (`docs` image reference) is the visual north star: warm, premium, human,
+> community-driven. Every value below lives in `lib/core/design/tokens.dart`
+> (colour, spacing, radius, shadow, motion) or `typography.dart`. Brand assets
+> (logo, illustrations, avatars) are code-drawn in `lib/core/brand/`.
 
 ## 1. Brand & tone
 
-- **Identity:** warm, trustworthy, community-first. Green = clean energy + growth.
+- **Identity:** warm, trustworthy, community-first, empowering. Green = clean
+  energy + growth; solar-yellow accent = optimism / the sun.
 - **Voice:** plain Indonesian, short sentences, second person ("Anda"), no
-  finance/tech jargon. Explain every number.
-- **Imagery:** flat vector illustrations of Indonesian women running small
-  businesses, solar panels, community scenes. Illustrations are bundled assets;
-  in planning they are placeholders.
+  finance/tech jargon. Explain every number. Numbers are hero information.
+- **Mark:** a rising sun cradled by a growing leaf (`IbuDayaMark`). Wordmark
+  `IbuDaya` with the "Daya" half in primary green (`IbuDayaLogo`).
+- **Imagery:** editorial geometric spot illustrations (`BrandArt`) — sun, house,
+  panels, community, coins — drawn with `CustomPainter`, no image assets. The
+  persona avatar (`IbuClaraAvatar`) is a painted head-scarf glyph on a warm
+  gradient. A licensed illustration set can replace these later 1:1.
 
 ## 2. Color tokens  `PROTOTYPE_DECISION` (confirm hex with design source)
 
 Define once in `core/design/tokens.dart`; never inline a hex in a widget.
 
-| Token | Value (start) | Usage |
+| Token | Value | Usage |
 | --- | --- | --- |
-| `primary` | `#1E8E4E` (medium green) | primary buttons, active nav, key figures |
-| `primaryDark` | `#14663A` | pressed state, headings on light green |
-| `primaryContainer` | `#E7F4EC` | card headers, selected chips, section tints |
-| `onPrimary` | `#FFFFFF` | text/icons on `primary` |
-| `secondary` | `#F4A623` (amber) | "Dapatkan Kuota" CTA, warnings, highlights |
+| `primary` | `#18864B` growth green | primary buttons, active nav, key figures |
+| `primaryDark` | `#0E5D35` deep forest | headings on light green, hero-card gradient end |
+| `primaryDarker` | `#0A4527` | snackbars, deepest wash |
+| `primaryContainer` | `#EAF6EF` soft mint | card headers, selected chips, mint cards |
+| `secondary` | `#F4B63E` solar yellow | accent, "sun" motifs, chart bars, delta arrows |
+| `secondaryContainer` | `#FDF3DE` | solar-tone cards, warning fills |
 | `surface` | `#FFFFFF` | cards |
-| `background` | `#F5F7F5` | screen background behind cards |
-| `outline` | `#E2E6E2` | dividers, card borders, input borders |
-| `textPrimary` | `#1B1F1D` | body text |
-| `textSecondary` | `#5E655F` | captions, helper text, labels |
-| `success` | `#1E8E4E` | positive factor, "Lunas" |
-| `warning` | `#F4A623` | "Alat Usaha Standby", non-blocking notes |
-| `danger` | `#D8412F` | "Lonjakan Energi Terdeteksi", added-cost figures |
-| `dangerContainer` | `#FBEBE9` | alert card background |
-| `info` | `#2F6FE0` | "Aman & Terpercaya" trust notes |
-| `infoContainer` | `#E9F0FC` | info card background |
+| `surfaceAlt` | `#F4F1E9` | input fill, subtle panels, progress track |
+| `background` | `#FAF9F5` warm cream | screen background |
+| `outline` / `outlineSubtle` | `#E7E3D6` / `#F0ECE0` | dividers, hairline borders |
+| `textPrimary` | `#17211B` | body text |
+| `textSecondary` / `textTertiary` | `#5B655F` / `#8B948D` | captions / de-emphasised |
+| `textOnDark` / `textOnDarkDim` | `#F3F7F3` / `#B9D4C4` | text on forest surfaces |
+| `success` | `#18864B` | positive factor, "Lunas" |
+| `warning` / `warningText` | `#E39A1F` / `#8A5A00` | non-blocking notes / text on solar |
+| `danger` / `dangerText` | `#D8412F` / `#A5291B` | spikes, added-cost figures |
+| `info` / `infoText` | `#2F6FE0` / `#1B4DA6` | trust / explanatory notes |
 
-- Build a Material 3 `ColorScheme` from these; do not use Flutter's default
-  purple.
-- Dark mode: **not in MVP**. Do not spend time on it; if it renders acceptably
-  from M3 theming, fine, but it is untested.
-- Contrast: body text on `background`/`surface` must be ≥ 4.5:1; large text and
-  UI components ≥ 3:1. Check `textSecondary` on `background` specifically.
+- Gradients (`AppGradients`): `brand` (green hero cards), `forest` (splash /
+  success), `mint` (input & score panels), `solar`.
+- Material 3 `ColorScheme` is built from these in `app_theme.dart`. Never the
+  default purple, never a raw `Color(0xFF…)` in feature code.
+- Dark mode: not in the MVP (light-only theme).
+- Contrast: body ≥ 4.5:1, large text / components ≥ 3:1.
 
-## 3. Typography  `PROTOTYPE_DECISION`
+## 3. Typography  (`typography.dart`)
 
-- Font: a friendly humanist sans (screenshots look like Poppins / Plus Jakarta
-  Sans). Bundle the `.ttf` (preferred) or use `google_fonts`.
-- Scale (map to M3 roles):
+- **Face:** Plus Jakarta Sans (SIL OFL). Not bundled in this environment — see
+  `assets/fonts/README.md`; the platform humanist sans + the tuned scale below
+  is the current fallback. `AppTypography.fontFamily` is the single switch.
+- **Numbers are hero information.** `AppTypography.numeric(size)` → w800,
+  tabular figures, negative tracking. Used for every Rp / % / score / kWh figure.
 
 | Role | Size / weight | Use |
 | --- | --- | --- |
-| `displayScore` | 40 / 700 | the big credit-score number, "Rp 245.000" hero |
-| `headlineSmall` | 22 / 700 | screen titles ("Analisis Energi") |
-| `titleMedium` | 16 / 600 | card titles, section headers |
-| `bodyLarge` | 15 / 400 | primary body |
-| `bodyMedium` | 14 / 400 | secondary body |
-| `label` | 12 / 500 | chips, qualifiers ("estimasi"), captions |
-| `button` | 15 / 600 | button labels |
+| `displayLarge` / `displayMedium` | 44·800 / 34·800 | score, hero rupiah |
+| `headlineMedium` | 24·700 | big amounts inside screens |
+| `headlineSmall` | 21·700 | screen titles / greeting |
+| `titleLarge` / `titleMedium` / `titleSmall` | 18·700 / 16·600 / 14·600 | headers, card titles, list titles |
+| `bodyLarge` / `bodyMedium` / `bodySmall` | 15·400 / 14·400 / 12.5·400 | body (1.4–1.5 line height) |
+| `labelLarge` / `labelMedium` / `labelSmall` | 15·600 / 12.5·600 / 11·600 | buttons, chips, captions |
 
-- Line height ≥ 1.35 for body. Support OS text scaling up to ~1.3× without
-  breaking layouts (test at `textScaleFactor` 1.3).
-- Never hardcode `TextStyle` in widgets — use `Theme.of(context).textTheme`.
+- Support OS text scaling to ~1.3× (structural check in `responsiveness_test`).
+- Never hardcode a `TextStyle`; use `Theme.of(context).textTheme` or
+  `AppTypography.numeric`.
 
 ## 4. Spacing & layout
 
-- **4 dp base grid.** Scale: `xs 4`, `sm 8`, `md 12`, `lg 16`, `xl 24`, `xxl 32`.
-- Screen horizontal padding: `lg (16)`.
-- Card padding: `lg (16)`; gap between cards: `md (12)`.
-- Section vertical rhythm: `xl (24)` between major sections.
-- Min interactive target: **48 dp** (never below 44).
-- All screens wrapped in `SafeArea`; scrollable body (`CustomScrollView` /
-  `ListView`) so small devices never overflow.
-- Content max width not required (phone-only), but avoid full-bleed text lines >
-  ~60 chars.
-- **No `Row` of flexible text without `Expanded`/`Flexible`** — the top cause of
-  RenderFlex overflow; enforce in review.
+- **4 dp grid.** `xxs 2 · xs 4 · sm 8 · md 12 · lg 16 · lgPlus 18 · gutter 20 ·
+  xl 24 · xxl 32 · xxxl 44`.
+- Screen horizontal padding: `20`. Card padding: `AppSpacing.card` (18);
+  hero-card padding: `AppSpacing.hero` (20). Card gap: `md`; section rhythm: `xl`.
+- Min interactive target: **≥ 44 dp** (48 preferred).
+- Scrollable body (`SingleChildScrollView` / `ListView`) inside `SafeArea`;
+  a `ListView` body must use `AppScaffold(scrollable: false)`.
+- **No `Row` of flexible text without `Expanded`/`Flexible`.**
 
 ## 5. Shape & elevation
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `radiusCard` | 16 | cards, sheets |
-| `radiusButton` | 12 | buttons, inputs |
-| `radiusPill` | 999 | chips, toggles, status badges |
-| `elevationCard` | 0–1 + `outline` border | cards are flat with a hairline border, matching screenshots |
-| `elevationSheet` | 2 | bottom sheets, dialogs |
+| `AppRadius.sm` | 14 | inputs, tiles, chips-as-cards |
+| `AppRadius.card` | 20 | standard cards |
+| `AppRadius.lg` / `xl` | 26 / 32 | hero cards / sheets |
+| `AppRadius.button` | 16 | buttons |
+| `AppRadius.pill` | 999 | chips, status badges |
+| `AppShadows.sm` / `md` / `lg` | soft green-tinted | resting card / hero / floating |
+| `AppShadows.button` | coloured glow | under enabled `PrimaryButton` |
+
+Cards carry a **soft shadow** (`AppShadows.sm`) + a barely-there
+`outlineSubtle` border — not a hard hairline. Depth, not outline.
 
 ## 6. Core components (`core/design/components/`)
 
@@ -114,10 +121,23 @@ Build these once; every screen composes them.
 | `VerificationNotice` | `InfoBanner` (warning tone) for the roof screen: "estimasi awal … perlu verifikasi teknis …" | `text` |
 | `AmountSlider` | rupiah slider with min/max, ticks, clamped value + helper text | `min`, `max`, `value`, `helper` |
 | `LedgerRow` | transaction row: member, type, amount (Rp or kWh), time, status | `type`, `status` |
-| `EmptyState` | icon + title + body + optional CTA | `icon`, `title`, `message`, `action` |
-| `ErrorState` | icon + message + "Coba lagi" | `message`, `onRetry` |
-| `LoadingState` | centered spinner + optional label; or skeleton list variant | `label`, `skeleton` |
-| `ConfirmDialog` | title + body + confirm/cancel | destructive variant for discard/logout |
+| `EmptyState` | `BrandArt` motif + title + body + optional CTA | `motif`, `title`, `message`, `action` |
+| `ErrorStateView` | round danger badge + message + "Coba lagi" | `message`, `onRetry` |
+| `LoadingState` | pulsing brand disc + optional label | `label` |
+
+### v2 additions
+
+| Component | Purpose | Key props |
+| --- | --- | --- |
+| `IbuDayaLogo` / `IbuDayaMark` | wordmark / symbol, code-drawn | `height`/`size`, `variant` (color/onDark/mono), `tagline` |
+| `BrandArt` | editorial spot illustration | `motif` (community/solar/scan/inbox/success/finance/roof), `size`, `onDark` |
+| `IbuClaraAvatar` / `MemberAvatar` | persona glyph / initials avatar | `size`, `ring` / `name` |
+| `ScoreRing` | animated 0–max gauge with tabular centre value | `score`, `max`, `size`, `stroke`, `caption` |
+| `StepDots` | numbered step header (1 · 2 · 3) | `labels`, `current` |
+| `FeatureBadge` | rounded-square feature icon container | `icon`, `tone` (mint/solar/sky/forest), `size` |
+| `StatTile` | label + hero number + optional delta / qualifier | `label`, `value`, `delta`, `qualifier`, `onDark` |
+| `SectionCard` | soft-shadow card; header (leading icon + title + trailing) | `title`, `trailing`, `leadingIcon`, `tone` (plain/mint/solar/forest), `onTap` |
+| `PrimaryButton` | filled CTA with glow + press-scale | `label`, `icon`, `loading`, `expand` |
 
 ## 7. State pattern (every data screen)
 
@@ -135,10 +155,13 @@ timeout path.
 
 ## 8. Iconography
 
-- Material Icons (`Icons.*`) for UI affordances.
-- Feature/decorative icons (solar, arisan, energy) as bundled SVG/PNG assets in
-  a single `assets/images/` set with consistent stroke weight.
-- One icon size scale: 20 (inline), 24 (default), 32 (tile), 48 (empty state).
+- **One family, one style:** Material Symbols **rounded outline** — use the
+  `Icons.*_rounded` / `Icons.*_outlined` variants consistently; never mix in a
+  filled glyph next to an outline one.
+- Feature / category icons are always wrapped in a `FeatureBadge` (rounded-square
+  tinted container) so they read as one system.
+- Size scale (`AppIconSize`): `sm 18` (inline) · `md 22` (default) · `lg 28`
+  (tile) · `xl 40` (hero). Illustration-scale art uses `BrandArt`.
 
 ## 9. Content & number formatting
 
@@ -152,7 +175,7 @@ timeout path.
 
 ## 10. Accessibility checklist (per screen)
 
-- [ ] Interactive targets ≥ 48 dp.
+- [ ] Interactive targets ≥ 44 dp (48 preferred).
 - [ ] Text contrast ≥ 4.5:1 (body) / ≥ 3:1 (large, components).
 - [ ] Renders at `textScaleFactor` 1.0 and 1.3 with no overflow.
 - [ ] Renders at 360 dp and 412 dp width.

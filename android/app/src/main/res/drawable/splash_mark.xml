@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- White IbuDaya mark for the forest-green launch screen. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="140dp"
+    android:height="140dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,14 C86,32 84,88 54,100 C24,88 22,32 54,14 Z" />
+    <path
+        android:strokeColor="#0E5D35"
+        android:strokeWidth="3.6"
+        android:strokeLineCap="round"
+        android:pathData="M54,26 C55,52 54,78 54,92" />
+    <path
+        android:fillColor="#F4B63E"
+        android:pathData="M42,46 a12,12 0 1,0 24,0 a12,12 0 1,0 -24,0 Z" />
+    <path
+        android:strokeColor="#F4B63E"
+        android:strokeWidth="3.6"
+        android:strokeLineCap="round"
+        android:pathData="M54,24 L54,18 M66,30 L69.5,25.5 M42,30 L38.5,25.5 M72,42 L77,40 M36,42 L31,40" />
+</vector>

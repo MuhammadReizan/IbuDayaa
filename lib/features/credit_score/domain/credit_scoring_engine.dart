@@ -1,6 +1,6 @@
 /// Credit-scoring domain layer — pure models and the engine interface.
 ///
-/// IMPLEMENTATION STATUS: DemoCreditScoringEngine is IMPLEMENTED (rule-based,
+/// IMPLEMENTATION STATUS: RuleBasedCreditScoringEngine is IMPLEMENTED (rule-based,
 /// deterministic). It is NOT a machine-learning model. The UI must not describe
 /// it as AI/ML anywhere (docs/AGENTS.MD, docs/DATA_MODEL.md §3.11).
 ///
@@ -148,7 +148,7 @@ class CreditScore {
 
 /// Pure interface for the credit-scoring engine.
 ///
-/// The demo implementation is [DemoCreditScoringEngine] (deterministic,
+/// The demo implementation is [RuleBasedCreditScoringEngine] (deterministic,
 /// rule-based). A future production implementation can replace it here without
 /// touching any UI code. See docs/ARCHITECTURE.md §4.
 abstract interface class CreditScoringEngine {

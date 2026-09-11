@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../tokens.dart';
 
-/// An option card used in single-select flows (e.g. appliances, slots).
-/// See docs/DESIGN_SYSTEM.md §6.
+/// A single-select option card (appliance, slot, purpose). Animates between
+/// resting and selected: a mint fill, a primary ring and a check.
 class SelectableTile extends StatelessWidget {
   const SelectableTile({
     super.key,
@@ -30,98 +30,121 @@ class SelectableTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
 
+    final Color bg = disabled
+        ? AppColors.surfaceAlt
+        : (selected ? AppColors.primaryContainer : AppColors.surface);
+    final Color border = disabled
+        ? AppColors.outline
+        : (selected ? AppColors.primary : AppColors.outline);
+
     return Semantics(
       selected: selected,
       button: true,
       enabled: !disabled,
-      child: GestureDetector(
-        onTap: disabled ? null : onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            color: selected
-                ? AppColors.primaryContainer
-                : (disabled
-                      ? AppColors.outline.withValues(alpha: 0.3)
-                      : AppColors.surface),
-            borderRadius: AppRadius.cardBr,
-            border: Border.all(
-              color: selected
-                  ? AppColors.primary
-                  : (disabled
-                        ? AppColors.outline.withValues(alpha: 0.5)
-                        : AppColors.outline),
-              width: selected ? 2 : 1,
-            ),
-          ),
-          padding: AppSpacing.card,
-          child: Row(
-            children: [
-              if (icon != null) ...[
-                Icon(
-                  icon,
-                  color: disabled
-                      ? AppColors.textSecondary
-                      : AppColors.primaryDark,
-                ),
-                const SizedBox(width: AppSpacing.md),
-              ],
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      label,
-                      style: text.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
+      child: AnimatedContainer(
+        duration: AppDurations.fast,
+        curve: kAppCurve,
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: AppRadius.smBr,
+          border: Border.all(color: border, width: selected ? 2 : 1.2),
+          boxShadow: selected && !disabled ? AppShadows.sm : AppShadows.none,
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: disabled ? null : onTap,
+            borderRadius: AppRadius.smBr,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
+              ),
+              child: Row(
+                children: [
+                  if (icon != null) ...[
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? AppColors.surface
+                            : AppColors.primaryContainer,
+                        borderRadius: AppRadius.xsBr,
+                      ),
+                      child: Icon(
+                        icon,
+                        size: 20,
                         color: disabled
-                            ? AppColors.textSecondary
-                            : AppColors.textPrimary,
+                            ? AppColors.textTertiary
+                            : AppColors.primaryDark,
                       ),
                     ),
-                    if (sublabel != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        sublabel!,
-                        style: text.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
+                    const SizedBox(width: AppSpacing.md),
+                  ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          label,
+                          style: text.titleSmall?.copyWith(
+                            color: disabled
+                                ? AppColors.textTertiary
+                                : AppColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (sublabel != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            sublabel!,
+                            style: text.bodySmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  if (badge != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: disabled
+                            ? AppColors.outline
+                            : badgeColor.withValues(alpha: 0.14),
+                        borderRadius: AppRadius.pillBr,
+                      ),
+                      child: Text(
+                        badge!,
+                        style: text.labelSmall?.copyWith(
+                          color: disabled
+                              ? AppColors.textSecondary
+                              : badgeColor,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ],
-                  ],
-                ),
+                    )
+                  else
+                    AnimatedScale(
+                      duration: AppDurations.fast,
+                      scale: selected ? 1 : 0,
+                      child: const Icon(
+                        Icons.check_circle_rounded,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
+                    ),
+                ],
               ),
-              if (badge != null) ...[
-                const SizedBox(width: AppSpacing.sm),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: disabled
-                        ? AppColors.outline
-                        : badgeColor.withValues(alpha: 0.1),
-                    borderRadius: AppRadius.pillBr,
-                    border: Border.all(
-                      color: disabled
-                          ? AppColors.outline
-                          : badgeColor.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  child: Text(
-                    badge!,
-                    style: text.labelSmall?.copyWith(
-                      color: disabled ? AppColors.textSecondary : badgeColor,
-                    ),
-                  ),
-                ),
-              ],
-              if (selected && badge == null) ...[
-                const SizedBox(width: AppSpacing.sm),
-                const Icon(Icons.check_circle, color: AppColors.primary),
-              ],
-            ],
+            ),
           ),
         ),
       ),

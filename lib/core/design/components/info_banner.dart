@@ -10,53 +10,68 @@ class InfoBanner extends StatelessWidget {
     super.key,
     required this.tone,
     required this.message,
+    this.title,
     this.icon,
   });
 
   final InfoTone tone;
   final String message;
+  final String? title;
   final IconData? icon;
 
-  ({Color bg, Color fg, IconData icon}) get _style => switch (tone) {
-    InfoTone.success => (
-      bg: AppColors.successContainer,
-      fg: AppColors.primaryDark,
-      icon: Icons.check_circle_outline,
-    ),
-    InfoTone.warning => (
-      bg: AppColors.warningContainer,
-      fg: const Color(0xFF8A5A00),
-      icon: Icons.warning_amber_rounded,
-    ),
-    InfoTone.danger => (
-      bg: AppColors.dangerContainer,
-      fg: const Color(0xFF9E2A1E),
-      icon: Icons.error_outline,
-    ),
-    InfoTone.info => (
-      bg: AppColors.infoContainer,
-      fg: const Color(0xFF1B4DA6),
-      icon: Icons.info_outline,
-    ),
-  };
+  ({Color bg, Color fg, Color accent, IconData icon}) get _style =>
+      switch (tone) {
+        InfoTone.success => (
+          bg: AppColors.successContainer,
+          fg: AppColors.primaryDarker,
+          accent: AppColors.primary,
+          icon: Icons.verified_rounded,
+        ),
+        InfoTone.warning => (
+          bg: AppColors.warningContainer,
+          fg: AppColors.warningText,
+          accent: AppColors.secondaryDark,
+          icon: Icons.info_rounded,
+        ),
+        InfoTone.danger => (
+          bg: AppColors.dangerContainer,
+          fg: AppColors.dangerText,
+          accent: AppColors.danger,
+          icon: Icons.error_rounded,
+        ),
+        InfoTone.info => (
+          bg: AppColors.infoContainer,
+          fg: AppColors.infoText,
+          accent: AppColors.info,
+          icon: Icons.info_rounded,
+        ),
+      };
 
   @override
   Widget build(BuildContext context) {
     final s = _style;
+    final TextTheme text = Theme.of(context).textTheme;
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(color: s.bg, borderRadius: AppRadius.cardBr),
+      decoration: BoxDecoration(color: s.bg, borderRadius: AppRadius.smBr),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon ?? s.icon, color: s.fg, size: 20),
+          Icon(icon ?? s.icon, color: s.accent, size: 20),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
-            child: Text(
-              message,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: s.fg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (title != null) ...[
+                  Text(title!, style: text.titleSmall?.copyWith(color: s.fg)),
+                  const SizedBox(height: 2),
+                ],
+                Text(
+                  message,
+                  style: text.bodySmall?.copyWith(color: s.fg, height: 1.4),
+                ),
+              ],
             ),
           ),
         ],

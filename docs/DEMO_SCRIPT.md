@@ -10,10 +10,12 @@
 - [ ] **Airplane mode ON** (proves the offline claim).
 - [ ] App installed from a release build (`flutter build apk --release`), not a
       debug USB run.
-- [ ] Open the app, go to **Profil → Pengaturan → Reset Demo**, confirm.
-- [ ] Land on Home showing: "Hi Ibu Clara", "Penghematan Bulan Ini Rp 245.000",
-      "45% Energy Usaha dari Solar Hub", score tile "82/100", "Status Arisan:
-      Lunas".
+- [ ] Open the app, go to **Profil → Pengaturan → "Reset Data Demo"** (or use
+      the "Reset Data Demo" button on the "Mode Demo" card lower on Profil),
+      confirm; you land back on Home.
+- [ ] Land on Home showing: "Hi, Ibu Clara", savings hero "Rp 245.000",
+      "Energi dari Solar Hub 45%", "Skor Kredit Energi 82", "Arisan Energi …
+      Lunas". The bell shows a red dot (4 demo notifications).
 - [ ] Close any keyboard; scroll Home to top.
 - [ ] Backup phone / screenshot deck ready.
 
@@ -29,10 +31,13 @@
 
 ### Scene 1 — Home (≈ 25 s)
 
-- **Show:** the dashboard. Point at monthly saving, "45% from Solar Hub", the
-  energy alert card ("Lonjakan Energi Produksi", "Alat Usaha Standby").
+- **Show:** the dashboard. Point at monthly saving, "Energi dari Solar Hub 45%",
+  then scroll to **"Status Penggunaan Daya"** — three rows: "Lonjakan Energi
+  Produksi" (18.00–21.00), "Alat Usaha Standby", and "Jadwal Hemat Hari Ini"
+  (10.00–12.00). Note the **"simulasi"** pill on the panel header.
 - **Say:** "Ibu Clara runs a home catering business. The app already sees her
-  usage patterns and flags where money is leaking."
+  usage patterns and flags where money is leaking — and when the cheapest,
+  sunniest window to produce is."
 - **Tap:** quick action **Scan Tagihan**.
 
 ### Scene 2 — Scan bill → AI Energy Insight (≈ 35 s)
@@ -71,23 +76,24 @@
 
 ### Scene 4 — Energy Arisan + share energy quota (≈ 55 s)
 
-- **On Home:** **Tap "Arisan" quick action**.
-- **On Arisan Energi:** point at "Arisan Energi Melati", "Giliran Pemakaian
-  Berikutnya", and the **Transaksi Terbaru** ledger ("recorded transparently").
+- **On Home:** **Tap "Arisan Energi" quick action**.
+- **On Arisan Energi:** point at "Arisan Energi Melati", the giliran card, the
+  "Jadwal Giliran" strip, and the **Catatan Transparan** ledger.
 - **Say:** "The traditional arisan, now a transparent ledger. Members can also
   share spare energy quota."
-- **Tap:** **Perdagangan Energi**.
-- **On Perdagangan Energi:** point at "Kuota Energi Saya" and the member offers
-  list (Siti Rahma, Ibu Lina, Ibu Putri).
-- **Tap:** **Bagikan Kuota**.
-- **On Bagikan Kuota:** **Tap "2 kWh"**, **tap a time slot**, **tap
-  "Publikasikan Penawaran"**.
-- **On "Penawaran Berhasil Dipublikasikan":** note "Tercatat dengan Aman".
-- **Tap:** **Kembali ke Perdagangan Energi** — point out "Kuota Energi Saya"
-  dropped by 2 kWh and the new offer is listed.
+- **Tap:** **"Tukar & Bagikan Kuota"** (bottom button).
+- **On Berbagi Kuota:** point at the status card (needed kWh) and the member
+  offers list (Siti Rahma, Ibu Lina).
+- **Tap:** **"Bagikan Kuota Saya"**.
+- **On Bagikan Kuota:** **Tap the "2" kWh chip**, leave the slot dropdown, then
+  **tap "Tinjau & Bagikan"**.
+- **On "Kuota Berhasil Dibagikan!":** read the confirmation line.
+- **Tap:** **"Selesai"** — back on Berbagi Kuota, point out "Kuota tersedia"
+  dropped by 2 kWh.
 - **Say:** "That share is now in the ledger. No blockchain, no real transfer —
   a transparent local record for the pilot."
-- **Tap:** back to **Arisan Energi**, then **Skor Kredit Energi**.
+- **Tap:** back arrow to Arisan Energi, then **"Skor Kredit Energi"** (the
+  secondary button under the main CTA).
 
 ### Scene 5 — Skor Kredit Energi (≈ 45 s)
 
@@ -95,18 +101,22 @@
   - the score **82 / 100 — "Baik Sekali"**,
   - the four rows: **Konsistensi pemakaian energi 30/35**, **Riwayat pembayaran
     24/30**, **Aktivitas usaha 18/20**, **Partisipasi komunitas 10/15**,
-  - "Potensi Pembiayaan Anda" up to **Rp 2.000.000** (label **"simulasi"**).
+  - **"Potensi Pembiayaan Anda — hingga Rp 2.000.000"** (label **"simulasi"**);
+    this is the same ceiling the next screen's slider caps at,
+  - the **"Cara meningkatkan skor"** card (two tips keyed to the weakest
+    factors).
 - **Say:** "No bank history. The score is a transparent rule — four categories,
   they add up to 82, and every one is shown. In production this engine is
   replaced by a validated model behind the same screen."
-- **Tap:** **Simulasi Pembiayaan**.
+- **Tap:** **"Lihat Simulasi Pembiayaan"**.
 
 ### Scene 6 — Simulasi Pembiayaan (≈ 35 s)
 
-- **On "Simulasi Pembiayaan (input)":**
-  - note the eligibility line **"Berdasarkan profil skor Anda"**,
-  - leave the amount at the preset (Rp 2.000.000),
-  - **Tap purpose "Membeli bahan produksi"**,
+- **On "Simulasi Pembiayaan":**
+  - read the eligibility banner **"Berdasarkan profil skor Anda"** (plafon
+    Rp 2.000.000, "bukan penawaran resmi"),
+  - leave the amount at the preset (**Rp 2.000.000** — the eligible maximum),
+  - **Tap purpose "Bahan Produksi"**,
   - **Tap tenor "6 Bulan"**,
   - **Tap "Hitung Simulasi"**.
 - **On "Hasil Simulasi Pembiayaan":** point at principal Rp 2.000.000, tenor
@@ -134,7 +144,7 @@
 
 | Problem | Recovery |
 | --- | --- |
-| A screen looks wrong / stale | Profil → Pengaturan → **Reset Demo**, resume from the current scene's entry on Home. |
+| A screen looks wrong / stale | Profil → Pengaturan → **"Reset Data Demo"**, resume from the current scene's entry on Home. |
 | App crashes | Reopen from the launcher (state resets), go to Home, resume from the current scene. Do **not** re-run earlier scenes. |
 | Tap does nothing | Wait 2 s (simulated latency), tap once more. Don't double-tap CTAs. |
 | Camera dialog stalls (P1 path) | Dismiss it; the canned analysis still proceeds. Prefer "Unggah dari Galeri". |
@@ -144,12 +154,14 @@
 ## 5. Do NOT do live
 
 - Do not toggle airplane mode off.
-- Do not open Settings rows other than "Reset Demo" / "Tentang IbuDaya".
+- "Bantuan & FAQ" and "Privasi & Data" on Profil are stubs — they show a
+  "Segera hadir" toast. Safe to tap, but nothing to show; don't linger.
 - Do not try real OCR, real camera roof scanning, or language switching.
-- Do not tap "Keluar Akun".
+- Do not tap "Keluar Akun" (it opens a demo confirm dialog — cancel it).
 - Do not take a member's quota offer *and* publish your own in the same run
   unless you will Reset Demo afterward.
-- Do not scroll into unfinished P2 areas.
+- Optional side-trips if asked: Home bell → **Notifikasi** (4 demo alerts, one
+  deep-links to Berbagi Kuota); Pesan → a thread → read-only conversation.
 
 ## 6. Judge Q&A — honest answers
 
@@ -164,7 +176,7 @@
   partner; the research survey cites OJK Regulation No. 29/2024. IbuDaya does not
   disburse funds."
 - **"Blockchain?"** — "The paper references it as future work. The app uses a
-  plain transparent local ledger."
+  plain transparent local ledger; the 'Tentang IbuDaya' screen says so."
 - **"Where do the savings / CO₂ numbers come from?"** — "Illustrative figures
   with documented placeholder factors, labelled as estimates in the UI."
 - **"Which SDG?"** — "Primary is SDG 11 — Sustainable Cities and Communities.

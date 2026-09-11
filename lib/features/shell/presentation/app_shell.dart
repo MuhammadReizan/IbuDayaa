@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// The bottom-navigation shell: 4 tabs (Beranda / Solar Hub / Pesan / Profil),
-/// each an independent navigation branch with its own state
-/// (docs/ARCHITECTURE.md §7). Wraps a `StatefulNavigationShell` from GoRouter.
+/// The bottom-navigation shell: Beranda / Solar Hub / Arisan / Profil, each an
+/// independent navigation branch with its own state.
+///
+/// There is deliberately no "Pesan" tab: this build has no server, so a chat
+/// would be a button that cannot work. Arisan takes that slot instead — it is
+/// a core pillar and people open it often.
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.navigationShell});
 
@@ -12,22 +15,22 @@ class AppShell extends StatelessWidget {
   static const List<NavigationDestination> _destinations = [
     NavigationDestination(
       icon: Icon(Icons.home_outlined),
-      selectedIcon: Icon(Icons.home),
+      selectedIcon: Icon(Icons.home_rounded),
       label: 'Beranda',
     ),
     NavigationDestination(
       icon: Icon(Icons.solar_power_outlined),
-      selectedIcon: Icon(Icons.solar_power),
+      selectedIcon: Icon(Icons.solar_power_rounded),
       label: 'Solar Hub',
     ),
     NavigationDestination(
-      icon: Icon(Icons.forum_outlined),
-      selectedIcon: Icon(Icons.forum),
-      label: 'Pesan',
+      icon: Icon(Icons.groups_2_outlined),
+      selectedIcon: Icon(Icons.groups_2_rounded),
+      label: 'Arisan',
     ),
     NavigationDestination(
-      icon: Icon(Icons.person_outline),
-      selectedIcon: Icon(Icons.person),
+      icon: Icon(Icons.person_outline_rounded),
+      selectedIcon: Icon(Icons.person_rounded),
       label: 'Profil',
     ),
   ];

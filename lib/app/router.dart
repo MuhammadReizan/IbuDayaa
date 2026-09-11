@@ -2,79 +2,91 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/data/app_data_controller.dart';
+import '../core/data/models.dart';
 import '../core/design/components/state_views.dart';
-import '../core/demo/demo_scenario.dart';
-import '../features/bill_scan/presentation/energy_analysis_screen.dart';
-import '../features/bill_scan/presentation/scan_tagihan_screen.dart';
-import '../features/credit_score/presentation/credit_score_screen.dart';
-import '../features/home/presentation/home_screen.dart';
-import '../features/messages/presentation/messages_screen.dart';
-import '../features/profile/presentation/profile_screen.dart';
-import '../features/shell/presentation/app_shell.dart';
-import '../features/solar_hub/presentation/booking_confirmed_screen.dart';
-import '../features/solar_hub/presentation/radar_atap_screen.dart';
-import '../features/solar_hub/presentation/solar_hub_booking_screen.dart';
-import '../features/solar_hub/presentation/solar_hub_screen.dart';
+import '../features/about/presentation/about_screen.dart';
+import '../features/appliances/presentation/appliance_edit_screen.dart';
+import '../features/appliances/presentation/appliances_screen.dart';
+import '../features/arisan/presentation/arisan_create_screen.dart';
 import '../features/arisan/presentation/arisan_screen.dart';
-import '../features/arisan/presentation/energy_trading_screen.dart';
-import '../features/arisan/presentation/offer_published_screen.dart';
-import '../features/arisan/presentation/share_quota_screen.dart';
-import '../features/financing/domain/financing_simulation.dart';
-import '../features/financing/presentation/financing_input_screen.dart';
-import '../features/financing/presentation/financing_result_screen.dart';
+import '../features/arisan/presentation/quota_share_screen.dart';
+import '../features/arisan/presentation/quota_trading_screen.dart';
+import '../features/bills/presentation/bill_add_screen.dart';
+import '../features/bills/presentation/bills_screen.dart';
+import '../features/bills/presentation/energy_analysis_screen.dart';
+import '../features/credit_score/presentation/credit_score_screen.dart';
+import '../features/financing/presentation/financing_screen.dart';
+import '../features/home/presentation/home_screen.dart';
+import '../features/notifications/presentation/notifications_screen.dart';
+import '../features/onboarding/presentation/onboarding_screen.dart';
+import '../features/profile/presentation/profile_screen.dart';
+import '../features/settings/presentation/app_settings_screen.dart';
+import '../features/shell/presentation/app_shell.dart';
+import '../features/solar_hub/presentation/roof_check_screen.dart';
+import '../features/solar_hub/presentation/session_add_screen.dart';
+import '../features/solar_hub/presentation/solar_hub_screen.dart';
 import 'splash_screen.dart';
 
-/// Stable route names + paths (docs/ARCHITECTURE.md §7). Navigate with these
-/// constants, never string literals scattered across widgets.
+/// Stable route names + paths. Navigate with these constants, never string
+/// literals scattered across widgets.
 abstract final class AppRoute {
   static const String splashPath = '/';
 
+  static const String onboarding = 'onboarding';
+  static const String onboardingPath = '/onboarding';
+
+  // Bottom-nav branches.
   static const String home = 'home';
   static const String homePath = '/home';
   static const String solar = 'solar';
   static const String solarPath = '/solar';
-  static const String messages = 'messages';
-  static const String messagesPath = '/messages';
+  static const String arisan = 'arisan';
+  static const String arisanPath = '/arisan';
   static const String profile = 'profile';
   static const String profilePath = '/profile';
 
-  // Pushed on top of the shell.
-  static const String creditScore = 'creditScore';
-  static const String creditScorePath = '/credit-score';
-
-  static const String scanTagihan = 'scanTagihan';
-  static const String scanTagihanPath = '/scan-tagihan';
-
+  // Bills.
+  static const String bills = 'bills';
+  static const String billsPath = '/bills';
+  static const String billAdd = 'billAdd';
+  static const String billAddPath = '/bills/add';
   static const String energyAnalysis = 'energyAnalysis';
   static const String energyAnalysisPath = '/energy-analysis';
 
-  static const String radarAtap = 'radarAtap';
-  static const String radarAtapPath = '/radar-atap';
+  // Appliances.
+  static const String appliances = 'appliances';
+  static const String appliancesPath = '/appliances';
+  static const String applianceEdit = 'applianceEdit';
+  static const String applianceEditPath = '/appliances/edit';
 
-  static const String solarBooking = 'solarBooking';
-  static const String solarBookingPath = '/solar-booking';
+  // Solar hub.
+  static const String roofCheck = 'roofCheck';
+  static const String roofCheckPath = '/roof-check';
+  static const String sessionAdd = 'sessionAdd';
+  static const String sessionAddPath = '/session/add';
 
-  static const String bookingConfirmed = 'bookingConfirmed';
-  static const String bookingConfirmedPath = '/booking-confirmed';
+  // Arisan.
+  static const String arisanCreate = 'arisanCreate';
+  static const String arisanCreatePath = '/arisan/create';
+  static const String quotaTrading = 'quotaTrading';
+  static const String quotaTradingPath = '/quota';
+  static const String quotaShare = 'quotaShare';
+  static const String quotaSharePath = '/quota/share';
 
-  static const String arisan = 'arisan';
-  static const String arisanPath = '/arisan';
-
-  // Canonical financing entry route (Simulasi Pembiayaan input → result).
+  // Money.
+  static const String creditScore = 'creditScore';
+  static const String creditScorePath = '/credit-score';
   static const String financing = 'financing';
   static const String financingPath = '/financing';
 
-  static const String financingResult = 'financingResult';
-  static const String financingResultPath = '/financing-result';
-
-  static const String energyTrading = 'energyTrading';
-  static const String energyTradingPath = '/energy-trading';
-
-  static const String shareQuota = 'shareQuota';
-  static const String shareQuotaPath = '/share-quota';
-
-  static const String offerPublished = 'offerPublished';
-  static const String offerPublishedPath = '/offer-published';
+  // Support.
+  static const String notifications = 'notifications';
+  static const String notificationsPath = '/notifications';
+  static const String about = 'about';
+  static const String aboutPath = '/about';
+  static const String appSettings = 'appSettings';
+  static const String appSettingsPath = '/settings';
 }
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(
@@ -85,11 +97,31 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: AppRoute.splashPath,
+    // Nothing but the splash and onboarding is reachable until a profile
+    // exists, so no screen ever has to cope with a null user.
+    redirect: (context, state) {
+      final loc = state.matchedLocation;
+      if (loc == AppRoute.splashPath) return null;
+
+      final data = ref.read(appDataProvider).value;
+      if (data == null) return null; // still loading; splash handles it
+
+      final onboarding = loc == AppRoute.onboardingPath;
+      if (!data.isOnboarded && !onboarding) return AppRoute.onboardingPath;
+      if (data.isOnboarded && onboarding) return AppRoute.homePath;
+      return null;
+    },
     routes: [
       GoRoute(
         path: AppRoute.splashPath,
         builder: (context, state) => const SplashScreen(),
       ),
+      GoRoute(
+        path: AppRoute.onboardingPath,
+        name: AppRoute.onboarding,
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             AppShell(navigationShell: navigationShell),
@@ -115,9 +147,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoute.messagesPath,
-                name: AppRoute.messages,
-                builder: (context, state) => const MessagesScreen(),
+                path: AppRoute.arisanPath,
+                name: AppRoute.arisan,
+                builder: (context, state) => const ArisanScreen(),
               ),
             ],
           ),
@@ -132,19 +164,20 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      // Pushed on top of the shell (no bottom-nav visible).
-      GoRoute(
-        path: AppRoute.creditScorePath,
-        name: AppRoute.creditScore,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const CreditScoreScreen(),
-      ),
 
+      // Pushed over the shell.
       GoRoute(
-        path: AppRoute.scanTagihanPath,
-        name: AppRoute.scanTagihan,
+        path: AppRoute.billsPath,
+        name: AppRoute.bills,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const ScanTagihanScreen(),
+        builder: (context, state) => const BillsScreen(),
+      ),
+      GoRoute(
+        path: AppRoute.billAddPath,
+        name: AppRoute.billAdd,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            BillAddScreen(existing: state.extra as Bill?),
       ),
       GoRoute(
         path: AppRoute.energyAnalysisPath,
@@ -152,70 +185,83 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const EnergyAnalysisScreen(),
       ),
+
       GoRoute(
-        path: AppRoute.radarAtapPath,
-        name: AppRoute.radarAtap,
+        path: AppRoute.appliancesPath,
+        name: AppRoute.appliances,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const RadarAtapScreen(),
+        builder: (context, state) => const AppliancesScreen(),
       ),
       GoRoute(
-        path: AppRoute.solarBookingPath,
-        name: AppRoute.solarBooking,
+        path: AppRoute.applianceEditPath,
+        name: AppRoute.applianceEdit,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const SolarHubBookingScreen(),
-      ),
-      GoRoute(
-        path: AppRoute.bookingConfirmedPath,
-        name: AppRoute.bookingConfirmed,
-        parentNavigatorKey: _rootNavigatorKey,
-        // Requires a DemoSolarBooking in `extra`; a direct/refreshed hit with
-        // no valid data falls back to Home instead of a cast crash.
-        redirect: (context, state) =>
-            state.extra is DemoSolarBooking ? null : AppRoute.homePath,
         builder: (context, state) =>
-            BookingConfirmedScreen(booking: state.extra as DemoSolarBooking),
+            ApplianceEditScreen(existing: state.extra as Appliance?),
       ),
 
       GoRoute(
-        path: AppRoute.arisanPath,
-        name: AppRoute.arisan,
+        path: AppRoute.roofCheckPath,
+        name: AppRoute.roofCheck,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const ArisanScreen(),
+        builder: (context, state) => const RoofCheckScreen(),
       ),
       GoRoute(
-        path: AppRoute.energyTradingPath,
-        name: AppRoute.energyTrading,
+        path: AppRoute.sessionAddPath,
+        name: AppRoute.sessionAdd,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const EnergyTradingScreen(),
+        builder: (context, state) => const SessionAddScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoute.arisanCreatePath,
+        name: AppRoute.arisanCreate,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ArisanCreateScreen(),
       ),
       GoRoute(
-        path: AppRoute.shareQuotaPath,
-        name: AppRoute.shareQuota,
+        path: AppRoute.quotaTradingPath,
+        name: AppRoute.quotaTrading,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const ShareQuotaScreen(),
+        builder: (context, state) => const QuotaTradingScreen(),
       ),
       GoRoute(
-        path: AppRoute.offerPublishedPath,
-        name: AppRoute.offerPublished,
+        path: AppRoute.quotaSharePath,
+        name: AppRoute.quotaShare,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const OfferPublishedScreen(),
+        builder: (context, state) => const QuotaShareScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoute.creditScorePath,
+        name: AppRoute.creditScore,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CreditScoreScreen(),
       ),
       GoRoute(
         path: AppRoute.financingPath,
         name: AppRoute.financing,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const FinancingInputScreen(),
+        builder: (context, state) => const FinancingScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoute.notificationsPath,
+        name: AppRoute.notifications,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const NotificationsScreen(),
       ),
       GoRoute(
-        path: AppRoute.financingResultPath,
-        name: AppRoute.financingResult,
+        path: AppRoute.aboutPath,
+        name: AppRoute.about,
         parentNavigatorKey: _rootNavigatorKey,
-        // Requires a LoanSimulation in `extra`; otherwise send the user back to
-        // the financing input screen rather than crashing on the cast.
-        redirect: (context, state) =>
-            state.extra is LoanSimulation ? null : AppRoute.financingPath,
-        builder: (context, state) =>
-            FinancingResultScreen(simulation: state.extra as LoanSimulation),
+        builder: (context, state) => const AboutScreen(),
+      ),
+      GoRoute(
+        path: AppRoute.appSettingsPath,
+        name: AppRoute.appSettings,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AppSettingsScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

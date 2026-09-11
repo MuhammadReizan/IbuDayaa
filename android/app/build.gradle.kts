@@ -8,7 +8,9 @@ plugins {
 android {
     namespace = "com.baswaramusi.ibudaya"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // path_provider_android needs 27.x; NDK releases are backward compatible,
+    // so pinning the highest required version satisfies every plugin.
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
