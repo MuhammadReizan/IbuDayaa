@@ -158,101 +158,122 @@ class _BillHero extends StatelessWidget {
     final change = i?.changePct;
 
     return HeroCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  i == null
-                      ? 'Tagihan listrik'
-                      : 'Listrik ${monthYearLabel(i.latest.month)}',
-                  style: text.labelLarge?.copyWith(
-                    color: AppColors.textOnDarkDim,
-                  ),
-                ),
-              ),
-              if (change != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xxs + 1,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.16),
-                    borderRadius: AppRadius.pillBr,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        change > 0
-                            ? Icons.arrow_upward_rounded
-                            : Icons.arrow_downward_rounded,
-                        size: 14,
-                        color: Colors.white,
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      i == null
+                          ? 'Tagihan listrik'
+                          : 'Listrik ${monthYearLabel(i.latest.month)}',
+                      style: text.labelLarge?.copyWith(
+                        color: AppColors.textOnDarkDim,
                       ),
-                      const SizedBox(width: 2),
+                    ),
+                  ),
+                  if (change != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xxs + 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.16),
+                        borderRadius: AppRadius.pillBr,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            change > 0
+                                ? Icons.arrow_upward_rounded
+                                : Icons.arrow_downward_rounded,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${change.abs().round()}% dari bulan lalu',
+                            style: text.labelSmall?.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Padding(
+                padding: const EdgeInsets.only(right: 120),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (i == null) ...[
                       Text(
-                        '${change.abs().round()}% dari bulan lalu',
-                        style: text.labelSmall?.copyWith(color: Colors.white),
+                        'Belum ada catatan',
+                        style: text.headlineSmall?.copyWith(
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        'Foto tagihan atau struk token PLN Anda. Angkanya dibaca '
+                        'otomatis, lalu Anda periksa.',
+                        style: text.bodySmall?.copyWith(
+                          color: AppColors.textOnDarkDim,
+                        ),
+                      ),
+                    ] else ...[
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          formatRupiah(i.latest.totalIdr),
+                          style: AppTypography.numeric(34, color: Colors.white),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        '${formatKwh(i.latest.kwh)}'
+                        '${i.latest.fromTokens ? ' · dari ${i.latest.recordCount} token' : ''}',
+                        style: text.bodyMedium?.copyWith(
+                          color: AppColors.textOnDarkDim,
+                        ),
                       ),
                     ],
-                  ),
+                    const SizedBox(height: AppSpacing.md),
+                    _HeroButton(
+                      icon: Icons.insights_rounded,
+                      label: 'Analisis',
+                      onTap: () => context.push(
+                        i == null ? Paths.energy : Paths.energyAnalysis,
+                      ),
+                    ),
+                  ],
                 ),
+              ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          if (i == null) ...[
-            Text(
-              'Belum ada catatan',
-              style: text.headlineSmall?.copyWith(color: Colors.white),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Foto tagihan atau struk token PLN Anda. Angkanya dibaca '
-              'otomatis, lalu Anda periksa.',
-              style: text.bodySmall?.copyWith(color: AppColors.textOnDarkDim),
-            ),
-          ] else ...[
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                formatRupiah(i.latest.totalIdr),
-                style: AppTypography.numeric(34, color: Colors.white),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              '${formatKwh(i.latest.kwh)}'
-              '${i.latest.fromTokens ? ' · dari ${i.latest.recordCount} token' : ''}',
-              style: text.bodyMedium?.copyWith(color: AppColors.textOnDarkDim),
-            ),
-          ],
-          const SizedBox(height: AppSpacing.lg),
-          Row(
-            children: [
-              Expanded(
-                child: _HeroButton(
-                  icon: Icons.document_scanner_rounded,
-                  label: 'Scan Tagihan',
-                  filled: true,
-                  onTap: () => context.push(Paths.scan),
+          Positioned(
+            right: 8,
+            bottom: -AppSpacing.hero.bottom,
+            child: IgnorePointer(
+              child: SizedBox(
+                width: 145,
+                height: 135,
+                child: Image.asset(
+                  'assets/images/house.webp',
+                  fit: BoxFit.contain,
+                  alignment: Alignment.bottomRight,
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: _HeroButton(
-                  icon: Icons.insights_rounded,
-                  label: 'Analisis',
-                  onTap: () => context.push(
-                    i == null ? Paths.energy : Paths.energyAnalysis,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
@@ -265,30 +286,29 @@ class _HeroButton extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.filled = false,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final bool filled;
 
   @override
   Widget build(BuildContext context) {
-    final fg = filled ? AppColors.primaryDark : Colors.white;
+    const fg = Colors.white;
     return Material(
-      color: filled ? Colors.white : Colors.white.withValues(alpha: 0.14),
+      color: Colors.white.withValues(alpha: 0.14),
       borderRadius: AppRadius.buttonBr,
       child: InkWell(
         onTap: onTap,
         borderRadius: AppRadius.buttonBr,
-        child: SizedBox(
+        child: Container(
           height: kMinTapTarget,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm + 2),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 18, color: fg),
-              const SizedBox(width: AppSpacing.xs + 2),
+              Icon(icon, size: 16, color: fg),
+              const SizedBox(width: 4),
               Flexible(
                 child: Text(
                   label,
@@ -299,6 +319,8 @@ class _HeroButton extends StatelessWidget {
                   ).textTheme.labelLarge?.copyWith(color: fg),
                 ),
               ),
+              const SizedBox(width: 2),
+              Icon(Icons.chevron_right_rounded, size: 16, color: fg),
             ],
           ),
         ),
@@ -321,14 +343,6 @@ class _QuickActions extends StatelessWidget {
         Paths.booking,
         AppColors.secondaryDark,
         AppColors.secondaryContainer,
-        0,
-      ),
-      (
-        Icons.roofing_rounded,
-        'Radar Atap',
-        Paths.roof,
-        AppColors.info,
-        AppColors.infoContainer,
         0,
       ),
       (

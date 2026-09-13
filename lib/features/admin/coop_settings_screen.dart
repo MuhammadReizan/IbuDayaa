@@ -220,24 +220,6 @@ class _CoopSettingsScreenState extends ConsumerState<CoopSettingsScreen> {
                   ),
               ],
             ),
-            const SizedBox(height: AppSpacing.xl),
-            Text('Radar Atap', style: text.titleLarge),
-            const SizedBox(height: AppSpacing.lg),
-            AppTextField(
-              label: 'Biaya pasang panel per kWp',
-              controller: _solarCost,
-              prefixText: 'Rp ',
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                ThousandsFormatter(),
-                LengthLimitingTextInputFormatter(13),
-              ],
-              helper:
-                  'Dipakai untuk perkiraan balik modal. Isi dari penawaran installer setempat.',
-              validator: (v) => (parseDigits(v ?? '') ?? 0) <= 0
-                  ? 'Isi biaya per kWp.'
-                  : null,
-            ),
           ],
         ),
       ),

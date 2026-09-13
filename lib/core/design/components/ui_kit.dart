@@ -306,6 +306,8 @@ class HeroCard extends StatelessWidget {
       ),
       child: Material(
         type: MaterialType.transparency,
+        borderRadius: AppRadius.lgBr,
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           borderRadius: AppRadius.lgBr,
@@ -932,15 +934,19 @@ class AppBottomNav extends StatelessWidget {
     required this.items,
     required this.index,
     required this.onTap,
+    this.onScanTap,
   });
 
   final List<NavItem> items;
   final int index;
   final ValueChanged<int> onTap;
+  final VoidCallback? onScanTap;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final hasScan = onScanTap != null && items.length == 4;
+
     return DecoratedBox(
       decoration: const BoxDecoration(
         color: AppColors.surface,
@@ -950,63 +956,118 @@ class AppBottomNav extends StatelessWidget {
         top: false,
         child: SizedBox(
           height: 66,
-          child: Row(
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
             children: [
-              for (int i = 0; i < items.length; i++)
-                Expanded(
+              Row(
+                children: [
+                  for (int i = 0; i < (hasScan ? 5 : items.length); i++) ...[
+                    if (hasScan && i == 2)
+                      const Expanded(child: SizedBox())
+                    else
+                      Expanded(
+                        child: _buildItem(
+                          context: context,
+                          item: items[hasScan && i > 2 ? i - 1 : i],
+                          itemIndex: hasScan && i > 2 ? i - 1 : i,
+                          text: text,
+                        ),
+                      ),
+                  ],
+                ],
+              ),
+              if (hasScan)
+                Positioned(
+                  top: -10,
                   child: Semantics(
-                    selected: i == index,
                     button: true,
-                    label: items[i].label,
-                    child: InkWell(
-                      onTap: () => onTap(i),
-                      child: Column(
-                        children: [
-                          AnimatedContainer(
-                            duration: AppDurations.fast,
-                            height: 3,
-                            width: i == index ? 32 : 0,
-                            decoration: const BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.vertical(
-                                bottom: Radius.circular(3),
+                    label: 'Scan',
+                    child: GestureDetector(
+                      onTap: onScanTap,
+                      child: Container(
+                        width: 58,
+                        height: 58,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primaryContainer,
+                        ),
+                        padding: const EdgeInsets.all(5),
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.primary,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(0x33107C41),
+                                blurRadius: 6,
+                                offset: Offset(0, 2),
                               ),
-                            ),
+                            ],
                           ),
-                          const Spacer(),
-                          Badge(
-                            isLabelVisible: items[i].badge > 0,
-                            label: Text('${items[i].badge}'),
-                            backgroundColor: AppColors.danger,
-                            child: Icon(
-                              i == index ? items[i].activeIcon : items[i].icon,
-                              color: i == index
-                                  ? AppColors.primary
-                                  : AppColors.textTertiary,
-                            ),
+                          child: const Icon(
+                            Icons.qr_code_scanner_rounded,
+                            color: Colors.white,
+                            size: 24,
                           ),
-                          const SizedBox(height: AppSpacing.xs),
-                          Text(
-                            items[i].label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: text.labelSmall?.copyWith(
-                              color: i == index
-                                  ? AppColors.primary
-                                  : AppColors.textTertiary,
-                              fontWeight: i == index
-                                  ? FontWeight.w700
-                                  : FontWeight.w600,
-                            ),
-                          ),
-                          const Spacer(),
-                        ],
+                        ),
                       ),
                     ),
                   ),
                 ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildItem({
+    required BuildContext context,
+    required NavItem item,
+    required int itemIndex,
+    required TextTheme text,
+  }) {
+    final isSelected = itemIndex == index;
+    return Semantics(
+      selected: isSelected,
+      button: true,
+      label: item.label,
+      child: InkWell(
+        onTap: () => onTap(itemIndex),
+        child: Column(
+          children: [
+            AnimatedContainer(
+              duration: AppDurations.fast,
+              height: 3,
+              width: isSelected ? 32 : 0,
+              decoration: const BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(3)),
+              ),
+            ),
+            const Spacer(),
+            Badge(
+              isLabelVisible: item.badge > 0,
+              label: Text('${item.badge}'),
+              backgroundColor: AppColors.danger,
+              child: Icon(
+                isSelected ? item.activeIcon : item.icon,
+                color: isSelected ? AppColors.primary : AppColors.textTertiary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              item.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: text.labelSmall?.copyWith(
+                color: isSelected ? AppColors.primary : AppColors.textTertiary,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+              ),
+            ),
+            const Spacer(),
+          ],
         ),
       ),
     );

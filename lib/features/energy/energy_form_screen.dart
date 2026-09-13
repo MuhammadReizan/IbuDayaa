@@ -1,5 +1,6 @@
-import 'dart:io';
+import 'dart:io' as io;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -309,14 +310,23 @@ class _ScanSummary extends StatelessWidget {
               if (photo != null)
                 ClipRRect(
                   borderRadius: AppRadius.xsBr,
-                  child: Image.file(
-                    File(photo),
-                    width: 64,
-                    height: 84,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) =>
-                        const SizedBox(width: 64, height: 84),
-                  ),
+                  child: kIsWeb
+                      ? Image.network(
+                          photo,
+                          width: 64,
+                          height: 84,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) =>
+                              const SizedBox(width: 64, height: 84),
+                        )
+                      : Image.file(
+                          io.File(photo),
+                          width: 64,
+                          height: 84,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) =>
+                              const SizedBox(width: 64, height: 84),
+                        ),
                 ),
               if (photo != null) const SizedBox(width: AppSpacing.md),
               Expanded(

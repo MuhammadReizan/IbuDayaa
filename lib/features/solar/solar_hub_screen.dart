@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/brand/brand.dart';
 import '../../core/db/row.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
@@ -41,7 +40,6 @@ class SolarHubScreen extends ConsumerWidget {
             )
             .toList()
           ..sort((a, b) => a.bookingDate.compareTo(b.bookingDate));
-    final roof = data.latestRoofOf(me.id);
 
     return AppScaffold(
       title: 'Solar Hub',
@@ -211,35 +209,6 @@ class SolarHubScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.sm),
             ],
-          const SizedBox(height: AppSpacing.xl),
-          SectionCard(
-            tone: CardTone.mint,
-            onTap: () => context.push(Paths.roof),
-            child: Row(
-              children: [
-                const BrandArt(motif: BrandArtMotif.roof, size: 64),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Radar Atap', style: text.titleMedium),
-                      const SizedBox(height: 2),
-                      Text(
-                        roof == null
-                            ? 'Foto dan ukur atap usaha Anda untuk melihat '
-                                  'potensi panel surya sendiri.'
-                            : 'Terakhir: ${roof.band} · ${roof.estKwp.toStringAsFixed(1)} kWp '
-                                  '· hemat ± ${formatRupiah(roof.estMonthlySavingIdr)}/bulan',
-                        style: text.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right_rounded),
-              ],
-            ),
-          ),
         ],
       ),
     );

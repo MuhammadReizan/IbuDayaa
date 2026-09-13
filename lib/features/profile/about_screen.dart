@@ -49,9 +49,7 @@ class AboutScreen extends ConsumerWidget {
               '• Skor Kredit Energi memakai aturan tetap dengan 4 faktor yang '
               'terlihat di layar skor. Bukan kecerdasan buatan, bukan skor bank.\n'
               '• Keputusan pinjaman dibuat oleh admin koperasi.\n'
-              '• CO₂ memakai asumsi 0,87 kg per kWh listrik PLN.\n'
-              '• Radar Atap menghitung dari ukuran yang Anda masukkan, bukan dari '
-              'foto. Teknisi tetap perlu memeriksa atap.',
+              '• CO₂ memakai asumsi 0,87 kg per kWh listrik PLN.',
               style: text.bodySmall?.copyWith(height: 1.7),
             ),
           ),

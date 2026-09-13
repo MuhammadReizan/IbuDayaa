@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/design/components/ui_kit.dart';
+import '../../core/paths.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
 
@@ -18,6 +19,7 @@ class MemberShell extends ConsumerWidget {
     final unread = me == null ? 0 : s.data.unreadMessagesOf(me);
     return _Shell(
       shell: shell,
+      onScanTap: () => context.push(Paths.scan),
       items: [
         const NavItem(
           icon: Icons.home_outlined,
@@ -85,10 +87,11 @@ class AdminShell extends ConsumerWidget {
 }
 
 class _Shell extends StatelessWidget {
-  const _Shell({required this.shell, required this.items});
+  const _Shell({required this.shell, required this.items, this.onScanTap});
 
   final StatefulNavigationShell shell;
   final List<NavItem> items;
+  final VoidCallback? onScanTap;
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +102,7 @@ class _Shell extends StatelessWidget {
         index: shell.currentIndex,
         onTap: (i) =>
             shell.goBranch(i, initialLocation: i == shell.currentIndex),
+        onScanTap: onScanTap,
       ),
     );
   }

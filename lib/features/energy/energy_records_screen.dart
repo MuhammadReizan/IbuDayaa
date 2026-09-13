@@ -1,5 +1,6 @@
-import 'dart:io';
+import 'dart:io' as io;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -131,15 +132,24 @@ class _RecordTile extends ConsumerWidget {
           ),
           child: Row(
             children: [
-              if (photo != null && File(photo).existsSync())
+              if (photo != null && (kIsWeb || io.File(photo).existsSync()))
                 ClipRRect(
                   borderRadius: AppRadius.xsBr,
-                  child: Image.file(
-                    File(photo),
-                    width: 44,
-                    height: 44,
-                    fit: BoxFit.cover,
-                  ),
+                  child: kIsWeb
+                      ? Image.network(
+                          photo,
+                          width: 44,
+                          height: 44,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) =>
+                              const SizedBox(width: 44, height: 44),
+                        )
+                      : Image.file(
+                          io.File(photo),
+                          width: 44,
+                          height: 44,
+                          fit: BoxFit.cover,
+                        ),
                 )
               else
                 FeatureBadge(

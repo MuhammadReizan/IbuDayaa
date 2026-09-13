@@ -26,7 +26,9 @@ Future<void> bootstrap() async {
     return true;
   };
 
-  final db = await LocalDatabase.open(FileDbStorage());
+  final db = await LocalDatabase.open(
+    kIsWeb ? MemoryDbStorage() : FileDbStorage(),
+  );
   final me = await LocalAuthRepository(db, DateTime.now).restoreSession();
   final initial = me == null
       ? const AppState()
