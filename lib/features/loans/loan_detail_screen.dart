@@ -7,6 +7,7 @@ import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/typography.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
 import '../../core/state/actions.dart';
@@ -34,14 +35,15 @@ class LoanDetailScreen extends ConsumerWidget {
     final data = s.data;
     final loan = data.loan(loanId);
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final now = ref.read(clockProvider)();
 
     if (loan == null) {
       return AppScaffold(
-        title: 'Pengajuan',
+        title: l10n.scaffoldLoanDetail,
         onBack: () => context.pop(),
         scrollable: false,
-        body: const EmptyState(title: 'Pengajuan tidak ditemukan'),
+        body: EmptyState(title: l10n.loansEmpty),
       );
     }
 
@@ -56,13 +58,16 @@ class LoanDetailScreen extends ConsumerWidget {
 
     final upcoming = switch (loan.status) {
       LoanStatus.submitted => [
-        'Review admin',
-        'Keputusan admin',
-        'Dana dicairkan',
+        l10n.loanStatusInReview,
+        l10n.loanStatusApproved,
+        l10n.loanStatusDisbursed,
       ],
-      LoanStatus.inReview => ['Keputusan admin', 'Dana dicairkan'],
-      LoanStatus.approved => ['Dana dicairkan'],
-      LoanStatus.disbursed => ['Semua cicilan lunas'],
+      LoanStatus.inReview => [
+        l10n.loanStatusApproved,
+        l10n.loanStatusDisbursed,
+      ],
+      LoanStatus.approved => [l10n.loanStatusDisbursed],
+      LoanStatus.disbursed => [l10n.loanStatusRepaid],
       _ => const <String>[],
     };
 
@@ -71,52 +76,49 @@ class LoanDetailScreen extends ConsumerWidget {
 
     final bottom = <Widget>[
       if (isAdmin && loan.status == LoanStatus.submitted) ...[
-        _reject(context, actions, loan),
+        _reject(context, actions, loan, l10n),
         PrimaryButton(
-          label: 'Mulai review',
-          onPressed: () => act(
-            () => actions.startLoanReview(loan.id),
-            'Status: sedang direview.',
-          ),
+          label: l10n.isEn ? 'Start review' : 'Mulai review',
+          onPressed: () =>
+              act(() => actions.startLoanReview(loan.id), 'Status: in review.'),
         ),
       ],
       if (isAdmin && loan.status == LoanStatus.inReview) ...[
-        _reject(context, actions, loan),
+        _reject(context, actions, loan, l10n),
         PrimaryButton(
-          label: 'Setujui',
+          label: l10n.isEn ? 'Approve' : 'Setujui',
           onPressed: () async {
             final note = await promptText(
               context,
-              title: 'Setujui pengajuan?',
-              label: 'Catatan untuk anggota (boleh kosong)',
-              confirmLabel: 'Setujui',
+              title: l10n.isEn ? 'Approve application?' : 'Setujui pengajuan?',
+              label: l10n.labelNote,
+              confirmLabel: l10n.isEn ? 'Approve' : 'Setujui',
               required: false,
             );
             if (note == null || !context.mounted) return;
             await act(
               () => actions.approveLoan(loan.id, note: note),
-              'Pengajuan disetujui.',
+              'Loan approved.',
             );
           },
         ),
       ],
       if (isAdmin && loan.status == LoanStatus.approved)
         PrimaryButton(
-          label: 'Catat dana dicairkan',
+          label: l10n.isEn ? 'Record disbursement' : 'Catat dana dicairkan',
           onPressed: () async {
             final ok = await confirmDialog(
               context,
-              title: 'Dana sudah diserahkan?',
-              message:
-                  'Catat pencairan hanya setelah ${formatRupiah(loan.amountIdr)} '
-                  'benar-benar diterima ${member?.fullName ?? 'anggota'}. Jadwal '
-                  'cicilan akan dibuat mulai hari ini.',
-              confirmLabel: 'Ya, sudah dicairkan',
+              title: l10n.isEn ? 'Record disbursement' : 'Catat dana dicairkan',
+              message: formatRupiah(loan.amountIdr),
+              confirmLabel: l10n.isEn
+                  ? 'Yes, disbursed'
+                  : 'Ya, sudah dicairkan',
             );
             if (!ok || !context.mounted) return;
             await act(
               () => actions.disburseLoan(loan.id),
-              'Pencairan dicatat.',
+              'Disbursement recorded.',
             );
           },
         ),
@@ -124,21 +126,17 @@ class LoanDetailScreen extends ConsumerWidget {
           loan.userId == me.id &&
           loan.status == LoanStatus.submitted)
         SecondaryButton(
-          label: 'Batalkan pengajuan',
+          label: l10n.loanStatusCancelled,
           onPressed: () async {
             final ok = await confirmDialog(
               context,
-              title: 'Batalkan pengajuan?',
-              message:
-                  'Pengajuan ini akan ditutup. Anda bisa mengajukan lagi nanti.',
-              confirmLabel: 'Batalkan',
+              title: l10n.loanStatusCancelled,
+              message: l10n.loanStatusCancelled,
+              confirmLabel: l10n.actionConfirm,
               destructive: true,
             );
             if (!ok || !context.mounted) return;
-            await act(
-              () => actions.cancelLoan(loan.id),
-              'Pengajuan dibatalkan.',
-            );
+            await act(() => actions.cancelLoan(loan.id), 'Loan cancelled.');
           },
         ),
     ];
@@ -149,7 +147,9 @@ class LoanDetailScreen extends ConsumerWidget {
     final support = data.supportThreadOf(loan.userId);
 
     return AppScaffold(
-      title: isAdmin ? 'Review Pengajuan' : 'Status Pengajuan',
+      title: isAdmin
+          ? (l10n.isEn ? 'Review Application' : 'Review Pengajuan')
+          : l10n.scaffoldLoanDetail,
       onBack: () => context.pop(),
       bottomBar: bottom.isEmpty
           ? null
@@ -177,34 +177,40 @@ class LoanDetailScreen extends ConsumerWidget {
                       ),
                     ),
                     StatusPill(
-                      label: loan.status.label,
+                      label: loan.status.localizedLabel(l10n),
                       tone: loanTone(loan.status),
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  '${loan.purpose.label} · diajukan ${formatLongDate(loan.createdAt)}',
+                  '${loan.purpose.localizedLabel(l10n)} · ${formatLongDate(loan.createdAt, l10n: l10n)}',
                   style: text.bodySmall,
                 ),
                 const Divider(height: AppSpacing.xl),
-                KeyValueRow(label: 'Tenor', value: '${loan.tenorMonths} bulan'),
                 KeyValueRow(
-                  label: 'Jasa per bulan (flat)',
+                  label: l10n.loanApplyTenor,
+                  value: '${loan.tenorMonths} bulan',
+                ),
+                KeyValueRow(
+                  label: l10n.loanApplyTitle,
                   value: formatPercent(loan.flatMonthlyRatePct, decimals: 1),
                 ),
                 KeyValueRow(
-                  label: 'Cicilan per bulan',
+                  label: l10n.loanInstallments,
                   value: formatRupiah(loan.monthlyInstallmentIdr),
                   emphasize: true,
                 ),
                 KeyValueRow(
-                  label: 'Total dikembalikan',
+                  label: l10n.labelTotal,
                   value: formatRupiah(loan.totalRepaymentIdr),
                 ),
                 if (loan.note != null) ...[
                   const SizedBox(height: AppSpacing.sm),
-                  Text('Keterangan: "${loan.note}"', style: text.bodyMedium),
+                  Text(
+                    '${l10n.labelNote}: "${loan.note}"',
+                    style: text.bodyMedium,
+                  ),
                 ],
               ],
             ),
@@ -216,8 +222,8 @@ class LoanDetailScreen extends ConsumerWidget {
                   ? InfoTone.danger
                   : InfoTone.success,
               title: loan.status == LoanStatus.rejected
-                  ? 'Alasan dari admin'
-                  : 'Catatan admin',
+                  ? l10n.labelRejected
+                  : l10n.labelApproved,
               message: loan.decisionNote!,
             ),
           ],
@@ -241,14 +247,14 @@ class LoanDetailScreen extends ConsumerWidget {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Kirim pesan',
+                    tooltip: l10n.navMessages,
                     onPressed: support == null
                         ? null
                         : () => context.push(Paths.thread(support.id)),
                     icon: const Icon(Icons.chat_bubble_outline_rounded),
                   ),
                   IconButton(
-                    tooltip: 'Profil anggota',
+                    tooltip: l10n.navProfile,
                     onPressed: () => context.push(Paths.adminMember(member.id)),
                     icon: const Icon(Icons.person_search_outlined),
                   ),
@@ -259,7 +265,7 @@ class LoanDetailScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.lg),
           SectionCard(
             title:
-                'Skor saat mengajukan: ${loan.scoreSnapshot} (${loan.scoreBand})',
+                '${l10n.homeSkorKredit}: ${loan.scoreSnapshot} (${loan.scoreBand})',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -283,7 +289,7 @@ class LoanDetailScreen extends ConsumerWidget {
                 if (currentScore != null &&
                     currentScore.score != loan.scoreSnapshot)
                   Text(
-                    'Skor anggota sekarang: ${currentScore.score} (${currentScore.band.label}).',
+                    '${l10n.homeSkorKredit}: ${currentScore.score} (${currentScore.band.localizedLabel(l10n)}).',
                     style: text.bodySmall,
                   ),
               ],
@@ -292,7 +298,7 @@ class LoanDetailScreen extends ConsumerWidget {
           if (installments.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
             SectionCard(
-              title: 'Cicilan',
+              title: l10n.isEn ? 'Installments' : 'Cicilan',
               trailing: Text(
                 '${formatRupiah(paid)} / ${formatRupiah(loan.totalRepaymentIdr)}',
                 style: text.labelMedium,
@@ -327,8 +333,8 @@ class LoanDetailScreen extends ConsumerWidget {
                                 ),
                                 Text(
                                   i.isPaid
-                                      ? 'Dibayar ${formatShortDate(i.paidAt!)}'
-                                      : 'Jatuh tempo ${formatShortDate(i.dueDate)} ${i.dueDate.year}',
+                                      ? '${l10n.labelCompleted} ${formatShortDate(i.paidAt!, l10n: l10n)}'
+                                      : '${l10n.labelDate} ${formatShortDate(i.dueDate, l10n: l10n)} ${i.dueDate.year}',
                                   style: text.bodySmall,
                                 ),
                               ],
@@ -336,7 +342,9 @@ class LoanDetailScreen extends ConsumerWidget {
                           ),
                           if (i.isPaid)
                             StatusPill(
-                              label: i.paidOnTime ? 'Lunas' : 'Lunas terlambat',
+                              label: i.paidOnTime
+                                  ? l10n.labelCompleted
+                                  : l10n.labelPending,
                               tone: i.paidOnTime
                                   ? PillTone.success
                                   : PillTone.warning,
@@ -347,23 +355,23 @@ class LoanDetailScreen extends ConsumerWidget {
                               onPressed: () async {
                                 final ok = await confirmDialog(
                                   context,
-                                  title: 'Cicilan ke-${i.seq} diterima?',
-                                  message:
-                                      'Catat hanya jika ${formatRupiah(i.amountIdr)} sudah '
-                                      'diterima koperasi.',
-                                  confirmLabel: 'Catat diterima',
+                                  title: '${l10n.loanInstallments} #${i.seq}',
+                                  message: formatRupiah(i.amountIdr),
+                                  confirmLabel: l10n.actionConfirm,
                                 );
                                 if (!ok || !context.mounted) return;
                                 await act(
                                   () => actions.markInstallmentPaid(i.id),
-                                  'Cicilan dicatat.',
+                                  'Installment recorded.',
                                 );
                               },
-                              child: const Text('Terima'),
+                              child: Text(l10n.actionConfirm),
                             )
                           else
                             StatusPill(
-                              label: i.isOverdue(now) ? 'Terlambat' : 'Belum',
+                              label: i.isOverdue(now)
+                                  ? l10n.homeLoanOverdue
+                                  : l10n.labelPending,
                               tone: i.isOverdue(now)
                                   ? PillTone.danger
                                   : PillTone.neutral,
@@ -377,18 +385,18 @@ class LoanDetailScreen extends ConsumerWidget {
           ],
           const SizedBox(height: AppSpacing.lg),
           SectionCard(
-            title: 'Riwayat',
+            title: l10n.arisanHistory,
             child: Column(
               children: [
                 for (int i = 0; i < events.length; i++)
                   TimelineItem(
-                    title: loanEventLabel(events[i].type),
+                    title: localizedLoanEventLabel(events[i].type, l10n),
                     subtitle: [
                       if (events[i].actorId != null)
                         data.nameOf(events[i].actorId),
                       if (events[i].note != null) events[i].note!,
                     ].join(' · '),
-                    time: formatDateTime(events[i].createdAt),
+                    time: formatDateTime(events[i].createdAt, l10n: l10n),
                     tone:
                         events[i].type == 'rejected' ||
                             events[i].type == 'cancelled'
@@ -418,21 +426,22 @@ class LoanDetailScreen extends ConsumerWidget {
     BuildContext context,
     AppActions actions,
     LoanApplication loan,
+    AppLocalizations l10n,
   ) => SecondaryButton(
-    label: 'Tolak',
+    label: l10n.labelRejected,
     onPressed: () async {
       final reason = await promptText(
         context,
-        title: 'Tolak pengajuan?',
-        label: 'Alasan (akan dibaca anggota)',
-        confirmLabel: 'Tolak',
+        title: l10n.labelRejected,
+        label: l10n.labelNote,
+        confirmLabel: l10n.labelRejected,
         destructive: true,
       );
       if (reason == null || !context.mounted) return;
       await runAction(
         context,
         () => actions.rejectLoan(loan.id, reason),
-        success: 'Pengajuan ditolak.',
+        success: 'Loan rejected.',
       );
     },
   );

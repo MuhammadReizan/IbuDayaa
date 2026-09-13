@@ -40,6 +40,7 @@ import '../features/messages/thread_screen.dart';
 import '../features/profile/about_screen.dart';
 import '../features/profile/change_pin_screen.dart';
 import '../features/profile/edit_profile_screen.dart';
+import '../features/profile/language_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/shell/shells.dart';
 import '../features/solar/booking_screen.dart';
@@ -175,6 +176,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       _page(Paths.profileEdit, (_) => const EditProfileScreen()),
       _page(Paths.changePin, (_) => const ChangePinScreen()),
       _page(Paths.about, (_) => const AboutScreen()),
+      _page(Paths.language, (_) => const LanguageScreen()),
 
       // -- Admin -------------------------------------------------------------
       StatefulShellRoute.indexedStack(

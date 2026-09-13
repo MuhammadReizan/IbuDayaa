@@ -6,6 +6,7 @@ import '../../core/db/row.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/models/models.dart';
 import '../../core/state/actions.dart';
 import '../../core/state/app_state.dart';
@@ -72,10 +73,11 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
     final data = s.data;
     final thread = data.thread(widget.threadId);
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     if (thread == null) {
       return AppScaffold(
-        title: 'Pesan',
+        title: l10n.scaffoldMessages,
         onBack: () => context.pop(),
         scrollable: false,
         body: const EmptyState(title: 'Percakapan tidak ditemukan'),

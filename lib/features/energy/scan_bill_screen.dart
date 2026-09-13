@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/logic/bill_parser.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
@@ -61,12 +62,13 @@ class _ScanBillScreenState extends ConsumerState<ScanBillScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return CaptureView(
-      title: 'Scan Tagihan',
-      hint: 'Letakkan tagihan atau struk token PLN di dalam bingkai',
+      title: l10n.scanTitle,
+      hint: l10n.scanInstruction,
       frameAspect: 0.72,
       busy: _reading,
-      busyLabel: 'Membaca angka di tagihan…',
+      busyLabel: l10n.scanScanning,
       onCaptured: _process,
       tips: const [
         'Tempat terang, tanpa bayangan',
@@ -75,9 +77,9 @@ class _ScanBillScreenState extends ConsumerState<ScanBillScreen> {
       ],
       secondaryAction: TextButton(
         onPressed: () => context.pushReplacement(Paths.energyAdd),
-        child: const Text(
-          'Isi manual tanpa foto',
-          style: TextStyle(color: Colors.white),
+        child: Text(
+          l10n.energyAddManual,
+          style: const TextStyle(color: Colors.white),
         ),
       ),
     );

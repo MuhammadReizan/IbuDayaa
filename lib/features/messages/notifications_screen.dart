@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/state/actions.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
@@ -22,9 +23,10 @@ class NotificationsScreen extends ConsumerWidget {
     final items = s.data.notificationsOf(me.id);
     final unread = s.data.unreadNotificationsOf(me.id);
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     return AppScaffold(
-      title: 'Notifikasi',
+      title: l10n.notificationsTitle,
       onBack: () => context.pop(),
       scrollable: items.isNotEmpty,
       actions: [
@@ -34,15 +36,14 @@ class NotificationsScreen extends ConsumerWidget {
               context,
               ref.read(actionsProvider).markAllNotificationsRead,
             ),
-            child: const Text('Baca semua'),
+            child: Text(l10n.notificationsReadAll),
           ),
       ],
       body: items.isEmpty
-          ? const EmptyState(
+          ? EmptyState(
               motif: BrandArtMotif.inbox,
-              title: 'Belum ada notifikasi',
-              message:
-                  'Kabar pengajuan, setoran, dan kuota akan muncul di sini.',
+              title: l10n.notificationsEmpty,
+              message: l10n.notificationsEmptyMessage,
             )
           : Column(
               children: [
@@ -87,7 +88,11 @@ class NotificationsScreen extends ConsumerWidget {
                                   Text(n.body, style: text.bodySmall),
                                   const SizedBox(height: AppSpacing.xs),
                                   Text(
-                                    relativeTimeLabel(n.createdAt, now),
+                                    relativeTimeLabel(
+                                      n.createdAt,
+                                      now,
+                                      l10n: l10n,
+                                    ),
                                     style: text.labelSmall,
                                   ),
                                 ],

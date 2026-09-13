@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 
 import '../db/row.dart';
 
+import '../l10n/l10n.dart';
+
 enum LoanStatus {
   submitted,
   inReview,
@@ -34,6 +36,16 @@ enum LoanStatus {
     disbursed => 'Dana dicairkan',
     repaid => 'Lunas',
     cancelled => 'Dibatalkan',
+  };
+
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+    submitted => l10n.loanStatusSubmitted,
+    inReview => l10n.loanStatusInReview,
+    approved => l10n.loanStatusApproved,
+    rejected => l10n.loanStatusRejected,
+    disbursed => l10n.loanStatusDisbursed,
+    repaid => l10n.loanStatusRepaid,
+    cancelled => l10n.loanStatusCancelled,
   };
 
   /// Still open — a member may hold only one at a time.
@@ -71,6 +83,13 @@ enum LoanPurpose {
     equipment => 'Alat produksi',
     renovation => 'Renovasi tempat usaha',
     other => 'Lainnya',
+  };
+
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+    rawMaterial => l10n.loanPurposeRawMaterial,
+    equipment => l10n.loanPurposeEquipment,
+    renovation => l10n.loanPurposeRenovation,
+    other => l10n.loanPurposeOther,
   };
 }
 

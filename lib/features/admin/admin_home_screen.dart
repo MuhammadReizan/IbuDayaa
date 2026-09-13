@@ -8,6 +8,7 @@ import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/typography.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/logic/hub_capacity.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
@@ -27,6 +28,7 @@ class AdminHomeScreen extends ConsumerWidget {
     final coop = data.cooperative;
     final now = ref.read(clockProvider)();
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     final members = data.memberProfiles;
     final waitingLoans = data.loansAwaitingAdmin;
@@ -70,7 +72,10 @@ class AdminHomeScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Dasbor Admin', style: text.bodySmall),
+                        Text(
+                          l10n.scaffoldAdminDashboard,
+                          style: text.bodySmall,
+                        ),
                         Text(
                           coop?.name ?? '-',
                           style: text.titleLarge,
@@ -81,7 +86,7 @@ class AdminHomeScreen extends ConsumerWidget {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Pesan',
+                    tooltip: l10n.navMessages,
                     onPressed: () => context.push(Paths.adminMessages),
                     icon: Badge(
                       isLabelVisible: unreadMsg > 0,
@@ -91,7 +96,7 @@ class AdminHomeScreen extends ConsumerWidget {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Notifikasi',
+                    tooltip: l10n.scaffoldNotifications,
                     onPressed: () => context.push(Paths.notifications),
                     icon: Badge(
                       isLabelVisible: unreadNotif > 0,
@@ -116,14 +121,14 @@ class AdminHomeScreen extends ConsumerWidget {
                       _Stat(
                         width: w,
                         icon: Icons.groups_rounded,
-                        label: 'Anggota',
+                        label: l10n.navMembers,
                         value: '${members.length}',
                         onTap: () => context.go(Paths.adminMembers),
                       ),
                       _Stat(
                         width: w,
                         icon: Icons.request_page_rounded,
-                        label: 'Pengajuan menunggu',
+                        label: l10n.labelPending,
                         value: '${waitingLoans.length}',
                         alert: waitingLoans.isNotEmpty,
                         onTap: () => context.go(Paths.adminLoans),
@@ -131,7 +136,7 @@ class AdminHomeScreen extends ConsumerWidget {
                       _Stat(
                         width: w,
                         icon: Icons.payments_rounded,
-                        label: 'Setoran menunggu',
+                        label: l10n.labelPending,
                         value: '${pendingPayments.length}',
                         alert: pendingPayments.isNotEmpty,
                         onTap: () => context.push(Paths.adminPayments),
@@ -139,7 +144,7 @@ class AdminHomeScreen extends ConsumerWidget {
                       _Stat(
                         width: w,
                         icon: Icons.account_balance_rounded,
-                        label: 'Sisa pinjaman berjalan',
+                        label: l10n.loanInstallments,
                         value: formatRupiah(outstanding),
                         small: true,
                         onTap: () => context.go(Paths.adminLoans),
@@ -152,21 +157,19 @@ class AdminHomeScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.md),
                 InfoBanner(
                   tone: InfoTone.danger,
-                  message:
-                      '$overdue cicilan sudah lewat jatuh tempo. Cek di Pengajuan → Berjalan.',
+                  message: '$overdue ${l10n.homeLoanOverdue}.',
                 ),
               ],
               const SizedBox(height: AppSpacing.xl),
               if (hub == null || !hub.isConfigured || data.groups.isEmpty) ...[
-                const SectionHeader(title: 'Siapkan koperasi'),
+                SectionHeader(title: l10n.adminDashTitle),
                 if (hub == null || !hub.isConfigured) ...[
                   TintedRow(
                     filled: true,
                     tone: PillTone.warning,
                     icon: Icons.solar_power_rounded,
-                    title: 'Atur kapasitas Solar Hub',
-                    subtitle:
-                        'Anggota belum bisa booking sebelum kapasitas diisi.',
+                    title: l10n.adminHubTitle,
+                    subtitle: l10n.solarNoHubMessage,
                     onTap: () => context.push(Paths.adminHub),
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -176,10 +179,10 @@ class AdminHomeScreen extends ConsumerWidget {
                     filled: true,
                     tone: PillTone.info,
                     icon: Icons.groups_rounded,
-                    title: 'Buat grup arisan',
+                    title: l10n.adminArisanNewGroup,
                     subtitle: members.length < 2
-                        ? 'Butuh minimal 2 anggota. Bagikan kode koperasi dulu.'
-                        : 'Masukkan anggota dan urutan gilirannya.',
+                        ? l10n.arisanNotJoinedMsg
+                        : l10n.arisanGroupName,
                     onTap: () => context.push(Paths.adminArisanNew),
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -200,9 +203,12 @@ class AdminHomeScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Solar Hub hari ini', style: text.bodySmall),
                             Text(
-                              '${formatKwh(today.bookedKwh)} dipesan dari ${formatKwh(today.capacityKwh)}',
+                              l10n.solarCapacityToday,
+                              style: text.bodySmall,
+                            ),
+                            Text(
+                              '${formatKwh(today.bookedKwh)} / ${formatKwh(today.capacityKwh)}',
                               style: text.titleSmall,
                             ),
                             const SizedBox(height: AppSpacing.xs),
@@ -222,15 +228,12 @@ class AdminHomeScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.xl),
               ],
               SectionHeader(
-                title: 'Pengajuan perlu ditinjau',
-                actionLabel: waitingLoans.isEmpty ? null : 'Semua',
+                title: l10n.labelPending,
+                actionLabel: waitingLoans.isEmpty ? null : l10n.actionViewAll,
                 onAction: () => context.go(Paths.adminLoans),
               ),
               if (waitingLoans.isEmpty)
-                Text(
-                  'Tidak ada pengajuan yang menunggu.',
-                  style: text.bodyMedium,
-                )
+                Text(l10n.adminLoansEmptyMessage, style: text.bodyMedium)
               else
                 for (final l in waitingLoans.take(3)) ...[
                   AdminLoanRow(loan: l, name: data.nameOf(l.userId)),
@@ -238,12 +241,14 @@ class AdminHomeScreen extends ConsumerWidget {
                 ],
               const SizedBox(height: AppSpacing.xl),
               SectionHeader(
-                title: 'Setoran arisan menunggu',
-                actionLabel: pendingPayments.isEmpty ? null : 'Semua',
+                title: l10n.adminPaymentsTitle,
+                actionLabel: pendingPayments.isEmpty
+                    ? null
+                    : l10n.actionViewAll,
                 onAction: () => context.push(Paths.adminPayments),
               ),
               if (pendingPayments.isEmpty)
-                Text('Semua setoran sudah diproses.', style: text.bodyMedium)
+                Text(l10n.adminPaymentsEmpty, style: text.bodyMedium)
               else
                 for (final p in pendingPayments.take(3)) ...[
                   TintedRow(
@@ -252,7 +257,7 @@ class AdminHomeScreen extends ConsumerWidget {
                     title:
                         '${data.nameOf(p.userId)} · ${formatRupiah(p.amountIdr)}',
                     subtitle:
-                        '${data.group(p.groupId)?.name ?? ''} · ${monthYearLabel(p.periodMonth)}',
+                        '${data.group(p.groupId)?.name ?? ''} · ${monthYearLabel(p.periodMonth, l10n: l10n)}',
                     onTap: () => context.push(Paths.adminPayments),
                   ),
                   const SizedBox(height: AppSpacing.sm),

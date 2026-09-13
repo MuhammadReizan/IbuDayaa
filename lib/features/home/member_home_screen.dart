@@ -7,6 +7,7 @@ import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/typography.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/logic/energy_insights.dart';
 import '../../core/logic/loan_math.dart';
 import '../../core/models/models.dart';
@@ -29,8 +30,9 @@ class MemberHomeScreen extends ConsumerWidget {
     final now = ref.read(clockProvider)();
     final text = Theme.of(context).textTheme;
 
+    final l10n = AppLocalizations.of(context);
     final insight = data.insightOf(me.id);
-    final observations = data.observationsOf(me.id, now);
+    final observations = data.observationsOf(me.id, now, l10n);
     final impact = data.impactOf(me.id, now);
     final unread = data.unreadNotificationsOf(me.id);
 
@@ -55,7 +57,7 @@ class MemberHomeScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Halo, ${me.greetingName}',
+                          '${l10n.homeHelloPrefix}, ${me.greetingName}',
                           style: text.titleLarge,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -70,7 +72,7 @@ class MemberHomeScreen extends ConsumerWidget {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Notifikasi',
+                    tooltip: l10n.scaffoldNotifications,
                     onPressed: () => context.push(Paths.notifications),
                     icon: Badge(
                       isLabelVisible: unread > 0,
@@ -87,7 +89,7 @@ class MemberHomeScreen extends ConsumerWidget {
               _QuickActions(pendingQuota: _pendingQuotaFor(data, me.id)),
               const SizedBox(height: AppSpacing.xl),
               if (observations.isNotEmpty) ...[
-                const SectionHeader(title: 'Status Penggunaan Daya'),
+                SectionHeader(title: l10n.homeStatusHeader),
                 for (final o in observations.take(4)) ...[
                   TintedRow(
                     filled: true,
@@ -154,6 +156,7 @@ class _BillHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final i = insight;
     final change = i?.changePct;
 
@@ -169,8 +172,10 @@ class _BillHero extends StatelessWidget {
                   Expanded(
                     child: Text(
                       i == null
-                          ? 'Tagihan listrik'
-                          : 'Listrik ${monthYearLabel(i.latest.month)}',
+                          ? l10n.homeBillLabel
+                          : l10n.billMonthLabel(
+                              monthYearLabel(i.latest.month, l10n: l10n),
+                            ),
                       style: text.labelLarge?.copyWith(
                         color: AppColors.textOnDarkDim,
                       ),
@@ -198,7 +203,7 @@ class _BillHero extends StatelessWidget {
                           ),
                           const SizedBox(width: 2),
                           Text(
-                            '${change.abs().round()}% dari bulan lalu',
+                            '${change.abs().round()}% ${l10n.homeChangePctSuffix}',
                             style: text.labelSmall?.copyWith(
                               color: Colors.white,
                             ),
@@ -216,15 +221,14 @@ class _BillHero extends StatelessWidget {
                   children: [
                     if (i == null) ...[
                       Text(
-                        'Belum ada catatan',
+                        l10n.homeBillNoData,
                         style: text.headlineSmall?.copyWith(
                           color: Colors.white,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        'Foto tagihan atau struk token PLN Anda. Angkanya dibaca '
-                        'otomatis, lalu Anda periksa.',
+                        l10n.homeBillNoDataHint,
                         style: text.bodySmall?.copyWith(
                           color: AppColors.textOnDarkDim,
                         ),
@@ -241,7 +245,7 @@ class _BillHero extends StatelessWidget {
                       const SizedBox(height: AppSpacing.xs),
                       Text(
                         '${formatKwh(i.latest.kwh)}'
-                        '${i.latest.fromTokens ? ' · dari ${i.latest.recordCount} token' : ''}',
+                        '${i.latest.fromTokens ? ' · ${l10n.homeFromTokens(i.latest.recordCount)}' : ''}',
                         style: text.bodyMedium?.copyWith(
                           color: AppColors.textOnDarkDim,
                         ),
@@ -250,7 +254,7 @@ class _BillHero extends StatelessWidget {
                     const SizedBox(height: AppSpacing.md),
                     _HeroButton(
                       icon: Icons.insights_rounded,
-                      label: 'Analisis',
+                      label: l10n.homeAnalysis,
                       onTap: () => context.push(
                         i == null ? Paths.energy : Paths.energyAnalysis,
                       ),
@@ -336,66 +340,67 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = [
-      (
-        Icons.solar_power_rounded,
-        'Booking Hub',
-        Paths.booking,
-        AppColors.secondaryDark,
-        AppColors.secondaryContainer,
-        0,
-      ),
-      (
-        Icons.groups_rounded,
-        'Arisan Energi',
-        Paths.arisan,
-        AppColors.primary,
-        AppColors.primaryContainer,
-        0,
-      ),
-      (
-        Icons.swap_horiz_rounded,
-        'Tukar Kuota',
-        Paths.quota,
-        AppColors.primary,
-        AppColors.primaryContainer,
-        pendingQuota,
-      ),
-      (
-        Icons.speed_rounded,
-        'Skor Kredit',
-        Paths.score,
-        AppColors.info,
-        AppColors.infoContainer,
-        0,
-      ),
-      (
-        Icons.account_balance_wallet_rounded,
-        'Pembiayaan',
-        Paths.loans,
-        AppColors.secondaryDark,
-        AppColors.secondaryContainer,
-        0,
-      ),
-      (
-        Icons.receipt_long_rounded,
-        'Catatan Listrik',
-        Paths.energy,
-        AppColors.primary,
-        AppColors.primaryContainer,
-        0,
-      ),
-      (
-        Icons.kitchen_rounded,
-        'Alat Usaha',
-        Paths.appliances,
-        AppColors.info,
-        AppColors.infoContainer,
-        0,
-      ),
-    ];
     return LayoutBuilder(
       builder: (context, c) {
+        final l10n = AppLocalizations.of(context);
+        final items = [
+          (
+            Icons.solar_power_rounded,
+            l10n.homeBookingHub,
+            Paths.booking,
+            AppColors.secondaryDark,
+            AppColors.secondaryContainer,
+            0,
+          ),
+          (
+            Icons.groups_rounded,
+            l10n.homeArisanEnergi,
+            Paths.arisan,
+            AppColors.primary,
+            AppColors.primaryContainer,
+            0,
+          ),
+          (
+            Icons.swap_horiz_rounded,
+            l10n.homeTukarKuota,
+            Paths.quota,
+            AppColors.primary,
+            AppColors.primaryContainer,
+            pendingQuota,
+          ),
+          (
+            Icons.speed_rounded,
+            l10n.homeSkorKredit,
+            Paths.score,
+            AppColors.info,
+            AppColors.infoContainer,
+            0,
+          ),
+          (
+            Icons.account_balance_wallet_rounded,
+            l10n.homePembiayaan,
+            Paths.loans,
+            AppColors.secondaryDark,
+            AppColors.secondaryContainer,
+            0,
+          ),
+          (
+            Icons.receipt_long_rounded,
+            l10n.homeCatatanListrik,
+            Paths.energy,
+            AppColors.primary,
+            AppColors.primaryContainer,
+            0,
+          ),
+          (
+            Icons.kitchen_rounded,
+            l10n.homeAlatUsaha,
+            Paths.appliances,
+            AppColors.info,
+            AppColors.infoContainer,
+            0,
+          ),
+        ];
         final cols = c.maxWidth < 340 ? 3 : 4;
         final w = c.maxWidth / cols;
         return Wrap(
@@ -430,6 +435,7 @@ class _ScoreTeaser extends ConsumerWidget {
     final data = ref.watch(appStateProvider).data;
     final now = ref.read(clockProvider)();
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final readiness = data.readinessOf(me.id, now);
     final score = data.scoreOf(
       me.id,
@@ -449,11 +455,10 @@ class _ScoreTeaser extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Skor Kredit Energi', style: text.titleMedium),
+                  Text(l10n.homeScoreTitle, style: text.titleMedium),
                   const SizedBox(height: 2),
                   Text(
-                    'Catat ${readiness.monthsStillNeeded} bulan lagi agar skor '
-                    'bisa dihitung.',
+                    l10n.homeScoreMonthsNeeded(readiness.monthsStillNeeded),
                     style: text.bodySmall,
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -487,15 +492,17 @@ class _ScoreTeaser extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Skor Kredit Energi', style: text.bodySmall),
-                Text(score.band.label, style: text.titleLarge),
+                Text(l10n.homeScoreTitle, style: text.bodySmall),
+                Text(score.band.localizedLabel(l10n), style: text.titleLarge),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   eligibility == null
                       ? ''
                       : eligibility.canApply
-                      ? 'Bisa ajukan hingga ${formatRupiah(eligibility.ceilingIdr)}'
-                      : eligibility.message,
+                      ? l10n.homeLoanCanApply(
+                          formatRupiah(eligibility.ceilingIdr),
+                        )
+                      : eligibility.localizedMessage(l10n),
                   style: text.bodySmall,
                 ),
               ],
@@ -523,6 +530,7 @@ class _LoanTeaser extends ConsumerWidget {
     final loan = data.activeLoanOf(me.id);
     if (loan == null) return const SizedBox.shrink();
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final next = data
         .installmentsOf(loan.id)
         .where((i) => !i.isPaid)
@@ -542,22 +550,27 @@ class _LoanTeaser extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Pinjaman ${formatRupiah(loan.amountIdr)}',
+                  '${l10n.homePembiayaan} ${formatRupiah(loan.amountIdr)}',
                   style: text.titleSmall,
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 if (next != null)
                   Text(
-                    'Cicilan ke-${next.seq} ${formatRupiah(next.amountIdr)} · '
-                    '${next.isOverdue(now) ? 'lewat jatuh tempo' : 'jatuh tempo'} '
-                    '${formatShortDate(next.dueDate)}',
+                    l10n.homeLoanInstallment(
+                          next.seq,
+                          formatRupiah(next.amountIdr),
+                          formatShortDate(next.dueDate, l10n: l10n),
+                        ) +
+                        (next.isOverdue(now)
+                            ? ' · ${l10n.homeLoanOverdue}'
+                            : ' · ${l10n.homeLoanDue}'),
                     style: text.bodySmall?.copyWith(
                       color: next.isOverdue(now) ? AppColors.dangerText : null,
                     ),
                   )
                 else
                   StatusPill(
-                    label: loan.status.label,
+                    label: loan.status.localizedLabel(l10n),
                     tone: loanTone(loan.status),
                   ),
               ],
@@ -583,7 +596,7 @@ class _ImpactCard extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return SectionCard(
       tone: CardTone.mint,
-      title: 'Dampak Solar Hub Anda',
+      title: AppLocalizations.of(context).homeImpactTitle,
       leadingIcon: Icons.eco_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -592,21 +605,21 @@ class _ImpactCard extends StatelessWidget {
             children: [
               Expanded(
                 child: StatTile(
-                  label: 'Hemat bulan ini',
+                  label: AppLocalizations.of(context).homeImpactThisMonth,
                   value: formatRupiah(impact.thisMonthSavingIdr),
                   valueSize: 18,
                 ),
               ),
               Expanded(
                 child: StatTile(
-                  label: 'Energi surya',
+                  label: AppLocalizations.of(context).homeImpactSolarEnergy,
                   value: formatKwh(impact.solarKwh),
                   valueSize: 18,
                 ),
               ),
               Expanded(
                 child: StatTile(
-                  label: 'CO₂ dihindari',
+                  label: AppLocalizations.of(context).homeImpactCo2,
                   value: '${impact.co2AvoidedKg.round()} kg',
                   valueSize: 18,
                   qualifier: QualifierKind.estimasi,
@@ -616,8 +629,7 @@ class _ImpactCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            'CO₂ memakai asumsi 0,87 kg per kWh listrik PLN. Hemat dihitung '
-            'dari energi hub yang sudah Anda tandai terpakai × tarif Anda.',
+            AppLocalizations.of(context).homeImpactCo2Note,
             style: text.bodySmall,
           ),
         ],

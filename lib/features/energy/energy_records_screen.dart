@@ -8,7 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
-import '../../core/logic/credit_signals.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/logic/energy_insights.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
@@ -27,17 +27,17 @@ class EnergyRecordsScreen extends ConsumerWidget {
     if (me == null) return const Scaffold();
     final records = s.data.recordsOf(me.id);
     final months = monthlyUsage(records);
-    final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     return AppScaffold(
-      title: 'Catatan Listrik',
+      title: l10n.scaffoldEnergy,
       onBack: () => context.pop(),
       scrollable: records.isNotEmpty,
       bottomBar: Row(
         children: [
           Expanded(
             child: SecondaryButton(
-              label: 'Isi manual',
+              label: l10n.energyAddManual,
               icon: Icons.edit_rounded,
               onPressed: () => context.push(Paths.energyAdd),
             ),
@@ -45,7 +45,7 @@ class EnergyRecordsScreen extends ConsumerWidget {
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: PrimaryButton(
-              label: 'Scan',
+              label: l10n.actionScan,
               icon: Icons.document_scanner_rounded,
               onPressed: () => context.push(Paths.scan),
             ),
@@ -53,22 +53,19 @@ class EnergyRecordsScreen extends ConsumerWidget {
         ],
       ),
       body: records.isEmpty
-          ? const EmptyState(
+          ? EmptyState(
               motif: BrandArtMotif.scan,
-              title: 'Belum ada catatan listrik',
-              message:
-                  'Scan tagihan atau struk token PLN. Catat minimal '
-                  '$kMinMonthsForScore bulan agar analisis dan Skor Kredit '
-                  'Energi bisa dihitung.',
+              title: l10n.energyEmpty,
+              message: l10n.energyEmptyMessage,
             )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SectionCard(
-                  title: 'Pemakaian per bulan',
+                  title: l10n.homeCatatanListrik,
                   trailing: TextButton(
                     onPressed: () => context.push(Paths.energyAnalysis),
-                    child: const Text('Analisis'),
+                    child: Text(l10n.homeAnalysis),
                   ),
                   child: UsageBars(months: months),
                 ),
@@ -77,12 +74,6 @@ class EnergyRecordsScreen extends ConsumerWidget {
                   _RecordTile(record: r),
                   const SizedBox(height: AppSpacing.sm),
                 ],
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Tahan lama sebuah catatan untuk menghapusnya.',
-                  style: text.bodySmall,
-                  textAlign: TextAlign.center,
-                ),
               ],
             ),
     );

@@ -6,6 +6,7 @@ import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/typography.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/logic/loan_math.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
@@ -50,40 +51,42 @@ class _LoanApplyScreenState extends ConsumerState<LoanApplyScreen> {
     final coop = data.cooperative;
     final now = ref.read(clockProvider)();
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     final done = _done;
     if (done != null) {
       return SuccessPanel(
-        title: 'Pengajuan terkirim',
-        message:
-            'Admin ${coop?.name ?? 'koperasi'} akan meninjau pengajuan Anda. '
-            'Kabar berikutnya muncul di notifikasi dan Pesan.',
-        primaryLabel: 'Lihat status pengajuan',
+        title: l10n.loanApplySuccess,
+        message: l10n.loanApplySuccess,
+        primaryLabel: l10n.scaffoldLoanDetail,
         onPrimary: () => context.pushReplacement(Paths.loan(done.id)),
-        secondaryLabel: 'Kembali ke beranda',
+        secondaryLabel: l10n.navHome,
         onSecondary: () => context.go(Paths.memberHome),
         child: SectionCard(
           child: Column(
             children: [
               KeyValueRow(
-                label: 'Nominal',
+                label: l10n.loanAmount,
                 value: formatRupiah(done.amountIdr),
                 emphasize: true,
               ),
-              KeyValueRow(label: 'Tenor', value: '${done.tenorMonths} bulan'),
               KeyValueRow(
-                label: 'Cicilan per bulan',
+                label: l10n.loanApplyTenor,
+                value: '${done.tenorMonths} bulan',
+              ),
+              KeyValueRow(
+                label: l10n.loanInstallments,
                 value: formatRupiah(done.monthlyInstallmentIdr),
               ),
               const Divider(height: AppSpacing.xl),
-              const TimelineItem(title: 'Pengajuan dikirim', done: true),
-              const TimelineItem(
-                title: 'Review admin',
+              TimelineItem(title: l10n.loanStatusSubmitted, done: true),
+              TimelineItem(
+                title: l10n.loanStatusInReview,
                 done: false,
                 tone: PillTone.warning,
               ),
-              const TimelineItem(
-                title: 'Keputusan & pencairan',
+              TimelineItem(
+                title: l10n.loanStatusDisbursed,
                 done: false,
                 isLast: true,
               ),
@@ -111,19 +114,19 @@ class _LoanApplyScreenState extends ConsumerState<LoanApplyScreen> {
         !eligibility.canApply ||
         eligibility.ceilingIdr < _min) {
       return AppScaffold(
-        title: 'Ajukan Pembiayaan',
+        title: l10n.scaffoldLoanApply,
         onBack: () => context.pop(),
         scrollable: false,
         body: EmptyState(
           motif: BrandArtMotif.finance,
-          title: 'Belum bisa mengajukan',
+          title: l10n.loanCannotApply,
           message: eligibility == null
-              ? 'Data koperasi tidak ditemukan.'
+              ? l10n.labelError
               : eligibility.canApply
-              ? 'Plafon Anda masih di bawah minimal ${formatRupiah(_min)}.'
-              : eligibility.message,
+              ? '${l10n.loanCannotApply} ${formatRupiah(_min)}.'
+              : eligibility.localizedMessage(l10n),
           action: SecondaryButton(
-            label: 'Lihat Skor Kredit',
+            label: l10n.homeSkorKredit,
             expand: false,
             onPressed: () => context.pushReplacement(Paths.score),
           ),
@@ -145,25 +148,24 @@ class _LoanApplyScreenState extends ConsumerState<LoanApplyScreen> {
     final steps = ((ceiling - _min) / 100000).round();
 
     return AppScaffold(
-      title: 'Ajukan Pembiayaan',
+      title: l10n.scaffoldLoanApply,
       onBack: () => context.pop(),
       bottomBar: PrimaryButton(
-        label: 'Kirim pengajuan',
+        label: l10n.actionSubmit,
         loading: _busy,
-        onPressed: _agree ? () => _submit(amount, tenor, quote) : null,
+        onPressed: _agree ? () => _submit(amount, tenor, quote, l10n) : null,
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           InfoBanner(
             tone: InfoTone.success,
-            title: 'Skor Anda mendukung pengajuan ini',
+            title: l10n.loanApplyConfirm,
             message:
-                'Skor ${score!.score} (${score.band.label}) · plafon hingga '
-                '${formatRupiah(ceiling)} di ${coop.name}.',
+                'Skor ${score!.score} (${score.band.localizedLabel(l10n)}) · ${l10n.loanCeilingTitle(formatRupiah(ceiling))} ${coop.name}.',
           ),
           const SizedBox(height: AppSpacing.xl),
-          Text('Nominal pinjaman', style: text.titleMedium),
+          Text(l10n.loanApplyAmount, style: text.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           Center(
             child: Text(formatRupiah(amount), style: AppTypography.numeric(32)),
@@ -186,7 +188,7 @@ class _LoanApplyScreenState extends ConsumerState<LoanApplyScreen> {
             ],
           ),
           const SizedBox(height: AppSpacing.xl),
-          Text('Lama cicilan', style: text.titleMedium),
+          Text(l10n.loanApplyTenor, style: text.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           Wrap(
             spacing: AppSpacing.sm,
@@ -200,11 +202,11 @@ class _LoanApplyScreenState extends ConsumerState<LoanApplyScreen> {
             ],
           ),
           const SizedBox(height: AppSpacing.xl),
-          Text('Untuk keperluan', style: text.titleMedium),
+          Text(l10n.loanApplyPurpose, style: text.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           for (final p in LoanPurpose.values) ...[
             SelectableTile(
-              label: p.label,
+              label: p.localizedLabel(l10n),
               icon: switch (p) {
                 LoanPurpose.rawMaterial => Icons.inventory_2_rounded,
                 LoanPurpose.equipment => Icons.precision_manufacturing_rounded,
@@ -218,20 +220,19 @@ class _LoanApplyScreenState extends ConsumerState<LoanApplyScreen> {
           ],
           const SizedBox(height: AppSpacing.md),
           AppTextField(
-            label: 'Keterangan untuk admin (boleh kosong)',
+            label: '${l10n.labelNote} (${l10n.labelOptional})',
             controller: _note,
             maxLines: 3,
             textCapitalization: TextCapitalization.sentences,
-            hint: 'Contoh: Beli oven kedua untuk pesanan katering.',
           ),
           const SizedBox(height: AppSpacing.xl),
           SectionCard(
             tone: CardTone.mint,
-            title: 'Rincian',
+            title: l10n.loanAmount,
             child: Column(
               children: [
                 KeyValueRow(
-                  label: 'Pokok pinjaman',
+                  label: l10n.loanAmount,
                   value: formatRupiah(quote.principalIdr),
                 ),
                 KeyValueRow(
@@ -240,12 +241,12 @@ class _LoanApplyScreenState extends ConsumerState<LoanApplyScreen> {
                   value: formatRupiah(quote.totalInterestIdr),
                 ),
                 KeyValueRow(
-                  label: 'Total dikembalikan',
+                  label: l10n.labelTotal,
                   value: formatRupiah(quote.totalRepaymentIdr),
                 ),
                 const Divider(height: AppSpacing.lg),
                 KeyValueRow(
-                  label: 'Cicilan per bulan',
+                  label: l10n.loanInstallments,
                   value: formatRupiah(quote.monthlyInstallmentIdr),
                   emphasize: true,
                   valueColor: AppColors.primaryDark,
@@ -255,7 +256,13 @@ class _LoanApplyScreenState extends ConsumerState<LoanApplyScreen> {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Jasa dihitung flat dari pokok, sesuai tarif yang ditetapkan koperasi.',
+            l10n.loanCoopPolicy(
+              coop.name,
+              formatRupiah(coop.loanMaxAmountIdr),
+              formatPercent(coop.loanFlatMonthlyRatePct, decimals: 1),
+              coop.loanTenors.join('/'),
+              coop.loanMinScore,
+            ),
             style: text.bodySmall,
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -267,9 +274,7 @@ class _LoanApplyScreenState extends ConsumerState<LoanApplyScreen> {
             contentPadding: EdgeInsets.zero,
             controlAffinity: ListTileControlAffinity.leading,
             title: Text(
-              'Saya paham ini pengajuan pinjaman ke koperasi dan wajib membayar '
-              'cicilan ${formatRupiah(quote.monthlyInstallmentIdr)} setiap bulan '
-              'jika disetujui.',
+              '${l10n.actionConfirm}: ${formatRupiah(quote.monthlyInstallmentIdr)} / ${l10n.loanApplyTenor}',
               style: text.bodyMedium,
             ),
           ),
@@ -278,15 +283,18 @@ class _LoanApplyScreenState extends ConsumerState<LoanApplyScreen> {
     );
   }
 
-  Future<void> _submit(int amount, int tenor, LoanQuote quote) async {
+  Future<void> _submit(
+    int amount,
+    int tenor,
+    LoanQuote quote,
+    AppLocalizations l10n,
+  ) async {
     final ok = await confirmDialog(
       context,
-      title: 'Kirim pengajuan?',
+      title: l10n.loanApplyConfirm,
       message:
-          '${formatRupiah(amount)} selama $tenor bulan, cicilan '
-          '${formatRupiah(quote.monthlyInstallmentIdr)}/bulan. Admin koperasi akan '
-          'meninjau.',
-      confirmLabel: 'Kirim',
+          '${formatRupiah(amount)} ($tenor bulan, ${formatRupiah(quote.monthlyInstallmentIdr)}/bulan)',
+      confirmLabel: l10n.actionSubmit,
     );
     if (!ok || !mounted) return;
     setState(() => _busy = true);

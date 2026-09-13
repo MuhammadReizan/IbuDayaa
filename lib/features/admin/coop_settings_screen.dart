@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/logic/loan_math.dart';
 import '../../core/state/actions.dart';
 import '../../core/state/app_state.dart';
@@ -88,9 +89,10 @@ class _CoopSettingsScreenState extends ConsumerState<CoopSettingsScreen> {
         .length;
     final text = Theme.of(context).textTheme;
     final max = parseDigits(_max.text) ?? 0;
+    final l10n = AppLocalizations.of(context);
 
     return AppScaffold(
-      title: 'Pengaturan Koperasi',
+      title: l10n.scaffoldAdminSettings,
       onBack: () => context.pop(),
       bottomBar: PrimaryButton(
         label: 'Simpan',

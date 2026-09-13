@@ -7,6 +7,7 @@ import '../../core/db/row.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/logic/hub_capacity.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
@@ -66,36 +67,35 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     final now = ref.read(clockProvider)();
     final today = dayOf(now);
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     final done = _done;
     if (done != null) {
       return SuccessPanel(
-        title: 'Booking berhasil',
-        message:
-            'Datang ke ${hub?.name ?? 'Solar Hub'} sesuai jadwal. Setelah '
-            'dipakai, tandai "Sudah dipakai" agar penghematan tercatat.',
-        primaryLabel: 'Lihat jadwal saya',
+        title: l10n.solarBookingSuccess,
+        message: 'Datang ke ${hub?.name ?? 'Solar Hub'} sesuai jadwal.',
+        primaryLabel: l10n.solarMyBookings,
         onPrimary: () => context.pushReplacement(Paths.bookings),
-        secondaryLabel: 'Kembali',
+        secondaryLabel: l10n.actionBack,
         onSecondary: () => context.pop(),
         child: SectionCard(
           child: Column(
             children: [
               KeyValueRow(
-                label: 'Tanggal',
-                value: formatShortDayDate(done.bookingDate),
+                label: l10n.labelDate,
+                value: formatShortDayDate(done.bookingDate, l10n: l10n),
               ),
               KeyValueRow(
-                label: 'Jam',
+                label: l10n.solarBookingSlot,
                 value: data.slot(done.slotId)?.label ?? '-',
               ),
-              KeyValueRow(label: 'Alat', value: done.applianceName),
               KeyValueRow(
-                label: 'Energi dipesan',
-                value: formatKwh(done.estKwh),
+                label: l10n.solarBookingAppliance,
+                value: done.applianceName,
               ),
+              KeyValueRow(label: l10n.energyKwh, value: formatKwh(done.estKwh)),
               KeyValueRow(
-                label: 'Hemat tagihan PLN',
+                label: l10n.labelEstimation,
                 value: '± ${formatRupiah(done.estKwh * me.tariffIdrPerKwh)}',
                 valueColor: AppColors.primaryDark,
               ),
@@ -107,13 +107,13 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
     if (hub == null || !hub.isConfigured) {
       return AppScaffold(
-        title: 'Booking Solar Hub',
+        title: l10n.scaffoldBooking,
         onBack: () => context.pop(),
         scrollable: false,
-        body: const EmptyState(
+        body: EmptyState(
           motif: BrandArtMotif.solar,
-          title: 'Booking belum dibuka',
-          message: 'Admin koperasi belum mengatur kapasitas Solar Hub.',
+          title: l10n.solarNoHub,
+          message: l10n.solarNoHubMessage,
         ),
       );
     }
@@ -150,12 +150,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     final estKwh = chosen == null ? 0.0 : need(chosen.slot);
 
     return AppScaffold(
-      title: 'Booking Solar Hub',
+      title: l10n.scaffoldBooking,
       onBack: () => context.pop(),
       bottomBar: PrimaryButton(
         label: chosenUsable
-            ? 'Booking ${chosen.slot.label}'
-            : 'Pilih alat dan jam',
+            ? '${l10n.solarBook} ${chosen.slot.label}'
+            : l10n.solarBookingSlot,
         loading: _busy,
         onPressed: chosenUsable && applianceName.isNotEmpty
             ? () => _book(chosen.slot, applianceName, estKwh)
@@ -164,7 +164,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('1. Pilih tanggal', style: text.titleMedium),
+          Text('1. ${l10n.solarBookingDate}', style: text.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           SizedBox(
             height: 72,
@@ -179,7 +179,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                   date: d,
                   label: i == 0
                       ? 'Hari ini'
-                      : formatShortDayDate(d).split(',').first,
+                      : formatShortDayDate(d, l10n: l10n).split(',').first,
                   selected: on,
                   onTap: () => setState(() {
                     _day = d;
@@ -190,13 +190,13 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          Text('2. Alat yang akan dipakai', style: text.titleMedium),
+          Text('2. ${l10n.solarBookingAppliance}', style: text.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           for (final a in appliances) ...[
             SelectableTile(
               icon: applianceIcon(a.kind),
               label: a.name,
-              sublabel: '${a.watts.round()} watt',
+              sublabel: '${a.watts.round()} W',
               selected: _applianceId == a.id,
               onTap: () => setState(() => _applianceId = a.id),
             ),
@@ -204,8 +204,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           ],
           SelectableTile(
             icon: Icons.add_rounded,
-            label: 'Alat lain',
-            sublabel: 'Isi nama dan dayanya',
+            label: l10n.appliancePresetLainnya,
+            sublabel: 'Custom appliance',
             selected: _applianceId == _custom,
             onTap: () => setState(() => _applianceId = _custom),
           ),
@@ -217,7 +217,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 Expanded(
                   flex: 3,
                   child: AppTextField(
-                    label: 'Nama alat',
+                    label: l10n.labelName,
                     controller: _customName,
                     textCapitalization: TextCapitalization.sentences,
                     onChanged: (_) => setState(() {}),
@@ -227,7 +227,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 Expanded(
                   flex: 2,
                   child: AppTextField(
-                    label: 'Daya',
+                    label: l10n.applianceFormWatt,
                     controller: _customWatts,
                     suffixText: 'W',
                     keyboardType: TextInputType.number,
@@ -242,27 +242,24 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             ),
           ],
           const SizedBox(height: AppSpacing.xl),
-          Text('3. Pilih jam', style: text.titleMedium),
+          Text('3. ${l10n.solarBookingSlot}', style: text.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           if (watts <= 0)
-            Text(
-              'Pilih alat dulu untuk melihat jam yang cukup.',
-              style: text.bodyMedium,
-            )
+            Text(l10n.solarBookingSlot, style: text.bodyMedium)
           else
             for (final a in slots) ...[
               SelectableTile(
                 icon: Icons.schedule_rounded,
                 label: a.slot.label,
                 sublabel: passed(a.slot)
-                    ? 'Sudah lewat'
-                    : 'Sisa ${formatKwh(a.remainingKwh)} · butuh ${formatKwh(need(a.slot))}',
+                    ? l10n.solarSlotPassed
+                    : '${l10n.solarQuotaRemaining(formatKwh(a.remainingKwh))} · ${formatKwh(need(a.slot))}',
                 selected: _slotId == a.slot.id,
                 disabled: !usable.contains(a),
                 badge: identical(a, best)
-                    ? 'Paling lega'
+                    ? l10n.solarSlotAvailable
                     : (!passed(a.slot) && !usable.contains(a)
-                          ? 'Tidak cukup'
+                          ? l10n.solarSlotFull
                           : null),
                 badgeColor: identical(a, best)
                     ? AppColors.primary
@@ -275,20 +272,20 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             const SizedBox(height: AppSpacing.lg),
             SectionCard(
               tone: CardTone.mint,
-              title: 'Ringkasan',
+              title: l10n.energyKwh,
               child: Column(
                 children: [
                   KeyValueRow(
-                    label: 'Energi dipesan',
+                    label: l10n.energyKwh,
                     value:
-                        '${formatKwh(estKwh)} (${watts.round()} W × ${chosen.slot.hours} jam)',
+                        '${formatKwh(estKwh)} (${watts.round()} W × ${chosen.slot.hours}h)',
                   ),
                   KeyValueRow(
-                    label: 'Hemat tagihan PLN',
+                    label: l10n.labelEstimation,
                     value: '± ${formatRupiah(estKwh * me.tariffIdrPerKwh)}',
                   ),
                   KeyValueRow(
-                    label: 'Sisa kuota setelah booking',
+                    label: l10n.solarQuotaThisMonth,
                     value: formatKwh(quota.availableKwh - estKwh),
                     valueColor: quota.availableKwh - estKwh < 0
                         ? AppColors.dangerText
@@ -301,9 +298,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               const SizedBox(height: AppSpacing.sm),
               InfoBanner(
                 tone: InfoTone.warning,
-                message:
-                    'Kuota Anda tidak cukup. Minta kuota ke anggota lain di '
-                    'Perdagangan Energi.',
+                message: l10n.solarQuotaThisMonth,
               ),
             ],
           ],

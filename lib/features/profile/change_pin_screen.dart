@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/design/components/components.dart';
 import '../../core/errors.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/state/actions.dart';
 import '../auth/pin_views.dart';
 
@@ -18,12 +19,12 @@ class _ChangePinScreenState extends ConsumerState<ChangePinScreen> {
   String? _current;
   bool _busy = false;
 
-  Future<void> _create(String next) async {
+  Future<void> _create(String next, AppLocalizations l10n) async {
     setState(() => _busy = true);
     try {
       await ref.read(actionsProvider).changePin(_current!, next);
       if (!mounted) return;
-      showAppSnack(context, 'PIN berhasil diganti.');
+      showAppSnack(context, l10n.changePinSuccess);
       context.pop();
     } on AppException catch (e) {
       if (!mounted) return;
@@ -37,15 +38,16 @@ class _ChangePinScreenState extends ConsumerState<ChangePinScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AppScaffold(
-      title: 'Ganti PIN',
+      title: l10n.scaffoldChangePin,
       onBack: () =>
           _current == null ? context.pop() : setState(() => _current = null),
       scrollable: false,
       body: _current == null
           ? PinEntryView(
               key: const ValueKey('current'),
-              title: 'Masukkan PIN lama',
+              title: l10n.changePinCurrentPin,
               onSubmit: (pin) async {
                 setState(() => _current = pin);
                 return null;
@@ -53,9 +55,9 @@ class _ChangePinScreenState extends ConsumerState<ChangePinScreen> {
             )
           : PinCreateView(
               key: const ValueKey('new'),
-              title: 'Buat PIN baru',
+              title: l10n.changePinNewPin,
               busy: _busy,
-              onCreated: _create,
+              onCreated: (pin) => _create(pin, l10n),
             ),
     );
   }

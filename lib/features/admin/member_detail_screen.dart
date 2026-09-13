@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/logic/energy_insights.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
@@ -26,10 +27,11 @@ class MemberDetailScreen extends ConsumerWidget {
     final m = data.profile(memberId);
     final now = ref.read(clockProvider)();
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     if (m == null) {
       return AppScaffold(
-        title: 'Anggota',
+        title: l10n.adminMembersTitle,
         onBack: () => context.pop(),
         scrollable: false,
         body: const EmptyState(title: 'Anggota tidak ditemukan'),
@@ -52,7 +54,7 @@ class MemberDetailScreen extends ConsumerWidget {
     final support = data.supportThreadOf(m.id);
 
     return AppScaffold(
-      title: 'Detail Anggota',
+      title: l10n.adminMemberDetailTitle,
       onBack: () => context.pop(),
       bottomBar: support == null
           ? null

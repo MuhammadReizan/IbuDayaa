@@ -7,6 +7,7 @@ import '../../core/auth/credentials.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/errors.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/paths.dart';
 import '../../core/state/actions.dart';
 import 'pin_views.dart';
@@ -33,12 +34,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final phone = _confirmedPhone;
     if (phone != null) {
+      final l10n = AppLocalizations.of(context);
       return AppScaffold(
-        title: 'Masukkan PIN',
+        title: l10n.loginPinTitle,
         onBack: () => setState(() => _confirmedPhone = null),
         scrollable: false,
         body: PinEntryView(
-          title: 'Halo, selamat datang kembali',
+          title: l10n.loginPinSubtitle,
           subtitle: 'Masukkan PIN untuk $phone',
           onSubmit: (pin) async {
             try {
@@ -48,32 +50,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               return e.message;
             }
           },
-          footer: TextLinkButton(label: 'Lupa PIN?', onPressed: _forgotPin),
+          footer: TextLinkButton(
+            label: l10n.loginForgotPin,
+            onPressed: _forgotPin,
+          ),
         ),
       );
     }
 
+    final l10n = AppLocalizations.of(context);
     final text = Theme.of(context).textTheme;
     return AppScaffold(
-      title: 'Masuk',
+      title: l10n.loginTitle,
       onBack: () => context.pop(),
-      bottomBar: PrimaryButton(label: 'Lanjut', onPressed: _next),
+      bottomBar: PrimaryButton(label: l10n.actionContinue, onPressed: _next),
       body: Form(
         key: _form,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Nomor HP Anda', style: text.headlineSmall),
+            Text(l10n.loginPhonePrompt, style: text.headlineSmall),
             const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Pakai nomor yang Anda daftarkan di IbuDaya.',
-              style: text.bodyMedium,
-            ),
+            Text(l10n.loginPhoneHelper, style: text.bodyMedium),
             const SizedBox(height: AppSpacing.xl),
             AppTextField(
-              label: 'Nomor HP',
+              label: l10n.loginPhoneLabel,
               controller: _phone,
-              hint: '0812 3456 7890',
+              hint: l10n.loginPhoneHint,
               prefixIcon: Icons.phone_iphone_rounded,
               keyboardType: TextInputType.phone,
               autofocus: true,
@@ -83,16 +86,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 LengthLimitingTextInputFormatter(17),
               ],
               validator: (v) => normalizeIndonesianPhone(v ?? '') == null
-                  ? 'Nomor HP tidak valid. Contoh: 0812 3456 7890'
+                  ? l10n.loginPhoneError
                   : null,
             ),
             const SizedBox(height: AppSpacing.xl),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Belum punya akun?', style: text.bodyMedium),
+                Text(l10n.loginNoAccount, style: text.bodyMedium),
                 TextLinkButton(
-                  label: 'Daftar',
+                  label: l10n.actionRegister,
                   onPressed: () => context.pushReplacement(Paths.register),
                 ),
               ],
@@ -110,40 +113,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _forgotPin() async {
+    final l10n = AppLocalizations.of(context);
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Lupa PIN'),
-        content: const Text(
-          'Saat ini akun tersimpan hanya di HP ini, jadi PIN tidak bisa '
-          'dikirim ulang. Setelah terhubung ke server koperasi, PIN bisa '
-          'diatur ulang lewat SMS.\n\nJika benar-benar lupa, Anda bisa '
-          'menghapus semua data di HP ini lalu mendaftar lagi.',
-        ),
+        title: Text(l10n.loginForgotPinTitle),
+        content: Text(l10n.loginForgotPinBody),
         actions: [
           TextButton(
             onPressed: () async {
               Navigator.of(ctx).pop();
               final ok = await confirmDialog(
                 context,
-                title: 'Hapus semua data?',
-                message:
-                    'Semua akun, catatan listrik, arisan, dan pinjaman di HP '
-                    'ini akan hilang dan tidak bisa dikembalikan.',
-                confirmLabel: 'Hapus semua',
+                title: l10n.loginClearDataConfirmTitle,
+                message: l10n.loginClearDataConfirmBody,
+                confirmLabel: l10n.loginClearDataConfirmLabel,
                 destructive: true,
               );
               if (!ok || !mounted) return;
               final done = await runAction(
                 context,
                 ref.read(actionsProvider).resetDevice,
-                success: 'Data di HP ini sudah dihapus.',
+                success: l10n.loginClearDataSuccess,
               );
               if (done && mounted) context.go(Paths.welcome);
             },
-            child: const Text(
-              'Hapus data',
-              style: TextStyle(color: AppColors.danger),
+            child: Text(
+              l10n.loginClearData,
+              style: const TextStyle(color: AppColors.danger),
             ),
           ),
           FilledButton(
@@ -151,7 +148,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               minimumSize: const Size(kMinTapTarget, kMinTapTarget),
             ),
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Mengerti'),
+            child: Text(l10n.loginUnderstood),
           ),
         ],
       ),

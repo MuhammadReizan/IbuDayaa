@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/design/components/ui_kit.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/paths.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
@@ -14,6 +15,7 @@ class MemberShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final s = ref.watch(appStateProvider);
     final me = s.me;
     final unread = me == null ? 0 : s.data.unreadMessagesOf(me);
@@ -21,26 +23,26 @@ class MemberShell extends ConsumerWidget {
       shell: shell,
       onScanTap: () => context.push(Paths.scan),
       items: [
-        const NavItem(
+        NavItem(
           icon: Icons.home_outlined,
           activeIcon: Icons.home_rounded,
-          label: 'Beranda',
+          label: l10n.navHome,
         ),
-        const NavItem(
+        NavItem(
           icon: Icons.solar_power_outlined,
           activeIcon: Icons.solar_power_rounded,
-          label: 'Solar Hub',
+          label: l10n.navSolarHub,
         ),
         NavItem(
           icon: Icons.chat_bubble_outline_rounded,
           activeIcon: Icons.chat_bubble_rounded,
-          label: 'Pesan',
+          label: l10n.navMessages,
           badge: unread,
         ),
-        const NavItem(
+        NavItem(
           icon: Icons.person_outline_rounded,
           activeIcon: Icons.person_rounded,
-          label: 'Profil',
+          label: l10n.navProfile,
         ),
       ],
     );
@@ -54,31 +56,32 @@ class AdminShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final data = ref.watch(appStateProvider).data;
     final waiting = data.loansAwaitingAdmin.length;
     return _Shell(
       shell: shell,
       items: [
-        const NavItem(
+        NavItem(
           icon: Icons.dashboard_outlined,
           activeIcon: Icons.dashboard_rounded,
-          label: 'Dasbor',
+          label: l10n.navDashboard,
         ),
         NavItem(
           icon: Icons.request_page_outlined,
           activeIcon: Icons.request_page_rounded,
-          label: 'Pengajuan',
+          label: l10n.navSubmissions,
           badge: waiting,
         ),
-        const NavItem(
+        NavItem(
           icon: Icons.groups_outlined,
           activeIcon: Icons.groups_rounded,
-          label: 'Anggota',
+          label: l10n.navMembers,
         ),
         NavItem(
           icon: Icons.grid_view_outlined,
           activeIcon: Icons.grid_view_rounded,
-          label: 'Lainnya',
+          label: l10n.navOther,
           badge: data.pendingPayments.length,
         ),
       ],

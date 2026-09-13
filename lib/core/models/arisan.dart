@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../db/row.dart';
+import '../l10n/l10n.dart';
 
 @immutable
 class ArisanGroup {
@@ -85,6 +86,8 @@ enum PaymentType {
   static PaymentType fromDb(String? v) => v == 'payout' ? payout : contribution;
   String get db => name;
   String get label => this == payout ? 'Pencairan giliran' : 'Setoran iuran';
+  String localizedLabel(AppLocalizations l10n) =>
+      this == payout ? l10n.paymentTypePayout : l10n.paymentTypeContribution;
 }
 
 enum PaymentStatus {
@@ -104,6 +107,12 @@ enum PaymentStatus {
     pending => 'Menunggu konfirmasi',
     confirmed => 'Terkonfirmasi',
     rejected => 'Ditolak',
+  };
+
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+    pending => l10n.paymentStatusPending,
+    confirmed => l10n.paymentStatusConfirmed,
+    rejected => l10n.paymentStatusRejected,
   };
 }
 

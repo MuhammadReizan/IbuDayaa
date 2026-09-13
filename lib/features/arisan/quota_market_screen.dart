@@ -7,6 +7,7 @@ import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/typography.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
 import '../../core/state/actions.dart';
@@ -25,6 +26,7 @@ class QuotaMarketScreen extends ConsumerWidget {
     final data = s.data;
     final now = ref.read(clockProvider)();
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final quota = data.quotaOf(me.id, now);
     final active = data.activeOffers;
 
@@ -53,7 +55,7 @@ class QuotaMarketScreen extends ConsumerWidget {
           ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
     return AppScaffold(
-      title: 'Perdagangan Energi',
+      title: l10n.arisanEnergyTrading,
       onBack: () => context.pop(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -63,14 +65,14 @@ class QuotaMarketScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Kuota Solar Hub ${monthYearLabel(now)}',
+                  '${l10n.solarQuotaThisMonth} ${monthYearLabel(now, l10n: l10n)}',
                   style: text.labelLarge?.copyWith(
                     color: AppColors.textOnDarkDim,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  '${formatKwh(quota.availableKwh)} tersisa',
+                  formatKwh(quota.availableKwh),
                   style: AppTypography.numeric(30, color: Colors.white),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -78,7 +80,7 @@ class QuotaMarketScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: StatTile(
-                        label: 'Jatah',
+                        label: l10n.solarQuotaThisMonth,
                         value: formatKwh(quota.allocationKwh),
                         onDark: true,
                         valueSize: 15,
@@ -86,7 +88,7 @@ class QuotaMarketScreen extends ConsumerWidget {
                     ),
                     Expanded(
                       child: StatTile(
-                        label: 'Dibooking',
+                        label: l10n.scaffoldBookings,
                         value: formatKwh(quota.bookedKwh),
                         onDark: true,
                         valueSize: 15,
@@ -94,7 +96,7 @@ class QuotaMarketScreen extends ConsumerWidget {
                     ),
                     Expanded(
                       child: StatTile(
-                        label: 'Diberi',
+                        label: l10n.arisanQuotaShare,
                         value: formatKwh(quota.givenKwh),
                         onDark: true,
                         valueSize: 15,
@@ -102,7 +104,7 @@ class QuotaMarketScreen extends ConsumerWidget {
                     ),
                     Expanded(
                       child: StatTile(
-                        label: 'Diterima',
+                        label: l10n.arisanQuotaNeed,
                         value: formatKwh(quota.receivedKwh),
                         onDark: true,
                         valueSize: 15,
@@ -118,7 +120,7 @@ class QuotaMarketScreen extends ConsumerWidget {
             children: [
               Expanded(
                 child: PrimaryButton(
-                  label: 'Bagikan',
+                  label: l10n.arisanQuotaShare,
                   icon: Icons.volunteer_activism_rounded,
                   onPressed: () => context.push('${Paths.quotaNew}?jenis=bagi'),
                 ),
@@ -126,7 +128,7 @@ class QuotaMarketScreen extends ConsumerWidget {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: SecondaryButton(
-                  label: 'Butuh kuota',
+                  label: l10n.arisanQuotaNeed,
                   icon: Icons.pan_tool_alt_rounded,
                   onPressed: () =>
                       context.push('${Paths.quotaNew}?jenis=butuh'),
@@ -135,26 +137,21 @@ class QuotaMarketScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          const InfoBanner(
-            tone: InfoTone.info,
-            message:
-                'Tukar kuota hanya mencatat kesepakatan jatah booking hub antar '
-                'anggota. Tidak ada listrik yang dikirim lewat aplikasi.',
-          ),
+          InfoBanner(tone: InfoTone.info, message: l10n.arisanEnergyTradingSub),
           if (decide.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.xl),
-            const SectionHeader(title: 'Perlu keputusan Anda'),
+            SectionHeader(title: l10n.labelPending),
             for (final o in decide) ...[
               _OfferCard(
                 offer: o,
                 headline: o.kind == QuotaKind.share
-                    ? '${data.nameOf(o.counterpartyId)} meminta kuota Anda'
-                    : '${data.nameOf(o.counterpartyId)} ingin memberi kuota',
+                    ? '${data.nameOf(o.counterpartyId)} (${l10n.arisanQuotaNeed})'
+                    : '${data.nameOf(o.counterpartyId)} (${l10n.arisanQuotaShare})',
                 actions: [
                   _action(
                     context,
                     ref,
-                    'Tolak',
+                    l10n.actionCancel,
                     secondary: true,
                     () => ref
                         .read(actionsProvider)
@@ -163,11 +160,11 @@ class QuotaMarketScreen extends ConsumerWidget {
                   _action(
                     context,
                     ref,
-                    'Terima',
+                    l10n.actionConfirm,
                     () => ref
                         .read(actionsProvider)
                         .settleQuota(o.id, accept: true),
-                    success: 'Pertukaran kuota tercatat.',
+                    success: 'Quota updated.',
                   ),
                 ],
               ),
@@ -176,17 +173,17 @@ class QuotaMarketScreen extends ConsumerWidget {
           ],
           if (waiting.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.xl),
-            const SectionHeader(title: 'Menunggu jawaban'),
+            SectionHeader(title: l10n.labelPending),
             for (final o in waiting) ...[
               _OfferCard(
                 offer: o,
-                headline: 'Menunggu ${data.nameOf(o.ownerId)} menerima',
+                headline: '${l10n.labelPending} ${data.nameOf(o.ownerId)}',
               ),
               const SizedBox(height: AppSpacing.sm),
             ],
           ],
           const SizedBox(height: AppSpacing.xl),
-          const SectionHeader(title: 'Penawaran anggota'),
+          SectionHeader(title: l10n.arisanQuotaTitle),
           if (market.isEmpty)
             SectionCard(
               child: Row(
@@ -194,10 +191,7 @@ class QuotaMarketScreen extends ConsumerWidget {
                   const BrandArt(motif: BrandArtMotif.arisan, size: 56),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
-                    child: Text(
-                      'Belum ada penawaran dari anggota lain.',
-                      style: text.bodyMedium,
-                    ),
+                    child: Text(l10n.arisanQuotaEmpty, style: text.bodyMedium),
                   ),
                 ],
               ),
@@ -207,21 +201,20 @@ class QuotaMarketScreen extends ConsumerWidget {
               _OfferCard(
                 offer: o,
                 headline: o.kind == QuotaKind.share
-                    ? '${data.nameOf(o.ownerId)} membagikan kuota'
-                    : '${data.nameOf(o.ownerId)} butuh kuota',
+                    ? '${data.nameOf(o.ownerId)} (${l10n.arisanQuotaShare})'
+                    : '${data.nameOf(o.ownerId)} (${l10n.arisanQuotaNeed})',
                 actions: [
                   _action(
                     context,
                     ref,
-                    o.kind == QuotaKind.share ? 'Minta' : 'Beri',
+                    o.kind == QuotaKind.share
+                        ? l10n.arisanQuotaNeed
+                        : l10n.arisanQuotaShare,
                     () => ref.read(actionsProvider).respondToQuota(o.id),
                     confirm: o.kind == QuotaKind.need
-                        ? 'Kuota Anda akan berkurang ${formatKwh(o.kwh)} jika '
-                              '${data.nameOf(o.ownerId)} menerima. Sisa kuota Anda '
-                              'sekarang ${formatKwh(quota.availableKwh)}.'
+                        ? '${formatKwh(o.kwh)} (${data.nameOf(o.ownerId)})'
                         : null,
-                    success:
-                        'Terkirim. Menunggu ${data.nameOf(o.ownerId)} menerima.',
+                    success: 'Sent.',
                   ),
                 ],
               ),
@@ -229,21 +222,21 @@ class QuotaMarketScreen extends ConsumerWidget {
             ],
           if (mineOpen.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.xl),
-            const SectionHeader(title: 'Penawaran saya'),
+            SectionHeader(title: l10n.arisanQuotaNew),
             for (final o in mineOpen) ...[
               _OfferCard(
                 offer: o,
                 headline: o.kind == QuotaKind.share
-                    ? 'Anda membagikan kuota'
-                    : 'Anda butuh kuota',
+                    ? l10n.arisanQuotaShare
+                    : l10n.arisanQuotaNeed,
                 actions: [
                   _action(
                     context,
                     ref,
-                    'Batalkan',
+                    l10n.actionCancel,
                     secondary: true,
                     () => ref.read(actionsProvider).cancelQuota(o.id),
-                    confirm: 'Penawaran ini akan ditutup.',
+                    confirm: l10n.actionCancel,
                   ),
                 ],
               ),
@@ -252,7 +245,7 @@ class QuotaMarketScreen extends ConsumerWidget {
           ],
           if (history.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.xl),
-            const SectionHeader(title: 'Riwayat'),
+            SectionHeader(title: l10n.arisanHistory),
             for (final o in history.take(10))
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -262,9 +255,9 @@ class QuotaMarketScreen extends ConsumerWidget {
                       : Icons.south_west_rounded,
                   tone: o.giverId == me.id ? PillTone.solar : PillTone.success,
                   title: o.giverId == me.id
-                      ? 'Memberi ${formatKwh(o.kwh)} ke ${data.nameOf(o.receiverId)}'
-                      : 'Menerima ${formatKwh(o.kwh)} dari ${data.nameOf(o.giverId)}',
-                  subtitle: formatShortDate(o.updatedAt),
+                      ? '${formatKwh(o.kwh)} → ${data.nameOf(o.receiverId)}'
+                      : '${formatKwh(o.kwh)} ← ${data.nameOf(o.giverId)}',
+                  subtitle: formatShortDate(o.updatedAt, l10n: l10n),
                 ),
               ),
           ],

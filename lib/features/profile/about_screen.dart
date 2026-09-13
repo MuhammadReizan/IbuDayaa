@@ -6,6 +6,7 @@ import '../../core/brand/brand.dart';
 import '../../core/config/app_config.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/paths.dart';
 import '../../core/state/actions.dart';
 
@@ -15,8 +16,9 @@ class AboutScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     return AppScaffold(
-      title: 'Tentang IbuDaya',
+      title: l10n.scaffoldAbout,
       onBack: () => context.pop(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -73,22 +75,20 @@ class AboutScreen extends ConsumerWidget {
           TextButton.icon(
             style: TextButton.styleFrom(foregroundColor: AppColors.danger),
             icon: const Icon(Icons.delete_forever_rounded),
-            label: const Text('Hapus semua data di HP ini'),
+            label: Text(l10n.aboutResetDevice),
             onPressed: () async {
               final ok = await confirmDialog(
                 context,
-                title: 'Hapus semua data?',
-                message:
-                    'Semua akun, catatan listrik, arisan, pinjaman, dan pesan di '
-                    'HP ini akan hilang dan tidak bisa dikembalikan.',
-                confirmLabel: 'Hapus semua',
+                title: l10n.aboutResetDeviceConfirmTitle,
+                message: l10n.aboutResetDeviceConfirmBody,
+                confirmLabel: l10n.actionDelete,
                 destructive: true,
               );
               if (!ok || !context.mounted) return;
               final done = await runAction(
                 context,
                 ref.read(actionsProvider).resetDevice,
-                success: 'Semua data di HP ini sudah dihapus.',
+                success: l10n.aboutResetDeviceSuccess,
               );
               if (done && context.mounted) context.go(Paths.welcome);
             },

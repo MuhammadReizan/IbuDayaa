@@ -8,6 +8,7 @@ library;
 import 'package:flutter/foundation.dart';
 
 import '../../features/credit_score/domain/credit_scoring_engine.dart';
+import '../l10n/l10n.dart';
 import '../models/account.dart';
 import '../models/loan.dart';
 
@@ -105,6 +106,13 @@ class LoanEligibility {
       'Skor Anda belum mencapai batas minimum yang ditetapkan koperasi.',
     LoanBlocker.activeLoan =>
       'Selesaikan pinjaman yang masih berjalan sebelum mengajukan lagi.',
+  };
+
+  String localizedMessage(AppLocalizations l10n) => switch (blocker) {
+    LoanBlocker.none => l10n.eligibilityNone,
+    LoanBlocker.notEnoughHistory => l10n.eligibilityNotEnoughHistory,
+    LoanBlocker.scoreTooLow => l10n.eligibilityScoreTooLow,
+    LoanBlocker.activeLoan => l10n.eligibilityActiveLoan,
   };
 }
 

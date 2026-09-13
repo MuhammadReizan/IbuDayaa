@@ -10,6 +10,7 @@ import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/typography.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/logic/roof_estimator.dart';
 import '../../core/models/models.dart';
 import '../../core/state/actions.dart';
@@ -63,9 +64,10 @@ class _RoofScanScreenState extends ConsumerState<RoofScanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (_step == 0) {
       return CaptureView(
-        title: 'Radar Atap',
+        title: l10n.solarRoofTitle,
         hint: 'Foto atap yang ingin dipasang panel surya',
         frameAspect: 1.1,
         busy: _copying,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/logic/energy_insights.dart';
 
 /// Monthly kWh bars, oldest on the left, newest highlighted.
@@ -28,7 +29,7 @@ class UsageBars extends StatelessWidget {
             Expanded(
               child: Semantics(
                 label:
-                    '${monthYearLabel(shown[i].month)}: ${formatKwh(shown[i].kwh)}',
+                    '${monthYearLabel(shown[i].month, l10n: AppLocalizations.of(context))}: ${formatKwh(shown[i].kwh)}',
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -71,7 +72,13 @@ class UsageBars extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
-                    Text(monthAbbr(shown[i].month), style: text.labelSmall),
+                    Text(
+                      monthAbbr(
+                        shown[i].month,
+                        l10n: AppLocalizations.of(context),
+                      ),
+                      style: text.labelSmall,
+                    ),
                   ],
                 ),
               ),

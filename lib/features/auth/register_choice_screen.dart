@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/brand/brand.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/paths.dart';
 
 class RegisterChoiceScreen extends StatelessWidget {
@@ -11,37 +12,31 @@ class RegisterChoiceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final text = Theme.of(context).textTheme;
     return AppScaffold(
-      title: 'Daftar',
+      title: l10n.registerTitle,
       onBack: () => context.pop(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Anda mendaftar sebagai?', style: text.headlineSmall),
+          Text(l10n.registerPrompt, style: text.headlineSmall),
           const SizedBox(height: AppSpacing.sm),
-          Text(
-            'IbuDaya dipakai bersama koperasi. Setiap anggota bergabung '
-            'dengan kode dari admin koperasinya.',
-            style: text.bodyMedium,
-          ),
+          Text(l10n.registerSubtitle, style: text.bodyMedium),
           const SizedBox(height: AppSpacing.xl),
           _RoleCard(
             motif: BrandArtMotif.community,
-            title: 'Anggota koperasi',
-            body:
-                'Saya punya usaha dan sudah mendapat kode koperasi dari admin.',
-            cta: 'Daftar sebagai anggota',
+            title: l10n.registerAsMember,
+            body: l10n.registerMemberBody,
+            cta: l10n.registerMemberCta,
             onTap: () => context.push(Paths.registerMember),
           ),
           const SizedBox(height: AppSpacing.lg),
           _RoleCard(
             motif: BrandArtMotif.finance,
-            title: 'Admin koperasi',
-            body:
-                'Saya pengurus koperasi. Saya akan membuat koperasi, mengelola '
-                'anggota, Solar Hub, arisan, dan meninjau pinjaman.',
-            cta: 'Buat koperasi',
+            title: l10n.registerAsAdmin,
+            body: l10n.registerAdminBody,
+            cta: l10n.registerAdminCta,
             tone: CardTone.solar,
             onTap: () => context.push(Paths.registerAdmin),
           ),
@@ -49,9 +44,9 @@ class RegisterChoiceScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('Sudah punya akun?', style: text.bodyMedium),
+              Text(l10n.registerHaveAccount, style: text.bodyMedium),
               TextLinkButton(
-                label: 'Masuk',
+                label: l10n.actionLogin,
                 onPressed: () => context.pushReplacement(Paths.login),
               ),
             ],

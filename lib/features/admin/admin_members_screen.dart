@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/brand/brand.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/logic/energy_insights.dart';
 import '../../core/paths.dart';
 import '../../core/state/app_state.dart';
@@ -27,6 +28,7 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
     final now = ref.read(clockProvider)();
     final engine = ref.read(creditScoringEngineProvider);
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final q = _query.toLowerCase();
     final members = data.memberProfiles
         .where(
@@ -38,15 +40,15 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
         .toList();
 
     return AppScaffold(
-      title: 'Anggota',
+      title: l10n.scaffoldAdminMembers,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextField(
             onChanged: (v) => setState(() => _query = v),
-            decoration: const InputDecoration(
-              hintText: 'Cari nama atau usaha',
-              prefixIcon: Icon(Icons.search_rounded),
+            decoration: InputDecoration(
+              hintText: l10n.labelSearch,
+              prefixIcon: const Icon(Icons.search_rounded),
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -55,10 +57,8 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
               padding: const EdgeInsets.only(top: AppSpacing.xl),
               child: EmptyState(
                 motif: BrandArtMotif.community,
-                title: 'Belum ada anggota',
-                message:
-                    'Bagikan kode koperasi ${data.cooperative?.inviteCode ?? ''} '
-                    'agar anggota bisa mendaftar.',
+                title: l10n.adminMembersEmpty,
+                message: l10n.adminMembersEmptyMessage,
               ),
             )
           else
@@ -81,18 +81,19 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
                             children: [
                               Text(m.fullName, style: text.titleSmall),
                               Text(
-                                '${m.businessName} · $months bln tercatat',
+                                '${m.businessName} · $months',
                                 style: text.bodySmall,
                               ),
                             ],
                           ),
                         ),
+                        const SizedBox(width: AppSpacing.sm),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             StatusPill(
                               label: score == null
-                                  ? 'Belum ada skor'
+                                  ? (l10n.isEn ? 'No score' : 'Belum ada skor')
                                   : 'Skor ${score.score}',
                               tone: score == null
                                   ? PillTone.neutral
@@ -101,7 +102,7 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
                             if (active != null) ...[
                               const SizedBox(height: AppSpacing.xs),
                               StatusPill(
-                                label: active.status.label,
+                                label: active.status.localizedLabel(l10n),
                                 tone: PillTone.solar,
                               ),
                             ],

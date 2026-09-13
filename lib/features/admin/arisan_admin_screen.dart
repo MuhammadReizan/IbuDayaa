@@ -7,6 +7,7 @@ import '../../core/db/row.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
 import '../../core/state/actions.dart';
@@ -22,9 +23,10 @@ class ArisanAdminScreen extends ConsumerWidget {
     final data = ref.watch(appStateProvider).data;
     final now = ref.read(clockProvider)();
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     return AppScaffold(
-      title: 'Grup Arisan',
+      title: l10n.scaffoldAdminArisan,
       onBack: () => context.pop(),
       scrollable: data.groups.isNotEmpty,
       bottomBar: PrimaryButton(
@@ -241,7 +243,7 @@ class _ArisanCreateScreenState extends ConsumerState<ArisanCreateScreen> {
             Text('Bulan mulai', style: text.titleSmall),
             const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<DateTime>(
-              value: _start,
+              initialValue: _start,
               items: [
                 for (int i = 0; i < 3; i++)
                   DropdownMenuItem(

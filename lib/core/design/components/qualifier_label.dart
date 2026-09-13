@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import '../tokens.dart';
 
 /// Honesty qualifier shown next to any `DEMO_SIMULATION` figure
@@ -15,6 +16,15 @@ enum QualifierKind {
 
   const QualifierKind(this.label);
   final String label;
+
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+    QualifierKind.estimasi => l10n.qualifierEstimasi,
+    QualifierKind.estimasiAwal => l10n.qualifierEstimasiAwal,
+    QualifierKind.simulasi => l10n.qualifierSimulasi,
+    QualifierKind.ilustrasi => l10n.qualifierIlustrasi,
+    QualifierKind.dataContoh => l10n.qualifierDataContoh,
+    QualifierKind.dataKomunitas => l10n.qualifierDataKomunitas,
+  };
 }
 
 class QualifierLabel extends StatelessWidget {
@@ -26,6 +36,7 @@ class QualifierLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color fg = onDark ? AppColors.textOnDarkDim : AppColors.textSecondary;
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 3, 10, 3),
       decoration: BoxDecoration(
@@ -53,7 +64,7 @@ class QualifierLabel extends StatelessWidget {
           const SizedBox(width: 5),
           Flexible(
             child: Text(
-              kind.label,
+              kind.localizedLabel(l10n),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(

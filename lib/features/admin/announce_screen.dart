@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/models/models.dart';
 import '../../core/state/actions.dart';
 import '../../core/state/app_state.dart';
@@ -31,6 +32,7 @@ class _AnnounceScreenState extends ConsumerState<AnnounceScreen> {
   Widget build(BuildContext context) {
     final data = ref.watch(appStateProvider).data;
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final thread = data.threads
         .where((t) => t.kind == ThreadKind.announcement)
         .firstOrNull;
@@ -43,7 +45,7 @@ class _AnnounceScreenState extends ConsumerState<AnnounceScreen> {
               .toList();
 
     return AppScaffold(
-      title: 'Kirim Pengumuman',
+      title: l10n.scaffoldAdminAnnounce,
       onBack: () => context.pop(),
       bottomBar: PrimaryButton(
         label: 'Kirim ke ${data.memberProfiles.length} anggota',

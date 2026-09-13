@@ -8,6 +8,7 @@ import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/typography.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
 import '../../core/state/actions.dart';
@@ -34,12 +35,13 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
     final data = s.data;
     final now = ref.read(clockProvider)();
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final groups = data.groupsOf(me.id);
 
     if (groups.isEmpty) {
       final support = data.supportThreadOf(me.id);
       return AppScaffold(
-        title: 'Arisan Energi',
+        title: l10n.arisanTitle,
         onBack: () => context.pop(),
         scrollable: false,
         body: EmptyState(
@@ -92,12 +94,12 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
     final started = !monthOf(now).isBefore(g.startMonth);
 
     return AppScaffold(
-      title: 'Arisan Energi',
+      title: l10n.arisanTitle,
       onBack: () => context.pop(),
       actions: [
         if (groupThread != null)
           IconButton(
-            tooltip: 'Obrolan grup',
+            tooltip: l10n.arisanGroupChat,
             onPressed: () => context.push(Paths.thread(groupThread.id)),
             icon: const Icon(Icons.forum_outlined),
           ),
@@ -129,7 +131,7 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Total arisan per bulan',
+                  l10n.arisanTotalPerMonth,
                   style: text.labelMedium?.copyWith(
                     color: AppColors.textOnDarkDim,
                   ),
@@ -143,7 +145,7 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
                   children: [
                     Expanded(
                       child: StatTile(
-                        label: 'Iuran',
+                        label: l10n.arisanDuesLabel,
                         value: formatRupiah(g.contributionIdr),
                         onDark: true,
                         valueSize: 16,
@@ -151,7 +153,7 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
                     ),
                     Expanded(
                       child: StatTile(
-                        label: 'Giliran bulan ini',
+                        label: l10n.arisanTurnThisMonth,
                         value: started ? data.nameOf(recipient?.userId) : '-',
                         onDark: true,
                         valueSize: 16,
@@ -159,8 +161,8 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
                     ),
                     Expanded(
                       child: StatTile(
-                        label: 'Giliran Anda',
-                        value: shortMonthYear(myTurn),
+                        label: l10n.arisanYourTurn,
+                        value: shortMonthYear(myTurn, l10n: l10n),
                         onDark: true,
                         valueSize: 16,
                       ),
@@ -172,37 +174,36 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
           ),
           const SizedBox(height: AppSpacing.lg),
           SectionCard(
-            title: 'Iuran ${monthYearLabel(now)}',
+            title: '${l10n.arisanDuesLabel} ${monthYearLabel(now, l10n: l10n)}',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (!started)
                   Text(
-                    'Arisan mulai ${monthYearLabel(g.startMonth)}.',
+                    l10n.arisanStartsMonth(
+                      monthYearLabel(g.startMonth, l10n: l10n),
+                    ),
                     style: text.bodyMedium,
                   )
                 else if (mine == null) ...[
                   if (rejected != null) ...[
                     InfoBanner(
                       tone: InfoTone.danger,
-                      title: 'Setoran sebelumnya ditolak',
-                      message:
-                          rejected.note ?? 'Hubungi admin untuk detailnya.',
+                      title: l10n.arisanPrevRejected,
+                      message: rejected.note ?? l10n.arisanPrevRejectedNote,
                     ),
                     const SizedBox(height: AppSpacing.md),
                   ],
                   Text(
-                    'Serahkan iuran ${formatRupiah(g.contributionIdr)} ke bendahara '
-                    'koperasi (tunai atau transfer), lalu tekan tombol di bawah. '
-                    'Admin akan mengonfirmasi.',
+                    l10n.arisanPayInstruction(formatRupiah(g.contributionIdr)),
                     style: text.bodyMedium,
                   ),
                   const SizedBox(height: AppSpacing.md),
                   PrimaryButton(
-                    label: 'Saya sudah setor',
+                    label: l10n.arisanPaidBtn,
                     icon: Icons.payments_rounded,
                     loading: _busy,
-                    onPressed: () => _pay(g),
+                    onPressed: () => _pay(g, l10n),
                   ),
                 ] else
                   Row(
@@ -219,13 +220,13 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
                       Expanded(
                         child: Text(
                           mine.status == PaymentStatus.confirmed
-                              ? 'Iuran bulan ini sudah lunas.'
-                              : 'Setoran terkirim, menunggu konfirmasi admin.',
+                              ? l10n.arisanPaidSuccess
+                              : l10n.arisanPaidPending,
                           style: text.bodyMedium,
                         ),
                       ),
                       StatusPill(
-                        label: mine.status.label,
+                        label: mine.status.localizedLabel(l10n),
                         tone: paymentTone(mine.status),
                       ),
                     ],
@@ -234,9 +235,10 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
                   const SizedBox(height: AppSpacing.md),
                   InfoBanner(
                     tone: InfoTone.success,
-                    message:
-                        'Arisan bulan ini sudah dicairkan ke ${data.nameOf(payout.userId)} '
-                        '(${formatRupiah(payout.amountIdr)}).',
+                    message: l10n.arisanPayoutInfo(
+                      data.nameOf(payout.userId),
+                      formatRupiah(payout.amountIdr),
+                    ),
                   ),
                 ],
               ],
@@ -257,10 +259,9 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Perdagangan Energi', style: text.titleMedium),
+                      Text(l10n.arisanEnergyTrading, style: text.titleMedium),
                       Text(
-                        'Bagikan sisa kuota Solar Hub ke sesama anggota, atau minta '
-                        'saat butuh.',
+                        l10n.arisanEnergyTradingSub,
                         style: text.bodySmall?.copyWith(
                           color: AppColors.onSolar,
                         ),
@@ -273,7 +274,7 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          SectionHeader(title: 'Anggota (${members.length})'),
+          SectionHeader(title: l10n.arisanMembersCount(members.length)),
           for (final m in members) ...[
             _MemberRow(
               name: data.nameOf(m.userId),
@@ -290,7 +291,7 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
           ],
           if (history.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
-            const SectionHeader(title: 'Riwayat saya'),
+            SectionHeader(title: l10n.arisanMyHistory),
             SectionCard(
               child: Column(
                 children: [
@@ -306,7 +307,7 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '${p.type.label} · ${monthYearLabel(p.periodMonth)}',
+                                  '${p.type.localizedLabel(l10n)} · ${monthYearLabel(p.periodMonth, l10n: l10n)}',
                                   style: text.titleSmall,
                                 ),
                                 Text(
@@ -317,7 +318,7 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
                             ),
                           ),
                           StatusPill(
-                            label: p.status.label,
+                            label: p.status.localizedLabel(l10n),
                             tone: paymentTone(p.status),
                           ),
                         ],
@@ -332,22 +333,19 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
     );
   }
 
-  Future<void> _pay(ArisanGroup g) async {
+  Future<void> _pay(ArisanGroup g, AppLocalizations l10n) async {
     final ok = await confirmDialog(
       context,
-      title: 'Sudah menyerahkan iuran?',
-      message:
-          'Tekan "Kirim" hanya jika uang ${formatRupiah(g.contributionIdr)} '
-          'sudah diserahkan ke bendahara. Admin akan mengecek dan '
-          'mengonfirmasi.',
-      confirmLabel: 'Kirim',
+      title: l10n.arisanPayConfirmTitle,
+      message: l10n.arisanPayConfirmMsg(formatRupiah(g.contributionIdr)),
+      confirmLabel: l10n.actionSend,
     );
     if (!ok || !mounted) return;
     setState(() => _busy = true);
     await runAction(
       context,
       () => ref.read(actionsProvider).submitContribution(g.id),
-      success: 'Setoran terkirim. Menunggu konfirmasi admin.',
+      success: l10n.arisanPaidPending,
     );
     if (mounted) setState(() => _busy = false);
   }
@@ -373,6 +371,7 @@ class _MemberRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final p = payment;
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -389,10 +388,13 @@ class _MemberRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(isMe ? '$name (Anda)' : name, style: text.titleSmall),
                 Text(
-                  'Giliran ke-$turn · ${shortMonthYear(turnMonth)}'
-                  '${isRecipient ? ' · menerima bulan ini' : ''}',
+                  isMe ? '$name ${l10n.arisanYouTag}' : name,
+                  style: text.titleSmall,
+                ),
+                Text(
+                  '${l10n.arisanTurnFormat(turn, shortMonthYear(turnMonth, l10n: l10n))}'
+                  '${isRecipient ? ' · ${l10n.arisanReceivingThisMonth}' : ''}',
                   style: text.bodySmall,
                 ),
               ],
@@ -400,10 +402,10 @@ class _MemberRow extends StatelessWidget {
           ),
           StatusPill(
             label: p == null
-                ? 'Belum setor'
+                ? l10n.arisanNotPaidYet
                 : p.status == PaymentStatus.confirmed
-                ? 'Lunas'
-                : 'Menunggu',
+                ? l10n.arisanPaidStatus
+                : l10n.arisanWaitingStatus,
             tone: p == null ? PillTone.neutral : paymentTone(p.status),
           ),
         ],

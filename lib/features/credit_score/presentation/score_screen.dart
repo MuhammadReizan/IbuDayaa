@@ -6,6 +6,7 @@ import '../../../core/brand/brand.dart';
 import '../../../core/design/components/components.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/format/format.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/logic/credit_signals.dart';
 import '../../../core/logic/loan_math.dart';
 import '../../../core/paths.dart';
@@ -27,6 +28,7 @@ class ScoreScreen extends ConsumerWidget {
     final data = s.data;
     final now = ref.read(clockProvider)();
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final engine = ref.read(creditScoringEngineProvider);
     final score = data.scoreOf(me.id, now, engine);
     final readiness = data.readinessOf(me.id, now);
@@ -34,7 +36,7 @@ class ScoreScreen extends ConsumerWidget {
 
     if (score == null) {
       return AppScaffold(
-        title: 'Skor Kredit Energi',
+        title: l10n.scaffoldScore,
         onBack: () => context.pop(),
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -45,21 +47,22 @@ class ScoreScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'Skor belum bisa dihitung',
+              l10n.scoreNotCalculatedTitle,
               style: text.headlineSmall,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Skor dihitung dari catatan Anda sendiri. Dengan data kurang dari '
-              '$kMinMonthsForScore bulan, angkanya belum bisa dipercaya.',
+              l10n.scoreNotCalculatedMsg(kMinMonthsForScore),
               style: text.bodyMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xl),
             SectionCard(
-              title:
-                  'Catatan listrik ${readiness.monthsRecorded}/$kMinMonthsForScore bulan',
+              title: l10n.scoreRecordsCount(
+                readiness.monthsRecorded,
+                kMinMonthsForScore,
+              ),
               child: AppProgressBar(
                 value: readiness.monthsRecorded / kMinMonthsForScore,
               ),
@@ -71,9 +74,9 @@ class ScoreScreen extends ConsumerWidget {
                   ? PillTone.success
                   : PillTone.warning,
               title: readiness.monthsStillNeeded == 0
-                  ? 'Catatan listrik cukup'
-                  : 'Scan tagihan ${readiness.monthsStillNeeded} bulan lagi',
-              subtitle: 'Bisa juga dari tagihan bulan-bulan sebelumnya.',
+                  ? l10n.scoreRecordsEnough
+                  : l10n.scoreScanMoreMonths(readiness.monthsStillNeeded),
+              subtitle: l10n.scoreScanMoreMonthsSubtitle,
               onTap: () => context.push(Paths.scan),
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -81,8 +84,8 @@ class ScoreScreen extends ConsumerWidget {
               icon: Icons.groups_rounded,
               tone: readiness.inArisan ? PillTone.success : PillTone.warning,
               title: readiness.inArisan
-                  ? 'Sudah ikut arisan'
-                  : 'Ikut grup arisan koperasi',
+                  ? l10n.scoreInArisan
+                  : l10n.scoreJoinArisan,
               onTap: () => context.push(Paths.arisan),
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -92,8 +95,10 @@ class ScoreScreen extends ConsumerWidget {
                   ? PillTone.success
                   : PillTone.warning,
               title: readiness.appliancesDeclared > 0
-                  ? '${readiness.appliancesDeclared} alat terdaftar'
-                  : 'Daftarkan alat usaha',
+                  ? l10n.scoreAppliancesDeclaredCount(
+                      readiness.appliancesDeclared,
+                    )
+                  : l10n.scoreRegisterAppliance,
               onTap: () => context.push(Paths.appliances),
             ),
           ],
@@ -112,14 +117,14 @@ class ScoreScreen extends ConsumerWidget {
           );
 
     return AppScaffold(
-      title: 'Skor Kredit Energi',
+      title: l10n.scaffoldScore,
       onBack: () => context.pop(),
       bottomBar: eligibility == null
           ? null
           : PrimaryButton(
               label: eligibility.canApply
-                  ? 'Ajukan Pembiayaan'
-                  : 'Lihat Pembiayaan',
+                  ? l10n.scoreApply
+                  : l10n.scoreViewLoans,
               onPressed: () => context.push(
                 eligibility.canApply ? Paths.loanApply : Paths.loans,
               ),
@@ -130,10 +135,10 @@ class ScoreScreen extends ConsumerWidget {
           SectionCard(
             child: Column(
               children: [
-                SemiGauge(value: score.score, caption: 'dari 100'),
+                SemiGauge(value: score.score, caption: l10n.scoreFrom100),
                 const SizedBox(height: AppSpacing.sm),
                 StatusPill(
-                  label: score.band.label,
+                  label: score.band.localizedLabel(l10n),
                   tone: switch (score.band) {
                     CreditBand.baikSekali ||
                     CreditBand.baik => PillTone.success,
@@ -144,11 +149,20 @@ class ScoreScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   delta == null
-                      ? 'Skor pertama Anda bulan ini.'
+                      ? l10n.scoreFirstThisMonth
                       : delta == 0
-                      ? 'Sama dengan ${monthYearLabel(previous!.month)}.'
-                      : '${delta > 0 ? 'Naik' : 'Turun'} ${delta.abs()} poin dari '
-                            '${monthYearLabel(previous!.month)}.',
+                      ? l10n.scoreSameAsMonth(
+                          monthYearLabel(previous!.month, l10n: l10n),
+                        )
+                      : delta > 0
+                      ? l10n.scoreDeltaUpFromMonth(
+                          delta,
+                          monthYearLabel(previous!.month, l10n: l10n),
+                        )
+                      : l10n.scoreDeltaDownFromMonth(
+                          delta.abs(),
+                          monthYearLabel(previous!.month, l10n: l10n),
+                        ),
                   style: text.bodyMedium?.copyWith(
                     color: delta == null || delta == 0
                         ? null
@@ -165,15 +179,17 @@ class ScoreScreen extends ConsumerWidget {
             InfoBanner(
               tone: eligibility.canApply ? InfoTone.success : InfoTone.warning,
               title: eligibility.canApply
-                  ? 'Skor Anda mendukung pengajuan hingga ${formatRupiah(eligibility.ceilingIdr)}'
+                  ? l10n.scoreCanApplyAmount(
+                      formatRupiah(eligibility.ceilingIdr),
+                    )
                   : null,
               message: eligibility.canApply
-                  ? 'Keputusan tetap di tangan admin koperasi.'
-                  : eligibility.message,
+                  ? l10n.scoreDecision
+                  : eligibility.localizedMessage(l10n),
             ),
           ],
           const SizedBox(height: AppSpacing.xl),
-          const SectionHeader(title: 'Yang membentuk skor Anda'),
+          SectionHeader(title: l10n.scoreFactors),
           for (final f in score.factors) ...[
             _FactorCard(
               factor: f,
@@ -183,17 +199,9 @@ class ScoreScreen extends ConsumerWidget {
           ],
           const SizedBox(height: AppSpacing.lg),
           SectionCard(
-            title: 'Tentang skor ini',
+            title: l10n.scoreAbout,
             leadingIcon: Icons.info_outline_rounded,
-            child: Text(
-              'Skor Kredit Energi adalah hitungan aturan tetap dari catatan Anda '
-              'di IbuDaya: kestabilan pemakaian listrik (35 poin), ketepatan bayar '
-              'iuran dan cicilan (30), aktivitas usaha (20), dan keaktifan di '
-              'komunitas (15). Ini bukan skor bank atau BI Checking. Koperasi '
-              'memakainya sebagai bahan pertimbangan'
-              '${coop == null ? '' : ', dengan skor minimum ${coop.loanMinScore} untuk mengajukan'}.',
-              style: text.bodySmall,
-            ),
+            child: Text(l10n.scoreAboutBody, style: text.bodySmall),
           ),
         ],
       ),

@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import '../../features/credit_score/domain/credit_scoring_engine.dart';
 import '../db/row.dart';
 import '../format/money.dart';
+import '../l10n/l10n.dart';
 import '../logic/credit_signals.dart';
 import '../logic/energy_insights.dart';
 import '../logic/hub_capacity.dart';
@@ -74,16 +75,20 @@ extension SnapshotQueries on CoopSnapshot {
     now: now,
   );
 
-  List<PowerObservation> observationsOf(String userId, DateTime now) =>
-      buildObservations(
-        insight: insightOf(userId),
-        records: recordsOf(userId),
-        appliances: appliancesOf(userId),
-        myBookings: bookingsOf(userId),
-        tariff: profile(userId)?.tariffIdrPerKwh ?? 1444.70,
-        now: now,
-        rupiah: formatRupiah,
-      );
+  List<PowerObservation> observationsOf(
+    String userId,
+    DateTime now, [
+    AppLocalizations? l10n,
+  ]) => buildObservations(
+    insight: insightOf(userId),
+    records: recordsOf(userId),
+    appliances: appliancesOf(userId),
+    myBookings: bookingsOf(userId),
+    tariff: profile(userId)?.tariffIdrPerKwh ?? 1444.70,
+    now: now,
+    rupiah: formatRupiah,
+    l10n: l10n,
+  );
 
   // -- Solar hub -------------------------------------------------------------
 

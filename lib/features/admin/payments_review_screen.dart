@@ -6,6 +6,7 @@ import '../../core/brand/brand.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/models/models.dart';
 import '../../core/state/actions.dart';
 import '../../core/state/app_state.dart';
@@ -19,6 +20,7 @@ class PaymentsReviewScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(appStateProvider).data;
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final pending = data.pendingPayments;
     final processed =
         data.payments
@@ -36,7 +38,7 @@ class PaymentsReviewScreen extends ConsumerWidget {
     final actions = ref.read(actionsProvider);
 
     return AppScaffold(
-      title: 'Konfirmasi Setoran',
+      title: l10n.scaffoldAdminPayments,
       onBack: () => context.pop(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -48,7 +50,7 @@ class PaymentsReviewScreen extends ConsumerWidget {
                 'Setoran yang dikonfirmasi ikut menaikkan skor anggota.',
           ),
           const SizedBox(height: AppSpacing.lg),
-          SectionHeader(title: 'Menunggu (${pending.length})'),
+          SectionHeader(title: '${l10n.labelPending} (${pending.length})'),
           if (pending.isEmpty)
             SectionCard(
               child: Row(
@@ -57,7 +59,7 @@ class PaymentsReviewScreen extends ConsumerWidget {
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Text(
-                      'Semua setoran sudah diproses.',
+                      l10n.adminPaymentsEmpty,
                       style: text.bodyMedium,
                     ),
                   ),
@@ -83,7 +85,7 @@ class PaymentsReviewScreen extends ConsumerWidget {
                                 style: text.titleSmall,
                               ),
                               Text(
-                                '${data.group(p.groupId)?.name ?? ''} · ${monthYearLabel(p.periodMonth)}',
+                                '${data.group(p.groupId)?.name ?? ''} · ${monthYearLabel(p.periodMonth, l10n: l10n)}',
                                 style: text.bodySmall,
                               ),
                             ],
@@ -101,7 +103,7 @@ class PaymentsReviewScreen extends ConsumerWidget {
                     ],
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Dikirim ${formatDateTime(p.createdAt)}',
+                      formatDateTime(p.createdAt, l10n: l10n),
                       style: text.labelSmall,
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -109,13 +111,13 @@ class PaymentsReviewScreen extends ConsumerWidget {
                       children: [
                         Expanded(
                           child: SecondaryButton(
-                            label: 'Tolak',
+                            label: l10n.adminPaymentsReject,
                             onPressed: () async {
                               final reason = await promptText(
                                 context,
-                                title: 'Tolak setoran?',
-                                label: 'Alasan (dibaca anggota)',
-                                confirmLabel: 'Tolak',
+                                title: l10n.adminPaymentsReject,
+                                label: l10n.labelNote,
+                                confirmLabel: l10n.adminPaymentsReject,
                                 destructive: true,
                               );
                               if (reason == null || !context.mounted) return;
@@ -126,7 +128,7 @@ class PaymentsReviewScreen extends ConsumerWidget {
                                   approve: false,
                                   note: reason,
                                 ),
-                                success: 'Setoran ditolak.',
+                                success: 'Payment rejected.',
                               );
                             },
                           ),
@@ -134,12 +136,11 @@ class PaymentsReviewScreen extends ConsumerWidget {
                         const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: PrimaryButton(
-                            label: 'Konfirmasi',
+                            label: l10n.adminPaymentsApprove,
                             onPressed: () => runAction(
                               context,
                               () => actions.reviewPayment(p.id, approve: true),
-                              success:
-                                  'Setoran ${data.nameOf(p.userId)} dikonfirmasi.',
+                              success: 'Confirmed.',
                             ),
                           ),
                         ),
@@ -152,7 +153,7 @@ class PaymentsReviewScreen extends ConsumerWidget {
             ],
           if (processed.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.xl),
-            const SectionHeader(title: 'Sudah diproses'),
+            SectionHeader(title: l10n.labelCompleted),
             for (final p in processed.take(20))
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -164,9 +165,9 @@ class PaymentsReviewScreen extends ConsumerWidget {
                   title:
                       '${data.nameOf(p.userId)} · ${formatRupiah(p.amountIdr)}',
                   subtitle:
-                      '${monthYearLabel(p.periodMonth)}${p.note == null ? '' : ' · ${p.note}'}',
+                      '${monthYearLabel(p.periodMonth, l10n: l10n)}${p.note == null ? '' : ' · ${p.note}'}',
                   trailing: StatusPill(
-                    label: p.status.label,
+                    label: p.status.localizedLabel(l10n),
                     tone: paymentTone(p.status),
                   ),
                 ),

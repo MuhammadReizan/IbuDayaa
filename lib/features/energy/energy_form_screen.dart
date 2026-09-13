@@ -190,7 +190,7 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
             ),
             const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<DateTime>(
-              value: _month,
+              initialValue: _month,
               items: [
                 for (int i = 0; i < 12; i++)
                   DropdownMenuItem(

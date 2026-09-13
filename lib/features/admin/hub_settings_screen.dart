@@ -6,6 +6,7 @@ import '../../core/db/row.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/models/models.dart';
 import '../../core/state/actions.dart';
 import '../../core/state/app_state.dart';
@@ -79,7 +80,7 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<int>(
-                  value: start,
+                  initialValue: start,
                   decoration: const InputDecoration(labelText: 'Mulai'),
                   items: [
                     for (int h = 5; h < 19; h++)
@@ -97,7 +98,7 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: DropdownButtonFormField<int>(
-                  value: end,
+                  initialValue: end,
                   decoration: const InputDecoration(labelText: 'Selesai'),
                   items: [
                     for (int h = start + 1; h <= 19; h++)
@@ -142,10 +143,11 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
     final now = ref.read(clockProvider)();
     final today = dayOf(now);
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     if (hub == null) {
       return AppScaffold(
-        title: 'Solar Hub',
+        title: l10n.adminHubTitle,
         onBack: () => context.pop(),
         scrollable: false,
         body: const EmptyState(title: 'Solar Hub tidak ditemukan'),

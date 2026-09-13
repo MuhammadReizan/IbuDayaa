@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 
 import '../db/row.dart';
+import '../l10n/l10n.dart';
 import '../models/energy.dart';
 import '../models/solar.dart';
 
@@ -255,6 +256,7 @@ List<PowerObservation> buildObservations({
   required double tariff,
   required DateTime now,
   required String Function(int) rupiah,
+  AppLocalizations? l10n,
 }) {
   final out = <PowerObservation>[];
 
@@ -266,10 +268,15 @@ List<PowerObservation> buildObservations({
         PowerObservation(
           id: 'spike',
           tone: ObservationTone.danger,
-          title: 'Lonjakan pemakaian ${change.round()}%',
+          title: l10n != null
+              ? l10n.obsSpikeTitle(change.round())
+              : 'Lonjakan pemakaian ${change.round()}%',
           body: extra > 0
-              ? 'Lebih mahal sekitar ${rupiah(extra)} dibanding bulan lalu.'
-              : 'Pemakaian bulan ini di atas rata-rata bulan sebelumnya.',
+              ? (l10n != null
+                    ? l10n.obsSpikeBodyExtra(rupiah(extra))
+                    : 'Lebih mahal sekitar ${rupiah(extra)} dibanding bulan lalu.')
+              : (l10n?.obsSpikeBodyAvg ??
+                    'Pemakaian bulan ini di atas rata-rata bulan sebelumnya.'),
           action: ObservationAction.analysis,
         ),
       );
@@ -278,8 +285,12 @@ List<PowerObservation> buildObservations({
         PowerObservation(
           id: 'saving',
           tone: ObservationTone.success,
-          title: 'Pemakaian turun ${change.abs().round()}%',
-          body: 'Lebih hemat dibanding bulan lalu. Pertahankan!',
+          title: l10n != null
+              ? l10n.obsSavingTitle(change.abs().round())
+              : 'Pemakaian turun ${change.abs().round()}%',
+          body:
+              l10n?.obsSavingBody ??
+              'Lebih hemat dibanding bulan lalu. Pertahankan!',
           action: ObservationAction.analysis,
         ),
       );
@@ -287,11 +298,13 @@ List<PowerObservation> buildObservations({
 
     if (insight.declaredExceedsUsage) {
       out.add(
-        const PowerObservation(
+        PowerObservation(
           id: 'mismatch',
           tone: ObservationTone.warning,
-          title: 'Data alat perlu dicek',
-          body: 'Total pemakaian alat melebihi catatan listrik Anda.',
+          title: l10n?.obsMismatchTitle ?? 'Data alat perlu dicek',
+          body:
+              l10n?.obsMismatchBody ??
+              'Total pemakaian alat melebihi catatan listrik Anda.',
           action: ObservationAction.appliances,
         ),
       );
@@ -302,9 +315,12 @@ List<PowerObservation> buildObservations({
         PowerObservation(
           id: 'top-appliance',
           tone: ObservationTone.warning,
-          title: '${top.appliance.name} paling boros',
-          body:
-              '±${rupiah(top.monthlyCostIdr)}/bulan. Pindahkan ke jam Solar Hub.',
+          title: l10n != null
+              ? l10n.obsTopApplianceTitle(top.appliance.name)
+              : '${top.appliance.name} paling boros',
+          body: l10n != null
+              ? l10n.obsTopApplianceBody(rupiah(top.monthlyCostIdr))
+              : '±${rupiah(top.monthlyCostIdr)}/bulan. Pindahkan ke jam Solar Hub.',
           action: ObservationAction.booking,
         ),
       );
@@ -320,10 +336,10 @@ List<PowerObservation> buildObservations({
       PowerObservation(
         id: 'confirm-booking',
         tone: ObservationTone.info,
-        title: 'Konfirmasi pemakaian hub',
-        body:
-            '${unconfirmed.length} jadwal sudah lewat. Tandai sudah dipakai '
-            'agar penghematan tercatat.',
+        title: l10n?.obsConfirmBookingTitle ?? 'Konfirmasi pemakaian hub',
+        body: l10n != null
+            ? l10n.obsConfirmBookingBody(unconfirmed.length)
+            : '${unconfirmed.length} jadwal sudah lewat. Tandai sudah dipakai agar penghematan tercatat.',
         action: ObservationAction.confirmBooking,
       ),
     );
@@ -331,11 +347,11 @@ List<PowerObservation> buildObservations({
 
   if (!records.any((r) => sameMonth(r.periodMonth, now))) {
     out.add(
-      const PowerObservation(
+      PowerObservation(
         id: 'no-record',
         tone: ObservationTone.info,
-        title: 'Scan tagihan bulan ini',
-        body: 'Belum ada catatan listrik bulan ini.',
+        title: l10n?.obsScanBillTitle ?? 'Scan tagihan bulan ini',
+        body: l10n?.obsScanBillBody ?? 'Belum ada catatan listrik bulan ini.',
         action: ObservationAction.scanBill,
       ),
     );
@@ -343,11 +359,12 @@ List<PowerObservation> buildObservations({
 
   if (appliances.isEmpty) {
     out.add(
-      const PowerObservation(
+      PowerObservation(
         id: 'no-appliance',
         tone: ObservationTone.info,
-        title: 'Daftarkan alat usaha',
-        body: 'Supaya tagihan bisa dipecah per alat.',
+        title: l10n?.obsNoApplianceTitle ?? 'Daftarkan alat usaha',
+        body:
+            l10n?.obsNoApplianceBody ?? 'Supaya tagihan bisa dipecah per alat.',
         action: ObservationAction.appliances,
       ),
     );

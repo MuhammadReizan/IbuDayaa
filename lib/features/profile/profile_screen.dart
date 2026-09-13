@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/brand/brand.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/logic/energy_insights.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
@@ -34,9 +35,10 @@ class ProfileScreen extends ConsumerWidget {
         .where((b) => b.status == BookingStatus.completed)
         .length;
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     return AppScaffold(
-      title: 'Profil',
+      title: l10n.profileTitle,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -78,7 +80,7 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
-                          'Bulan tercatat',
+                          l10n.profileMonthsRecorded,
                           style: text.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: AppColors.textPrimary,
@@ -87,7 +89,7 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: AppSpacing.xxs),
                         Text(
-                          'Sejak bergabung',
+                          l10n.profileSinceJoined,
                           style: text.bodySmall?.copyWith(
                             color: AppColors.textTertiary,
                             fontSize: 11,
@@ -126,7 +128,7 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
-                          'Sesi hub',
+                          l10n.profileHubSessions,
                           style: text.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: AppColors.textPrimary,
@@ -135,7 +137,7 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: AppSpacing.xxs),
                         Text(
-                          'Aktivitas di Solar Hub',
+                          l10n.profileHubActivities,
                           style: text.bodySmall?.copyWith(
                             color: AppColors.textTertiary,
                             fontSize: 11,
@@ -174,7 +176,7 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
-                          'Skor Kredit Energi',
+                          l10n.profileEnergyCredit,
                           style: text.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: AppColors.textPrimary,
@@ -185,9 +187,11 @@ class ProfileScreen extends ConsumerWidget {
                         Text.rich(
                           TextSpan(
                             children: [
-                              const TextSpan(text: 'Kategori: '),
+                              TextSpan(text: l10n.profileCategory),
                               TextSpan(
-                                text: score == null ? '–' : score.band.label,
+                                text: score == null
+                                    ? '–'
+                                    : score.band.localizedLabel(l10n),
                                 style: TextStyle(
                                   color: score == null
                                       ? AppColors.textTertiary
@@ -211,60 +215,71 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          const SectionHeader(title: 'Usaha & energi'),
+          SectionHeader(title: l10n.profileSectionBusiness),
           _menu(
             context,
             Icons.receipt_long_rounded,
-            'Catatan listrik',
+            l10n.profileMenuEnergy,
             Paths.energy,
           ),
-          _menu(context, Icons.kitchen_rounded, 'Alat usaha', Paths.appliances),
+          _menu(
+            context,
+            Icons.kitchen_rounded,
+            l10n.profileMenuAppliances,
+            Paths.appliances,
+          ),
           _menu(
             context,
             Icons.event_available_rounded,
-            'Jadwal Solar Hub',
+            l10n.profileMenuSolarSchedule,
             Paths.bookings,
           ),
           _menu(
             context,
             Icons.speed_rounded,
-            'Skor Kredit Energi',
+            l10n.profileMenuScore,
             Paths.score,
           ),
           _menu(
             context,
             Icons.account_balance_wallet_rounded,
-            'Pembiayaan',
+            l10n.profileMenuLoans,
             Paths.loans,
           ),
           const SizedBox(height: AppSpacing.lg),
-          const SectionHeader(title: 'Akun'),
+          SectionHeader(title: l10n.profileSectionAccount),
           _menu(
             context,
             Icons.person_outline_rounded,
-            'Ubah profil & tarif listrik',
+            l10n.profileMenuEditProfile,
             Paths.profileEdit,
           ),
           _menu(
             context,
             Icons.lock_outline_rounded,
-            'Ganti PIN',
+            l10n.profileMenuChangePin,
             Paths.changePin,
           ),
           _menu(
             context,
             Icons.notifications_none_rounded,
-            'Notifikasi',
+            l10n.profileMenuNotifications,
             Paths.notifications,
           ),
           _menu(
             context,
+            Icons.language_rounded,
+            l10n.profileMenuLanguage,
+            Paths.language,
+          ),
+          _menu(
+            context,
             Icons.info_outline_rounded,
-            'Tentang IbuDaya',
+            l10n.profileMenuAbout,
             Paths.about,
           ),
           const SizedBox(height: AppSpacing.lg),
-          LogoutButton(ref: ref),
+          LogoutButton(ref: ref, l10n: l10n),
         ],
       ),
     );
@@ -295,6 +310,7 @@ class ProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     return HeroCard(
       child: Row(
         children: [
@@ -335,7 +351,7 @@ class ProfileHeader extends StatelessWidget {
                   runSpacing: AppSpacing.xs,
                   children: [
                     StatusPill(
-                      label: me.role.label,
+                      label: me.role.localizedLabel(l10n),
                       tone: me.isAdmin ? PillTone.solar : PillTone.success,
                     ),
                     if (coopName != null)
@@ -352,21 +368,22 @@ class ProfileHeader extends StatelessWidget {
 }
 
 class LogoutButton extends StatelessWidget {
-  const LogoutButton({super.key, required this.ref});
+  const LogoutButton({super.key, required this.ref, required this.l10n});
 
   final WidgetRef ref;
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
     return SecondaryButton(
-      label: 'Keluar',
+      label: l10n.profileLogout,
       icon: Icons.logout_rounded,
       onPressed: () async {
         final ok = await confirmDialog(
           context,
-          title: 'Keluar dari akun?',
-          message: 'Data tetap tersimpan. Masuk lagi dengan nomor HP dan PIN.',
-          confirmLabel: 'Keluar',
+          title: l10n.profileLogoutTitle,
+          message: l10n.profileLogoutMessage,
+          confirmLabel: l10n.profileLogoutConfirm,
           destructive: true,
         );
         if (!ok || !context.mounted) return;

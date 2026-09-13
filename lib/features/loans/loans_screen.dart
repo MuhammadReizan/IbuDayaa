@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/logic/loan_math.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
@@ -26,6 +27,7 @@ class LoansScreen extends ConsumerWidget {
     final coop = data.cooperative;
     final now = ref.read(clockProvider)();
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final loans = data.loansOf(me.id);
     final score = data.scoreOf(
       me.id,
@@ -45,10 +47,10 @@ class LoansScreen extends ConsumerWidget {
         eligibility.ceilingIdr >= LocalLoanRepository.minimumAmountIdr;
 
     return AppScaffold(
-      title: 'Pembiayaan',
+      title: l10n.scaffoldLoans,
       onBack: () => context.pop(),
       bottomBar: PrimaryButton(
-        label: 'Ajukan Pembiayaan',
+        label: l10n.scoreApply,
         icon: Icons.add_rounded,
         onPressed: canApply ? () => context.push(Paths.loanApply) : null,
       ),
@@ -75,15 +77,20 @@ class LoansScreen extends ConsumerWidget {
                     children: [
                       Text(
                         canApply
-                            ? 'Plafon Anda ${formatRupiah(eligibility.ceilingIdr)}'
-                            : 'Belum bisa mengajukan',
+                            ? l10n.loanCeilingTitle(
+                                formatRupiah(eligibility.ceilingIdr),
+                              )
+                            : l10n.loanCannotApply,
                         style: text.titleMedium,
                       ),
                       const SizedBox(height: 2),
                       Text(
                         canApply
-                            ? 'Dari skor ${score!.score} (${score.band.label}).'
-                            : eligibility?.message ?? '',
+                            ? l10n.loanCeilingFromScore(
+                                score!.score,
+                                score.band.localizedLabel(l10n),
+                              )
+                            : (eligibility?.localizedMessage(l10n) ?? ''),
                         style: text.bodySmall,
                       ),
                     ],
@@ -96,16 +103,20 @@ class LoansScreen extends ConsumerWidget {
           if (coop != null) ...[
             const SizedBox(height: AppSpacing.md),
             Text(
-              'Kebijakan ${coop.name}: maksimal ${formatRupiah(coop.loanMaxAmountIdr)}, '
-              'jasa ${formatPercent(coop.loanFlatMonthlyRatePct, decimals: 1)} per bulan (flat), '
-              'tenor ${coop.loanTenors.join('/')} bulan, skor minimum ${coop.loanMinScore}.',
+              l10n.loanCoopPolicy(
+                coop.name,
+                formatRupiah(coop.loanMaxAmountIdr),
+                formatPercent(coop.loanFlatMonthlyRatePct, decimals: 1),
+                coop.loanTenors.join('/'),
+                coop.loanMinScore,
+              ),
               style: text.bodySmall,
             ),
           ],
           const SizedBox(height: AppSpacing.xl),
-          const SectionHeader(title: 'Pengajuan saya'),
+          SectionHeader(title: l10n.loanMySubmissions),
           if (loans.isEmpty)
-            Text('Belum ada pengajuan.', style: text.bodyMedium)
+            Text(l10n.loanNoSubmissions, style: text.bodyMedium)
           else
             for (final l in loans) ...[
               _LoanCard(loan: l),
@@ -127,6 +138,7 @@ class _LoanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     return SectionCard(
       onTap: () => context.push(Paths.loan(loan.id)),
       child: Row(
@@ -142,13 +154,16 @@ class _LoanCard extends StatelessWidget {
               children: [
                 Text(formatRupiah(loan.amountIdr), style: text.titleMedium),
                 Text(
-                  '${loan.purpose.label} · ${loan.tenorMonths} bulan · ${formatShortDate(loan.createdAt)}',
+                  '${loan.purpose.localizedLabel(l10n)} · ${loan.tenorMonths} bulan · ${formatShortDate(loan.createdAt, l10n: l10n)}',
                   style: text.bodySmall,
                 ),
               ],
             ),
           ),
-          StatusPill(label: loan.status.label, tone: loanTone(loan.status)),
+          StatusPill(
+            label: loan.status.localizedLabel(l10n),
+            tone: loanTone(loan.status),
+          ),
         ],
       ),
     );

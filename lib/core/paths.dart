@@ -38,6 +38,7 @@ abstract final class Paths {
   static const profileEdit = '/profile/edit';
   static const changePin = '/profile/pin';
   static const about = '/about';
+  static const language = '/language';
 
   // Admin shell.
   static const adminHome = '/a/home';

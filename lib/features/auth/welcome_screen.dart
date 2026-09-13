@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/brand/brand.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/paths.dart';
 import '../../core/repositories/local/sample_seeder.dart';
 import '../../core/state/actions.dart';
@@ -14,76 +14,115 @@ class WelcomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final text = Theme.of(context).textTheme;
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, c) => SingleChildScrollView(
-            padding: AppSpacing.screenH,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: c.maxHeight),
-              child: IntrinsicHeight(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: AppSpacing.xl),
-                    const Center(
-                      child: IbuDayaLogo(
-                        height: 36,
-                        tagline: 'Energi hemat, usaha kuat',
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                    const Center(
-                      child: BrandArt(
-                        motif: BrandArtMotif.community,
-                        size: 190,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                    Text(
-                      'Kelola listrik usaha bersama koperasi',
-                      style: text.headlineSmall,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    const _Point(
-                      icon: Icons.document_scanner_rounded,
-                      text: 'Scan tagihan PLN, lihat alat yang paling boros',
-                    ),
-                    const _Point(
-                      icon: Icons.solar_power_rounded,
-                      text: 'Pesan jadwal pakai Solar Hub koperasi',
-                    ),
-                    const _Point(
-                      icon: Icons.groups_rounded,
-                      text: 'Arisan energi dan pinjaman usaha dari koperasi',
-                    ),
-                    const Spacer(),
-                    const SizedBox(height: AppSpacing.xl),
-                    PrimaryButton(
-                      label: 'Masuk',
-                      onPressed: () => context.push(Paths.login),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    SecondaryButton(
-                      label: 'Daftar',
-                      onPressed: () => context.push(Paths.register),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    TextLinkButton(
-                      label: 'Coba dengan data contoh',
-                      icon: Icons.science_outlined,
-                      onPressed: () => _openSample(context, ref),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                  ],
+      body: Stack(
+        children: [
+          // Top Left Decorative Pattern
+          Positioned(
+            top: 0,
+            left: 0,
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: 0.4,
+                child: Image.asset(
+                  'assets/images/pattern1.webp',
+                  fit: BoxFit.contain,
                 ),
               ),
             ),
           ),
-        ),
+
+          // Bottom Right Decorative Pattern
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: 0.4,
+                child: Image.asset(
+                  'assets/images/pattern2.webp',
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+
+          // Main Foreground Content
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                padding: AppSpacing.screenH,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: AppSpacing.md),
+                        // Language Switcher Top Right
+                        Align(
+                          alignment: Alignment.topRight,
+                          child: _LanguageSwitcher(ref: ref),
+                        ),
+
+                        const Spacer(flex: 2),
+
+                        // Logo Section
+                        Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Image.asset(
+                                'assets/images/Logo IbuDaya.webp',
+                                fit: BoxFit.contain,
+                                width: 220,
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              Text(
+                                l10n.appTagline,
+                                style: text.bodyMedium?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  height: 1.3,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const Spacer(flex: 3),
+
+                        // Action Buttons Section
+                        PrimaryButton(
+                          label: l10n.actionLogin,
+                          onPressed: () => context.push(Paths.login),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        SecondaryButton(
+                          label: l10n.actionRegister,
+                          onPressed: () => context.push(Paths.register),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Center(
+                          child: TextLinkButton(
+                            label: l10n.welcomeTrySample,
+                            icon: Icons.science_outlined,
+                            onPressed: () => _openSample(context, ref),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -91,15 +130,12 @@ class WelcomeScreen extends ConsumerWidget {
   Future<void> _openSample(BuildContext context, WidgetRef ref) async {
     final actions = ref.read(actionsProvider);
     if (!actions.sampleSeeded) {
+      final l10n = AppLocalizations.of(context);
       final ok = await confirmDialog(
         context,
-        title: 'Tambah data contoh?',
-        message:
-            'Aplikasi akan membuat "Koperasi Energi Melati" berisi 1 admin dan '
-            '4 anggota dengan catatan listrik, arisan, dan pengajuan pinjaman '
-            'rekaan. Semua angka di dalamnya bukan data asli. Anda bisa '
-            'menghapusnya kapan saja dari menu Tentang.',
-        confirmLabel: 'Tambahkan',
+        title: l10n.welcomeSampleTitle,
+        message: l10n.welcomeSampleBanner,
+        confirmLabel: l10n.sampleConfirmLabel,
       );
       if (!ok || !context.mounted) return;
       final done = await runAction(context, actions.seedSample);
@@ -116,6 +152,7 @@ class WelcomeScreen extends ConsumerWidget {
       for (final m in SampleSeeder.members)
         (phone: m.phone, name: m.name, role: 'Anggota · ${m.business}'),
     ];
+    final l10n = AppLocalizations.of(context);
     final picked = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -130,14 +167,15 @@ class WelcomeScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Masuk sebagai', style: Theme.of(ctx).textTheme.titleLarge),
+              Text(
+                l10n.welcomeLoginAs,
+                style: Theme.of(ctx).textTheme.titleLarge,
+              ),
               const SizedBox(height: AppSpacing.sm),
-              const InfoBanner(
+              InfoBanner(
                 tone: InfoTone.warning,
-                title: 'Data contoh',
-                message:
-                    'Semua akun di bawah memakai PIN ${SampleSeeder.pin}. '
-                    'Isinya rekaan untuk mencoba aplikasi.',
+                title: l10n.sampleTitle,
+                message: l10n.sampleMessage,
               ),
               const SizedBox(height: AppSpacing.md),
               for (final a in accounts) ...[
@@ -164,22 +202,59 @@ class WelcomeScreen extends ConsumerWidget {
   }
 }
 
-class _Point extends StatelessWidget {
-  const _Point({required this.icon, required this.text});
+class _LanguageSwitcher extends StatelessWidget {
+  const _LanguageSwitcher({required this.ref});
 
-  final IconData icon;
-  final String text;
+  final WidgetRef ref;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+    final currentLocale = ref.watch(resolvedLocaleProvider);
+    final isEn = currentLocale.languageCode == 'en';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          FeatureBadge(icon: icon, size: 36),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Text(text, style: Theme.of(context).textTheme.bodyLarge),
+          InkWell(
+            borderRadius: BorderRadius.circular(4),
+            onTap: () =>
+                ref.read(localeProvider.notifier).setLocale(const Locale('id')),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: Text(
+                'ID',
+                style: TextStyle(
+                  fontWeight: !isEn ? FontWeight.bold : FontWeight.w500,
+                  color: !isEn ? AppColors.primary : AppColors.textTertiary,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              '|',
+              style: TextStyle(color: AppColors.outline, fontSize: 14),
+            ),
+          ),
+          InkWell(
+            borderRadius: BorderRadius.circular(4),
+            onTap: () =>
+                ref.read(localeProvider.notifier).setLocale(const Locale('en')),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: Text(
+                'EN',
+                style: TextStyle(
+                  fontWeight: isEn ? FontWeight.bold : FontWeight.w500,
+                  color: isEn ? AppColors.primary : AppColors.textTertiary,
+                  fontSize: 14,
+                ),
+              ),
+            ),
           ),
         ],
       ),

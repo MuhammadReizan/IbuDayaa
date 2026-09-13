@@ -6,6 +6,7 @@ import '../../core/brand/brand.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
 import '../../core/state/actions.dart';
@@ -27,23 +28,24 @@ class MessagesScreen extends ConsumerWidget {
     final now = ref.read(clockProvider)();
     final threads = data.threadsFor(me);
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     return AppScaffold(
-      title: 'Pesan',
+      title: l10n.messagesTitle,
       onBack: standalone ? () => context.pop() : null,
       scrollable: threads.isNotEmpty,
       actions: [
         IconButton(
-          tooltip: 'Pesan baru',
+          tooltip: l10n.messagesTitle,
           onPressed: () => _newMessage(context, ref, me),
           icon: const Icon(Icons.edit_square),
         ),
       ],
       body: threads.isEmpty
-          ? const EmptyState(
+          ? EmptyState(
               motif: BrandArtMotif.inbox,
-              title: 'Belum ada pesan',
-              message: 'Pengumuman koperasi dan obrolan akan muncul di sini.',
+              title: l10n.messagesEmpty,
+              message: l10n.messagesEmptyMessage,
             )
           : Column(
               children: [
@@ -59,8 +61,7 @@ class MessagesScreen extends ConsumerWidget {
                   ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Pesan tersimpan di HP ini. Setelah tersambung ke server '
-                  'koperasi, pesan akan sampai ke HP anggota lain.',
+                  l10n.messagesEmptyMessage,
                   style: text.bodySmall,
                   textAlign: TextAlign.center,
                 ),
@@ -96,7 +97,10 @@ class MessagesScreen extends ConsumerWidget {
             AppSpacing.lg,
           ),
           children: [
-            Text('Kirim pesan ke', style: Theme.of(ctx).textTheme.titleLarge),
+            Text(
+              AppLocalizations.of(context).threadTitle,
+              style: Theme.of(ctx).textTheme.titleLarge,
+            ),
             const SizedBox(height: AppSpacing.md),
             for (final p in people)
               ListTile(
@@ -207,7 +211,11 @@ class _ThreadRow extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        relativeTimeLabel(t.activity, now),
+                        relativeTimeLabel(
+                          t.activity,
+                          now,
+                          l10n: AppLocalizations.of(context),
+                        ),
                         style: text.labelSmall?.copyWith(
                           color: unread
                               ? AppColors.primary

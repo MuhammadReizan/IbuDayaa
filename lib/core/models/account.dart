@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 
 import '../db/row.dart';
 
+import '../l10n/l10n.dart';
+
 enum UserRole {
   member,
   admin;
@@ -9,6 +11,8 @@ enum UserRole {
   static UserRole fromDb(String? v) => v == 'admin' ? admin : member;
   String get db => name;
   String get label => this == admin ? 'Admin Koperasi' : 'Anggota';
+  String localizedLabel(AppLocalizations l10n) =>
+      this == admin ? l10n.roleAdmin : l10n.roleMember;
 }
 
 @immutable

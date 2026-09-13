@@ -10,6 +10,8 @@ library;
 
 import 'package:flutter/foundation.dart';
 
+import '../../../core/l10n/l10n.dart';
+
 // ---------------------------------------------------------------------------
 // Enums (docs/DATA_MODEL.md §2)
 // ---------------------------------------------------------------------------
@@ -38,6 +40,13 @@ enum CreditBand {
     CreditBand.cukup => 'Cukup',
     CreditBand.baik => 'Baik',
     CreditBand.baikSekali => 'Baik Sekali',
+  };
+
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+    CreditBand.perluPeningkatan => l10n.creditBandPerluPeningkatan,
+    CreditBand.cukup => l10n.creditBandCukup,
+    CreditBand.baik => l10n.creditBandBaik,
+    CreditBand.baikSekali => l10n.creditBandBaikSekali,
   };
 }
 

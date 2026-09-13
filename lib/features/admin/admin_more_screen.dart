@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/paths.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
@@ -14,6 +15,7 @@ class AdminMoreScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final s = ref.watch(appStateProvider);
     final me = s.me;
     if (me == null) return const Scaffold();
@@ -44,64 +46,78 @@ class AdminMoreScreen extends ConsumerWidget {
     );
 
     return AppScaffold(
-      title: 'Lainnya',
+      title: l10n.scaffoldAdminOther,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ProfileHeader(me: me, coopName: data.cooperative?.name),
           const SizedBox(height: AppSpacing.xl),
-          const SectionHeader(title: 'Kelola koperasi'),
+          SectionHeader(title: l10n.adminSectionManage),
           item(
             Icons.payments_rounded,
-            'Konfirmasi setoran arisan',
+            l10n.adminPaymentsMenu,
             Paths.adminPayments,
             badge: data.pendingPayments.length,
             tone: PillTone.warning,
           ),
           item(
             Icons.groups_rounded,
-            'Grup arisan',
+            l10n.adminArisanMenu,
             Paths.adminArisan,
-            subtitle: '${data.groups.length} grup',
+            subtitle:
+                '${data.groups.length} ${l10n.arisanGroupName.toLowerCase()}',
           ),
           item(
             Icons.solar_power_rounded,
-            'Solar Hub & slot',
+            l10n.adminHubMenu,
             Paths.adminHub,
             tone: PillTone.solar,
           ),
           item(
             Icons.campaign_rounded,
-            'Kirim pengumuman',
+            l10n.adminAnnounceMenu,
             Paths.adminAnnounce,
             tone: PillTone.info,
           ),
           item(
             Icons.chat_bubble_outline_rounded,
-            'Pesan',
+            l10n.adminMessagesMenu,
             Paths.adminMessages,
             badge: data.unreadMessagesOf(me),
             tone: PillTone.info,
           ),
           item(
             Icons.tune_rounded,
-            'Pengaturan koperasi & pinjaman',
+            l10n.adminSettingsMenu,
             Paths.adminSettings,
-            subtitle: 'Kode undangan, plafon, jasa, tenor, kuota',
+            subtitle: l10n.adminSettingsSubtitle,
           ),
           const SizedBox(height: AppSpacing.lg),
-          const SectionHeader(title: 'Akun'),
-          item(Icons.person_outline_rounded, 'Ubah profil', Paths.profileEdit),
-          item(Icons.lock_outline_rounded, 'Ganti PIN', Paths.changePin),
+          SectionHeader(title: l10n.adminSectionAccount),
+          item(
+            Icons.person_outline_rounded,
+            l10n.adminEditProfile,
+            Paths.profileEdit,
+          ),
+          item(
+            Icons.lock_outline_rounded,
+            l10n.adminChangePin,
+            Paths.changePin,
+          ),
           item(
             Icons.notifications_none_rounded,
-            'Notifikasi',
+            l10n.scaffoldNotifications,
             Paths.notifications,
             badge: data.unreadNotificationsOf(me.id),
           ),
-          item(Icons.info_outline_rounded, 'Tentang IbuDaya', Paths.about),
+          item(
+            Icons.language_rounded,
+            l10n.profileMenuLanguage,
+            Paths.language,
+          ),
+          item(Icons.info_outline_rounded, l10n.profileMenuAbout, Paths.about),
           const SizedBox(height: AppSpacing.lg),
-          LogoutButton(ref: ref),
+          LogoutButton(ref: ref, l10n: l10n),
         ],
       ),
     );

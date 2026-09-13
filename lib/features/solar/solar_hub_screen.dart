@@ -7,6 +7,7 @@ import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/typography.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/logic/hub_capacity.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
@@ -26,6 +27,7 @@ class SolarHubScreen extends ConsumerWidget {
     final now = ref.read(clockProvider)();
     final today = dayOf(now);
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     final slots = data.availabilityOn(today);
     final day = dayCapacity(slots);
@@ -42,7 +44,7 @@ class SolarHubScreen extends ConsumerWidget {
           ..sort((a, b) => a.bookingDate.compareTo(b.bookingDate));
 
     return AppScaffold(
-      title: 'Solar Hub',
+      title: l10n.solarTitle,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -59,7 +61,7 @@ class SolarHubScreen extends ConsumerWidget {
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        hub?.name ?? 'Solar Hub koperasi',
+                        hub?.name ?? l10n.solarHubCoop,
                         style: text.titleMedium?.copyWith(color: Colors.white),
                       ),
                     ),
@@ -77,13 +79,12 @@ class SolarHubScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.lg),
                 if (hub == null || !hub.isConfigured)
                   Text(
-                    'Admin koperasi belum mengatur kapasitas hub. Booking akan '
-                    'dibuka setelah kapasitas diisi.',
+                    l10n.solarNoHubMessage,
                     style: text.bodyMedium?.copyWith(color: Colors.white),
                   )
                 else ...[
                   Text(
-                    'Kapasitas energi hari ini',
+                    l10n.solarCapacityToday,
                     style: text.labelMedium?.copyWith(
                       color: AppColors.textOnDarkDim,
                     ),
@@ -101,8 +102,10 @@ class SolarHubScreen extends ConsumerWidget {
                         child: Padding(
                           padding: const EdgeInsets.only(bottom: 4),
                           child: Text(
-                            'tersedia · ${formatKwh(day.remainingKwh)} dari '
-                            '${formatKwh(day.capacityKwh)}',
+                            l10n.solarCapacityAvailable(
+                              formatKwh(day.remainingKwh),
+                              formatKwh(day.capacityKwh),
+                            ),
                             style: text.bodySmall?.copyWith(
                               color: AppColors.textOnDarkDim,
                             ),
@@ -126,7 +129,7 @@ class SolarHubScreen extends ConsumerWidget {
             children: [
               Expanded(
                 child: PrimaryButton(
-                  label: 'Booking Jadwal',
+                  label: l10n.solarBookingScheduleBtn,
                   icon: Icons.event_available_rounded,
                   onPressed: hub?.isConfigured ?? false
                       ? () => context.push(Paths.booking)
@@ -149,21 +152,23 @@ class SolarHubScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Kuota energi bulan ini', style: text.bodySmall),
+                      Text(l10n.solarQuotaThisMonth, style: text.bodySmall),
                       Text(
-                        '${formatKwh(quota.availableKwh)} tersisa',
+                        l10n.solarQuotaRemaining(formatKwh(quota.availableKwh)),
                         style: text.titleMedium,
                       ),
                       Text(
-                        'Jatah ${formatKwh(quota.allocationKwh)} · terpakai '
-                        '${formatKwh(quota.bookedKwh)}',
+                        l10n.solarQuotaAllocationUsed(
+                          formatKwh(quota.allocationKwh),
+                          formatKwh(quota.bookedKwh),
+                        ),
                         style: text.bodySmall,
                       ),
                     ],
                   ),
                 ),
                 Text(
-                  'Tukar',
+                  l10n.solarSwap,
                   style: text.labelLarge?.copyWith(
                     color: AppColors.primaryDark,
                   ),
@@ -177,32 +182,28 @@ class SolarHubScreen extends ConsumerWidget {
           ),
           if (hub != null && hub.isConfigured && slots.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.xl),
-            const SectionHeader(title: 'Slot hari ini'),
+            SectionHeader(title: l10n.solarTodaySlots),
             for (final a in slots) ...[
               _SlotRow(availability: a, passed: now.hour >= a.slot.endHour),
               const SizedBox(height: AppSpacing.sm),
             ],
-            Text(
-              'Kapasitas per slot dibagi mengikuti perkiraan terik matahari '
-              '06.00–18.00: slot siang mendapat bagian lebih besar.',
-              style: text.bodySmall,
-            ),
+            Text(l10n.solarSlotCapacityNote, style: text.bodySmall),
           ],
           const SizedBox(height: AppSpacing.xl),
           SectionHeader(
-            title: 'Jadwal saya',
-            actionLabel: 'Semua',
+            title: l10n.solarMyBookings,
+            actionLabel: l10n.solarMyScheduleAll,
             onAction: () => context.push(Paths.bookings),
           ),
           if (upcoming.isEmpty)
-            Text('Belum ada jadwal yang akan datang.', style: text.bodyMedium)
+            Text(l10n.solarNoUpcoming, style: text.bodyMedium)
           else
             for (final b in upcoming.take(3)) ...[
               TintedRow(
                 icon: Icons.event_rounded,
                 tone: PillTone.info,
                 title:
-                    '${formatShortDayDate(b.bookingDate)} · '
+                    '${formatShortDayDate(b.bookingDate, l10n: l10n)} · '
                     '${data.slot(b.slotId)?.label ?? ''}',
                 subtitle: '${b.applianceName} · ${formatKwh(b.estKwh)}',
                 onTap: () => context.push(Paths.bookings),
@@ -224,6 +225,7 @@ class _SlotRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final a = availability;
     final free = 1 - a.usedFraction;
     return Container(
@@ -251,9 +253,9 @@ class _SlotRow extends StatelessWidget {
             child: Align(
               alignment: Alignment.centerRight,
               child: passed
-                  ? const StatusPill(label: 'Lewat')
+                  ? StatusPill(label: l10n.solarSlotPassed)
                   : a.isFull
-                  ? const StatusPill(label: 'Penuh', tone: PillTone.danger)
+                  ? StatusPill(label: l10n.solarSlotFull, tone: PillTone.danger)
                   : Text(formatKwh(a.remainingKwh), style: text.labelMedium),
             ),
           ),

@@ -6,6 +6,7 @@ import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/typography.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/logic/energy_insights.dart';
 import '../../core/paths.dart';
 import '../../core/state/app_state.dart';
@@ -22,21 +23,22 @@ class EnergyAnalysisScreen extends ConsumerWidget {
     final me = s.me;
     if (me == null) return const Scaffold();
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final insight = s.data.insightOf(me.id);
     final tariff = me.tariffIdrPerKwh;
 
     if (insight == null) {
       return AppScaffold(
-        title: 'Analisis Energi',
+        title: l10n.energyAnalysisTitle,
         onBack: () => context.pop(),
         scrollable: false,
         body: EmptyState(
           motif: BrandArtMotif.scan,
-          title: 'Belum ada yang dianalisis',
+          title: l10n.energyAnalysisEmpty,
           message:
               'Scan tagihan listrik pertama Anda untuk melihat analisisnya.',
           action: PrimaryButton(
-            label: 'Scan Tagihan',
+            label: l10n.scanConfirm,
             expand: false,
             onPressed: () => context.pushReplacement(Paths.scan),
           ),
@@ -50,7 +52,7 @@ class EnergyAnalysisScreen extends ConsumerWidget {
     final top = insight.contributors.firstOrNull;
 
     return AppScaffold(
-      title: 'Analisis Energi',
+      title: l10n.energyAnalysisTitle,
       onBack: () => context.pop(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -60,7 +62,9 @@ class EnergyAnalysisScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Pemakaian ${monthYearLabel(insight.latest.month)}',
+                  l10n.energyAnalysisUsage(
+                    monthYearLabel(insight.latest.month, l10n: l10n),
+                  ),
                   style: text.labelLarge?.copyWith(
                     color: AppColors.textOnDarkDim,
                   ),
@@ -104,12 +108,21 @@ class EnergyAnalysisScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   change == null
-                      ? 'Catat bulan berikutnya untuk melihat perubahan.'
+                      ? l10n.energyAnalysisNoPrev
                       : change >= 0
-                      ? 'Naik ${change.round()}% dari ${monthYearLabel(insight.previous!.month)}'
-                            '${extra > 0 ? ' · lebih mahal ± ${formatRupiah(extra)}' : ''}'
-                      : 'Turun ${change.abs().round()}% dari '
-                            '${monthYearLabel(insight.previous!.month)}',
+                      ? l10n.energyAnalysisUp(
+                          change.round(),
+                          monthYearLabel(insight.previous!.month, l10n: l10n),
+                          extra > 0
+                              ? l10n.energyAnalysisMoreExpensive(
+                                  formatRupiah(extra),
+                                )
+                              : '',
+                        )
+                      : l10n.energyAnalysisDown(
+                          change.abs().round(),
+                          monthYearLabel(insight.previous!.month, l10n: l10n),
+                        ),
                   style: text.bodyMedium?.copyWith(color: Colors.white),
                 ),
               ],
@@ -117,44 +130,39 @@ class EnergyAnalysisScreen extends ConsumerWidget {
           ),
           if (insight.spikeDetected) ...[
             const SizedBox(height: AppSpacing.md),
-            const InfoBanner(
+            InfoBanner(
               tone: InfoTone.danger,
-              title: 'Lonjakan terdeteksi',
-              message:
-                  'Bulan ini lebih dari 15% di atas rata-rata 3 bulan '
-                  'sebelumnya. Cek alat yang jam pakainya bertambah.',
+              title: l10n.energyAnalysisSpikeTitle,
+              message: l10n.energyAnalysisSpikeBody,
             ),
           ],
           const SizedBox(height: AppSpacing.lg),
           SectionCard(
-            title: 'Tren 6 bulan',
+            title: l10n.energyAnalysisTrend6Months,
             child: UsageBars(months: months),
           ),
           const SizedBox(height: AppSpacing.lg),
           SectionCard(
-            title: 'Rincian per alat',
+            title: l10n.energyAnalysisBreakdownTitle,
             trailing: TextButton(
               onPressed: () => context.push(Paths.appliances),
-              child: Text(insight.contributors.isEmpty ? 'Tambah' : 'Ubah'),
+              child: Text(
+                insight.contributors.isEmpty ? l10n.actionAdd : l10n.actionEdit,
+              ),
             ),
             child: insight.contributors.isEmpty
-                ? Text(
-                    'Daftarkan alat usaha (oven, kulkas, mesin jahit…) untuk '
-                    'melihat alat mana yang paling banyak memakan listrik.',
-                    style: text.bodyMedium,
-                  )
+                ? Text(l10n.energyAnalysisNoAppliances, style: text.bodyMedium)
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       if (insight.declaredExceedsUsage) ...[
                         InfoBanner(
                           tone: InfoTone.warning,
-                          title: 'Data alat perlu dicek',
-                          message:
-                              'Total alat (${formatKwh(insight.declaredKwh)}) '
-                              'melebihi pemakaian tercatat '
-                              '(${formatKwh(insight.latest.kwh)}). Periksa watt '
-                              'atau jam pakainya.',
+                          title: l10n.obsMismatchTitle,
+                          message: l10n.energyAnalysisMismatchBody(
+                            formatKwh(insight.declaredKwh),
+                            formatKwh(insight.latest.kwh),
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.md),
                       ],
@@ -165,7 +173,7 @@ class EnergyAnalysisScreen extends ConsumerWidget {
                       if (!insight.declaredExceedsUsage &&
                           insight.unaccountedKwh > 0)
                         KeyValueRow(
-                          label: 'Belum terdaftar (lampu, dll.)',
+                          label: l10n.energyAnalysisUnregistered,
                           value: formatKwh(insight.unaccountedKwh),
                         ),
                     ],
@@ -176,20 +184,21 @@ class EnergyAnalysisScreen extends ConsumerWidget {
             SectionCard(
               tone: CardTone.solar,
               leadingIcon: Icons.lightbulb_rounded,
-              title: 'Saran penghematan',
+              title: l10n.energyAnalysisSavingTipTitle,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    '${top.appliance.name} memakai sekitar '
-                    '${formatKwh(top.monthlyKwh)} per bulan '
-                    '(± ${formatRupiah(top.monthlyCostIdr)}). Pakai di jam Solar '
-                    'Hub koperasi untuk mengurangi tagihan PLN.',
+                    l10n.energyAnalysisSavingTipBody(
+                      applianceKindLabel(top.appliance.kind, l10n),
+                      formatKwh(top.monthlyKwh),
+                      formatRupiah(top.monthlyCostIdr),
+                    ),
                     style: text.bodyMedium?.copyWith(color: AppColors.onSolar),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   PrimaryButton(
-                    label: 'Booking Solar Hub',
+                    label: l10n.scaffoldBooking,
                     icon: Icons.solar_power_rounded,
                     onPressed: () => context.push(
                       Uri(
@@ -204,9 +213,7 @@ class EnergyAnalysisScreen extends ConsumerWidget {
           ],
           const SizedBox(height: AppSpacing.lg),
           Text(
-            'Cara menghitung: watt × jam per hari × hari per minggu × 30/7 ÷ '
-            '1000 = kWh per bulan, dikali tarif Anda ${formatRupiah(tariff)}/kWh. '
-            'Angkanya perkiraan dari data alat yang Anda isi.',
+            l10n.energyAnalysisFormula(formatRupiah(tariff)),
             style: text.bodySmall,
           ),
         ],
@@ -223,6 +230,7 @@ class _ContributorRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -234,7 +242,14 @@ class _ContributorRow extends StatelessWidget {
               color: AppColors.primaryDark,
             ),
             const SizedBox(width: AppSpacing.sm),
-            Expanded(child: Text(cost.appliance.name, style: text.titleSmall)),
+            Expanded(
+              child: Text(
+                cost.appliance.name.isNotEmpty
+                    ? cost.appliance.name
+                    : applianceKindLabel(cost.appliance.kind, l10n),
+                style: text.titleSmall,
+              ),
+            ),
             Text(
               '${(cost.share * 100).round()}% · ${formatRupiah(cost.monthlyCostIdr)}',
               style: text.labelMedium,

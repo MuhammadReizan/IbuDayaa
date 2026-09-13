@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../db/row.dart';
+import '../l10n/l10n.dart';
 
 @immutable
 class SolarHub {
@@ -113,6 +114,12 @@ enum BookingStatus {
     booked => 'Terjadwal',
     completed => 'Sudah dipakai',
     cancelled => 'Dibatalkan',
+  };
+
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+    booked => l10n.bookingStatusBooked,
+    completed => l10n.bookingStatusCompleted,
+    cancelled => l10n.bookingStatusCancelled,
   };
 }
 

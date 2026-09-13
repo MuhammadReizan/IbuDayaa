@@ -6,6 +6,7 @@ import '../../core/db/row.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
 import '../../core/state/actions.dart';
@@ -27,13 +28,14 @@ class BookingsScreen extends ConsumerWidget {
       ..sort((a, b) => a.bookingDate.compareTo(b.bookingDate));
     final history = all.where((b) => b.status != BookingStatus.booked).toList();
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     Widget list(List<HubBooking> items, String empty) => items.isEmpty
         ? EmptyState(
             motif: BrandArtMotif.solar,
             title: empty,
             action: SecondaryButton(
-              label: 'Booking jadwal',
+              label: l10n.solarBook,
               expand: false,
               onPressed: () => context.push(Paths.booking),
             ),
@@ -44,8 +46,7 @@ class BookingsScreen extends ConsumerWidget {
             separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
             itemBuilder: (_, i) => i == items.length
                 ? Text(
-                    'Tandai "Sudah dipakai" hanya setelah alat benar-benar '
-                    'dipakai di hub. Angka hemat dan skor Anda memakai data ini.',
+                    l10n.solarSlotCapacityNote,
                     style: text.bodySmall,
                     textAlign: TextAlign.center,
                   )
@@ -57,9 +58,9 @@ class BookingsScreen extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           centerTitle: true,
-          title: const Text('Jadwal Solar Hub'),
+          title: Text(l10n.scaffoldBookings),
           leading: IconButton(
-            tooltip: 'Kembali',
+            tooltip: l10n.actionBack,
             icon: const Icon(Icons.arrow_back_rounded),
             onPressed: () => context.pop(),
           ),
@@ -68,15 +69,15 @@ class BookingsScreen extends ConsumerWidget {
             indicatorColor: AppColors.primary,
             unselectedLabelColor: AppColors.textTertiary,
             tabs: [
-              Tab(text: 'Terjadwal (${upcoming.length})'),
-              const Tab(text: 'Riwayat'),
+              Tab(text: '${l10n.solarMyBookings} (${upcoming.length})'),
+              Tab(text: l10n.arisanHistory),
             ],
           ),
         ),
         body: TabBarView(
           children: [
-            list(upcoming, 'Belum ada jadwal'),
-            list(history, 'Belum ada riwayat'),
+            list(upcoming, l10n.solarNoUpcoming),
+            list(history, l10n.solarNoUpcoming),
           ],
         ),
       ),
@@ -95,6 +96,7 @@ class _BookingCard extends ConsumerWidget {
     final data = ref.watch(appStateProvider).data;
     final me = ref.watch(appStateProvider).me!;
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final b = booking;
     final canConfirm =
         b.status == BookingStatus.booked && !b.bookingDate.isAfter(today);
@@ -117,11 +119,11 @@ class _BookingCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${formatShortDayDate(b.bookingDate)} · ${data.slot(b.slotId)?.label ?? ''}',
+                      '${formatShortDayDate(b.bookingDate, l10n: l10n)} · ${data.slot(b.slotId)?.label ?? ''}',
                       style: text.titleSmall,
                     ),
                     Text(
-                      '${b.applianceName} · ${formatKwh(b.estKwh)} · hemat ± '
+                      '${b.applianceName} · ${formatKwh(b.estKwh)} · ± '
                       '${formatRupiah(b.estKwh * me.tariffIdrPerKwh)}',
                       style: text.bodySmall,
                     ),
@@ -129,7 +131,9 @@ class _BookingCard extends ConsumerWidget {
                 ),
               ),
               StatusPill(
-                label: overdue ? 'Perlu konfirmasi' : b.status.label,
+                label: overdue
+                    ? l10n.labelPending
+                    : b.status.localizedLabel(l10n),
                 tone: overdue ? PillTone.warning : bookingTone(b.status),
               ),
             ],
@@ -140,13 +144,13 @@ class _BookingCard extends ConsumerWidget {
               children: [
                 Expanded(
                   child: SecondaryButton(
-                    label: 'Batalkan',
+                    label: l10n.actionCancel,
                     onPressed: () async {
                       final ok = await confirmDialog(
                         context,
-                        title: 'Batalkan booking?',
-                        message: 'Kapasitas dan kuota Anda akan dikembalikan.',
-                        confirmLabel: 'Batalkan booking',
+                        title: l10n.actionCancel,
+                        message: l10n.solarBookingTitle,
+                        confirmLabel: l10n.actionCancel,
                         destructive: true,
                       );
                       if (!ok || !context.mounted) return;
@@ -155,7 +159,7 @@ class _BookingCard extends ConsumerWidget {
                         () => ref
                             .read(actionsProvider)
                             .setBookingStatus(b.id, BookingStatus.cancelled),
-                        success: 'Booking dibatalkan.',
+                        success: 'Booking cancelled.',
                       );
                     },
                   ),
@@ -163,7 +167,7 @@ class _BookingCard extends ConsumerWidget {
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: PrimaryButton(
-                    label: 'Sudah dipakai',
+                    label: l10n.labelCompleted,
                     onPressed: canConfirm
                         ? () => runAction(
                             context,
@@ -173,7 +177,7 @@ class _BookingCard extends ConsumerWidget {
                                   b.id,
                                   BookingStatus.completed,
                                 ),
-                            success: 'Tercatat. Terima kasih!',
+                            success: 'Recorded.',
                           )
                         : null,
                   ),

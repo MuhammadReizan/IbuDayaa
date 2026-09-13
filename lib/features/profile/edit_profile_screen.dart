@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/state/actions.dart';
 import '../../core/state/app_state.dart';
 import '../shared/inputs.dart';
@@ -67,12 +68,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     return AppScaffold(
-      title: 'Ubah Profil',
+      title: l10n.scaffoldProfileEdit,
       onBack: () => context.pop(),
       bottomBar: PrimaryButton(
-        label: 'Simpan',
+        label: l10n.actionSave,
         loading: _busy,
         onPressed: _save,
       ),
@@ -82,37 +83,36 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             AppTextField(
-              label: 'Nama lengkap',
+              label: l10n.editProfileName,
               controller: _name,
               textCapitalization: TextCapitalization.words,
               validator: (v) =>
-                  (v ?? '').trim().isEmpty ? 'Nama wajib diisi.' : null,
+                  (v ?? '').trim().isEmpty ? l10n.labelRequired : null,
             ),
             if (!me.isAdmin) ...[
               const SizedBox(height: AppSpacing.lg),
               AppTextField(
-                label: 'Nama usaha',
+                label: l10n.editProfileBusiness,
                 controller: _business,
                 textCapitalization: TextCapitalization.words,
               ),
             ],
             const SizedBox(height: AppSpacing.lg),
             AppTextField(
-              label: 'Kota',
+              label: l10n.editProfileCity,
               controller: _city,
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: AppSpacing.lg),
             AppTextField(
-              label: 'Nomor HP',
+              label: l10n.labelPhone,
               controller: TextEditingController(text: me.displayPhone),
               enabled: false,
-              helper: 'Nomor HP dipakai untuk masuk dan tidak bisa diubah.',
             ),
             if (!me.isAdmin) ...[
               const SizedBox(height: AppSpacing.xl),
               AppTextField(
-                label: 'Tarif listrik PLN',
+                label: l10n.editProfileTariff,
                 controller: _tariff,
                 prefixText: 'Rp ',
                 suffixText: '/kWh',
@@ -120,13 +120,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   decimal: true,
                 ),
                 inputFormatters: [decimalInput],
-                helper:
-                    'Semua perhitungan rupiah memakai tarif ini. Lihat di tagihan '
-                    'atau struk token Anda; tarif bisa berubah tiap 3 bulan.',
                 validator: (v) {
                   final x = parseDecimal(v ?? '');
                   if (x == null || x < 100 || x > 5000) {
-                    return 'Isi tarif per kWh.';
+                    return l10n.labelRequired;
                   }
                   return null;
                 },
@@ -146,11 +143,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                     ),
                 ],
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Tarif rumah tangga non-subsidi PLN 2024.',
-                style: text.bodySmall,
               ),
             ],
           ],

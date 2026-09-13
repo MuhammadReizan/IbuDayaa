@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/paths.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
@@ -20,24 +21,23 @@ class AppliancesScreen extends ConsumerWidget {
     if (me == null) return const Scaffold();
     final list = s.data.appliancesOf(me.id);
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final totalKwh = list.fold<double>(0, (a, x) => a + x.monthlyKwh);
 
     return AppScaffold(
-      title: 'Alat Usaha',
+      title: l10n.scaffoldAppliances,
       onBack: () => context.pop(),
       scrollable: list.isNotEmpty,
       bottomBar: PrimaryButton(
-        label: 'Tambah alat',
+        label: l10n.appliancesAdd,
         icon: Icons.add_rounded,
         onPressed: () => context.push(Paths.applianceEdit),
       ),
       body: list.isEmpty
-          ? const EmptyState(
+          ? EmptyState(
               motif: BrandArtMotif.solar,
-              title: 'Belum ada alat',
-              message:
-                  'Daftarkan alat listrik yang dipakai untuk usaha. Watt biasanya '
-                  'tertulis di stiker belakang alat.',
+              title: l10n.appliancesEmpty,
+              message: l10n.appliancesEmptyMessage,
             )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
