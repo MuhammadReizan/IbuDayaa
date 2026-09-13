@@ -33,6 +33,7 @@ class ProfileScreen extends ConsumerWidget {
         .bookingsOf(me.id)
         .where((b) => b.status == BookingStatus.completed)
         .length;
+    final text = Theme.of(context).textTheme;
 
     return AppScaffold(
       title: 'Profil',
@@ -42,21 +43,171 @@ class ProfileScreen extends ConsumerWidget {
           ProfileHeader(me: me, coopName: data.cooperative?.name),
           const SizedBox(height: AppSpacing.lg),
           SectionCard(
-            child: Row(
-              children: [
-                Expanded(
-                  child: StatTile(label: 'Bulan tercatat', value: '$months'),
-                ),
-                Expanded(
-                  child: StatTile(label: 'Sesi hub', value: '$sessions'),
-                ),
-                Expanded(
-                  child: StatTile(
-                    label: 'Skor',
-                    value: score == null ? '–' : '${score.score}',
+            padding: const EdgeInsets.symmetric(
+              vertical: AppSpacing.lg,
+              horizontal: AppSpacing.xs,
+            ),
+            child: IntrinsicHeight(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryContainer,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.event_available_rounded,
+                            color: AppColors.primary,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          '$months',
+                          style: text.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          'Bulan tercatat',
+                          style: text.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: AppSpacing.xxs),
+                        Text(
+                          'Sejak bergabung',
+                          style: text.bodySmall?.copyWith(
+                            color: AppColors.textTertiary,
+                            fontSize: 11,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  Container(width: 1, color: AppColors.outlineSubtle),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppColors.infoContainer,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.groups_rounded,
+                            color: AppColors.info,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          '$sessions',
+                          style: text.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          'Sesi hub',
+                          style: text.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: AppSpacing.xxs),
+                        Text(
+                          'Aktivitas di Solar Hub',
+                          style: text.bodySmall?.copyWith(
+                            color: AppColors.textTertiary,
+                            fontSize: 11,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(width: 1, color: AppColors.outlineSubtle),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppColors.secondaryContainer,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.star_outline_rounded,
+                            color: AppColors.secondaryDark,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          score == null ? '–' : '${score.score}',
+                          style: text.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          'Skor Kredit Energi',
+                          style: text.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: AppSpacing.xxs),
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              const TextSpan(text: 'Kategori: '),
+                              TextSpan(
+                                text: score == null ? '–' : score.band.label,
+                                style: TextStyle(
+                                  color: score == null
+                                      ? AppColors.textTertiary
+                                      : AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          style: text.bodySmall?.copyWith(
+                            color: AppColors.textTertiary,
+                            fontSize: 11,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
