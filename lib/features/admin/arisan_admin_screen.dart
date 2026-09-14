@@ -243,7 +243,7 @@ class _ArisanCreateScreenState extends ConsumerState<ArisanCreateScreen> {
             Text('Bulan mulai', style: text.titleSmall),
             const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<DateTime>(
-              initialValue: _start,
+              value: _start,
               items: [
                 for (int i = 0; i < 3; i++)
                   DropdownMenuItem(

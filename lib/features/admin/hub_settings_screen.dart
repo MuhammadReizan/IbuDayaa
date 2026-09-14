@@ -80,7 +80,7 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<int>(
-                  initialValue: start,
+                  value: start,
                   decoration: const InputDecoration(labelText: 'Mulai'),
                   items: [
                     for (int h = 5; h < 19; h++)
@@ -98,7 +98,7 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: DropdownButtonFormField<int>(
-                  initialValue: end,
+                  value: end,
                   decoration: const InputDecoration(labelText: 'Selesai'),
                   items: [
                     for (int h = start + 1; h <= 19; h++)
