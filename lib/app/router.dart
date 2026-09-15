@@ -29,6 +29,7 @@ import '../features/energy/appliances_screen.dart';
 import '../features/energy/energy_analysis_screen.dart';
 import '../features/energy/energy_form_screen.dart';
 import '../features/energy/energy_records_screen.dart';
+import '../features/energy/demo_barcode_scan_screen.dart';
 import '../features/energy/scan_bill_screen.dart';
 import '../features/home/member_home_screen.dart';
 import '../features/loans/loan_apply_screen.dart';
@@ -47,6 +48,9 @@ import '../features/solar/booking_screen.dart';
 import '../features/solar/bookings_screen.dart';
 import '../features/solar/roof_scan_screen.dart';
 import '../features/solar/solar_hub_screen.dart';
+import '../features/solar_hub/scan/solar_qr_scan_screen.dart';
+import '../features/solar_hub/analysis/solar_panel_result_screen.dart';
+import '../core/solar_demo/solar_panel_model.dart';
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
@@ -125,6 +129,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       _page(Paths.scan, (_) => const ScanBillScreen()),
+      _page(Paths.scanDemo, (_) => const DemoBarcodeScanScreen()),
       _page(Paths.energy, (_) => const EnergyRecordsScreen()),
       _page(
         Paths.energyAdd,
@@ -137,6 +142,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         (s) => ApplianceFormScreen(existing: s.extra as Appliance?),
       ),
       _page(Paths.roof, (_) => const RoofScanScreen()),
+      _page(Paths.solarQrScan, (_) => const SolarQrScanScreen()),
+      _page(
+        Paths.solarQrResult,
+        (s) => SolarPanelResultScreen(data: s.extra as SolarPanelData),
+      ),
       _page(
         Paths.booking,
         (s) => BookingScreen(applianceName: s.uri.queryParameters['alat']),

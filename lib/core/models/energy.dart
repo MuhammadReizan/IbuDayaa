@@ -20,6 +20,33 @@ enum RecordSource {
   String get db => name;
 }
 
+/// Values to prefill the energy-entry form with — from OCR, a demo
+/// QR/barcode, or nothing.
+@immutable
+class EnergyDraft {
+  const EnergyDraft({
+    this.kind = EnergyKind.postpaid,
+    this.periodMonth,
+    this.kwh,
+    this.totalIdr,
+    this.customerId,
+    this.photoPath,
+    this.source = RecordSource.manual,
+    this.rawText,
+    this.readFailed = false,
+  });
+
+  final EnergyKind kind;
+  final DateTime? periodMonth;
+  final double? kwh;
+  final int? totalIdr;
+  final String? customerId;
+  final String? photoPath;
+  final RecordSource source;
+  final String? rawText;
+  final bool readFailed;
+}
+
 @immutable
 class EnergyRecord {
   const EnergyRecord({

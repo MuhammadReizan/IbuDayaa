@@ -57,6 +57,11 @@ dependencies:
   google_mlkit_text_recognition: ^0.16.0
   # SHA-256 for hashing PINs in local mode. Supabase Auth replaces this later.
   crypto: ^3.0.7
+  # Decodes a printed QR/barcode for the demo-data scan path (see
+  # lib/features/energy/demo_qr_scan_screen.dart). camera + ML Kit text
+  # recognition read prose off a bill; this reads structured demo data
+  # reliably at a booth without depending on OCR accuracy on stage.
+  mobile_scanner: ^6.0.10
 
 dev_dependencies:
   flutter_test:

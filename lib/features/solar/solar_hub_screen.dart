@@ -13,6 +13,7 @@ import '../../core/models/models.dart';
 import '../../core/paths.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
+import '../solar_hub/widgets/solar_qr_card.dart';
 
 class SolarHubScreen extends ConsumerWidget {
   const SolarHubScreen({super.key});
@@ -180,6 +181,8 @@ class SolarHubScreen extends ConsumerWidget {
               ],
             ),
           ),
+          const SizedBox(height: AppSpacing.lg),
+          const SolarQrCard(),
           if (hub != null && hub.isConfigured && slots.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.xl),
             SectionHeader(title: l10n.solarTodaySlots),

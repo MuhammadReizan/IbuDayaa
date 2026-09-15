@@ -16,12 +16,15 @@ abstract final class Paths {
 
   // Member flows.
   static const scan = '/scan';
+  static const scanDemo = '/scan/demo';
   static const energy = '/energy';
   static const energyAdd = '/energy/add';
   static const energyAnalysis = '/energy/analysis';
   static const appliances = '/appliances';
   static const applianceEdit = '/appliances/edit';
   static const roof = '/roof';
+  static const solarQrScan = '/solar/qr-scan';
+  static const solarQrResult = '/solar/qr-result';
   static const booking = '/booking';
   static const bookings = '/bookings';
   static const arisan = '/arisan';

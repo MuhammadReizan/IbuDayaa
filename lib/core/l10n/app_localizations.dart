@@ -354,6 +354,12 @@ abstract class AppLocalizations {
   String get scanSaved;
   String get scanPickGallery;
   String get scanErrorNoData;
+  String get scanDemoAction;
+  String get scanDemoTitle;
+  String get scanDemoInstruction;
+  String get scanDemoReading;
+  String get scanDemoInvalid;
+  String get scanDemoApplied;
 
   // ── Solar Hub ─────────────────────────────────────────────────────────────
   String get solarTitle;
@@ -1269,6 +1275,19 @@ class _IdStrings extends AppLocalizations {
   String get scanPickGallery => 'Unggah dari Galeri';
   @override
   String get scanErrorNoData => 'Tidak ada data yang terbaca dari gambar ini.';
+  @override
+  String get scanDemoAction => 'Kode Demo';
+  @override
+  String get scanDemoTitle => 'Pindai Barcode Demo';
+  @override
+  String get scanDemoInstruction =>
+      'Arahkan kamera ke barcode meteran atau kode demo.';
+  @override
+  String get scanDemoReading => 'Membaca barcode…';
+  @override
+  String get scanDemoInvalid => 'Ini bukan barcode demo IbuDaya.';
+  @override
+  String get scanDemoApplied => 'Data demo diterapkan.';
 
   // Solar
   @override
@@ -2551,6 +2570,19 @@ class _EnStrings extends AppLocalizations {
   String get scanPickGallery => 'Upload from Gallery';
   @override
   String get scanErrorNoData => 'No data could be read from this image.';
+  @override
+  String get scanDemoAction => 'Demo Code';
+  @override
+  String get scanDemoTitle => 'Scan Demo Barcode';
+  @override
+  String get scanDemoInstruction =>
+      'Point the camera at the meter barcode or a demo code.';
+  @override
+  String get scanDemoReading => 'Reading barcode…';
+  @override
+  String get scanDemoInvalid => 'This is not an IbuDaya demo barcode.';
+  @override
+  String get scanDemoApplied => 'Demo data applied.';
 
   // Solar
   @override

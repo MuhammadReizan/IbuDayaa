@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/credit_score/application/credit_score_provider.dart';
 import '../errors.dart';
+import '../demo/demo_bill_models.dart';
 import '../models/models.dart';
 import '../repositories/local/sample_seeder.dart';
 import 'app_state.dart';
@@ -179,6 +180,62 @@ class AppActions {
         .saveRoofAssessment(_me, draft);
     await _refresh();
     return saved;
+  }
+
+  /// Demo/testing only: seeds bill history, an appliance list, and the
+  /// current month's bill from a scanned demo barcode, so the real spike
+  /// check and per-appliance cost breakdown (`energy_insights.dart`) have
+  /// something to compute from instead of a hand-typed month of data before
+  /// every demo. Every number comes from the barcode's matched entry; this
+  /// computes nothing itself. Unlike a real scan, the barcode is a
+  /// deterministic lookup rather than a probabilistic OCR read, so the
+  /// caller goes straight to the analysis screen instead of the editable
+  /// confirm screen.
+  Future<void> applyDemoBillPayload(DemoBillPayload payload) async {
+    // Step 1: Save all historical bill records (upsert by month, safe to repeat).
+    for (final h in payload.history) {
+      await saveRecord(
+        kind: EnergyKind.postpaid,
+        periodMonth: h.month,
+        kwh: h.kwh,
+        totalIdr: h.totalIdr,
+        source: RecordSource.manual,
+      );
+    }
+
+    // Step 2: Clear ALL existing appliances so each demo barcode produces
+    // a clean, unique appliance set. Without this, a second scan would skip
+    // appliances already inserted from a previous demo (e.g. "Kulkas" from
+    // DEMO-001 blocks DEMO-002's "Kulkas" with different wattage), causing
+    // all demos to show identical analysis results.
+    final existingAppliances = _ref
+        .read(appStateProvider)
+        .data
+        .appliancesOf(_me.id);
+    for (final a in existingAppliances) {
+      await _ref.read(energyRepositoryProvider).deleteAppliance(_me, a.id);
+    }
+    await _refresh();
+
+    // Step 3: Insert the demo payload's appliances fresh.
+    for (final a in payload.appliances) {
+      await saveAppliance(
+        name: a.name,
+        kind: a.kind,
+        watts: a.watts,
+        hoursPerDay: a.hoursPerDay,
+        daysPerWeek: a.daysPerWeek,
+      );
+    }
+
+    // Step 4: Save the current month's bill record.
+    await saveRecord(
+      kind: EnergyKind.postpaid,
+      periodMonth: payload.current.month,
+      kwh: payload.current.kwh,
+      totalIdr: payload.current.totalIdr,
+      source: RecordSource.scan,
+    );
   }
 
   // -- Solar hub -------------------------------------------------------------

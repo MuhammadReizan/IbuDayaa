@@ -13,7 +13,6 @@ import 'package:ibudaya/core/repositories/local/local_snapshot_repository.dart';
 import 'package:ibudaya/core/repositories/local/sample_seeder.dart';
 import 'package:ibudaya/core/state/app_state.dart';
 import 'package:ibudaya/features/credit_score/data/rule_based_credit_scoring_engine.dart';
-import 'package:ibudaya/features/energy/energy_form_screen.dart';
 import 'package:ibudaya/features/home/member_home_screen.dart';
 
 final _now = DateTime(2026, 9, 11, 10);
@@ -120,7 +119,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Hasil Scan'), findsOneWidget);
-    expect(find.text('Terbaca: kWh, total'), findsOneWidget);
+    expect(find.text('Analisis AI Energi'), findsOneWidget);
 
     await tapText(tester, 'Simpan');
     expect(find.text('Analisis Energi'), findsOneWidget);
