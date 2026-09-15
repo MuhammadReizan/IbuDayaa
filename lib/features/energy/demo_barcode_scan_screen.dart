@@ -13,6 +13,7 @@ import '../../core/l10n/l10n.dart';
 import '../../core/paths.dart';
 import '../../core/state/actions.dart';
 import 'ai_analysis_loading_screen.dart';
+import 'energy_analysis_copy.dart';
 
 /// Scans a demo barcode — a real PLN meter's printed serial, or one made up
 /// for a demo — and looks it up in [DemoBillRepository]. The barcode carries
@@ -60,10 +61,16 @@ class _DemoBarcodeScanScreenState extends ConsumerState<DemoBarcodeScanScreen> {
     debugPrint('Scanned Barcode: $raw');
     debugPrint('[SCAN] Barcode = $raw');
 
+    // Every new detection discards whatever analysis was left over from a
+    // previous scan first — otherwise a different barcode (or a stale
+    // in-memory value left by a back gesture that skipped the explicit
+    // close button) could keep showing the previous scan's result.
+    DemoAnalysisRepository.clear();
+
     final payload = DemoBillRepository.findByBarcode(raw);
     if (payload == null) {
       debugPrint('[SCAN] Barcode unrecognized: $raw');
-      const errorMsg = 'Ini bukan barcode demo IbuDaya.';
+      final errorMsg = l10n.scanDemoInvalid;
       setState(() => _error = errorMsg);
       if (mounted) {
         showAppSnack(context, errorMsg, error: true);
@@ -74,6 +81,14 @@ class _DemoBarcodeScanScreenState extends ConsumerState<DemoBarcodeScanScreen> {
     final scenarioName = DemoBillRepository.scenarioNameOf(payload);
     debugPrint('[PAYLOAD] Scenario = $scenarioName');
 
+    // Shown to the member on the loading screen: the localised status
+    // title, never the internal English scenario name above (debug/log
+    // use only) — otherwise the badge would stay in English regardless of
+    // the active locale.
+    final displayScenario = payload.analysis != null
+        ? demoStatusTitle(payload.analysis!.status, l10n)
+        : null;
+
     DemoAnalysisRepository.current = payload.analysis;
 
     // Prepare completer BEFORE showing loading screen.
@@ -83,7 +98,7 @@ class _DemoBarcodeScanScreenState extends ConsumerState<DemoBarcodeScanScreen> {
     setState(() {
       _busy = true;
       _analyzing = true;
-      _analyzingScenario = scenarioName;
+      _analyzingScenario = displayScenario;
       _error = null;
     });
     await _controller.stop();

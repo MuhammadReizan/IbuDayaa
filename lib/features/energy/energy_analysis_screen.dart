@@ -13,8 +13,12 @@ import '../../core/paths.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
 import '../shared/labels.dart';
+import 'energy_analysis_copy.dart';
 
-/// Redesigned AI Energy Analysis screen matching the reference visual design:
+/// Redesigned Energy Analysis screen matching the reference visual design.
+/// This is a rule-based lookup/computation, never a trained model — copy
+/// here must never claim "AI" ([CLAUDE.md] "No AI claims").
+///
 /// - Clean white header with dark green branding and help button
 /// - Prominent soft red/pink alert card with custom ray warning icon and dynamic cost
 /// - Cause card ("Penyebab Lonjakan") with lightbulb icon
@@ -49,10 +53,10 @@ class EnergyAnalysisScreen extends ConsumerWidget {
           children: [
             const Icon(Icons.info_outline_rounded, color: _brandGreen),
             const SizedBox(width: 10),
-            const Expanded(
+            Expanded(
               child: Text(
-                'Analisis AI Energi',
-                style: TextStyle(
+                l10n.energyAnalysisTitle,
+                style: const TextStyle(
                   color: _brandGreen,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -68,9 +72,12 @@ class EnergyAnalysisScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text(
-              'Mengerti',
-              style: TextStyle(color: _brandGreen, fontWeight: FontWeight.bold),
+            child: Text(
+              l10n.scanAnalysisHelpOk,
+              style: const TextStyle(
+                color: _brandGreen,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -102,8 +109,7 @@ class EnergyAnalysisScreen extends ConsumerWidget {
         body: EmptyState(
           motif: BrandArtMotif.scan,
           title: l10n.energyAnalysisEmpty,
-          message:
-              'Scan tagihan listrik pertama Anda untuk melihat analisisnya.',
+          message: l10n.scanAnalysisEmptyMessage,
           action: PrimaryButton(
             label: l10n.scanConfirm,
             expand: false,
@@ -127,22 +133,18 @@ class EnergyAnalysisScreen extends ConsumerWidget {
     final bool isSpike;
 
     if (demo != null) {
-      statusTitle = demo.title;
-      statusSubtitle = demo.description;
-      statusLabel = demo.status == 'solar_recommendation'
-          ? 'Estimasi penghematan'
-          : (demo.status == 'normal' ? 'Estimasi tagihan' : 'Biaya tambahan');
+      statusTitle = demoStatusTitle(demo.status, l10n);
+      statusSubtitle = demoStatusDescription(demo.status, l10n);
+      statusLabel = demoStatusLabel(demo.status, l10n);
       additionalCost = demo.extraCost;
-      causeTitle = demo.status == 'solar_recommendation'
-          ? 'Peluang Penghematan'
-          : (demo.status == 'normal' ? 'Pola Pemakaian' : 'Penyebab Lonjakan');
-      causeText = demo.mainCause;
-      insightText = demo.insight;
+      causeTitle = demoCauseTitle(demo.status, l10n);
+      causeText = demoCauseText(demo.status, l10n);
+      insightText = demoInsightText(demo.status, l10n);
       isSpike = demo.status == 'energy_spike';
       displayAppliances = [
         for (final c in demo.contributors)
           _ApplianceDisplayItem(
-            name: c.name,
+            name: applianceKindLabel(c.kind, l10n),
             kind: c.kind,
             costIdr: c.monthlyCost,
             progress: (c.percentage / 100.0).clamp(0.05, 1.0),
@@ -150,29 +152,37 @@ class EnergyAnalysisScreen extends ConsumerWidget {
       ];
     } else {
       isSpike = (insight?.spikeDetected ?? false) || extra > 0;
-      statusTitle = isSpike
-          ? 'Lonjakan Energi Terdeteksi'
-          : 'Pemakaian Stabil';
-      statusSubtitle = isSpike
-          ? 'Pemakaian tinggi jam 18.00\u201321.00'
-          : 'Sesuai rata-rata pemakaian normal Anda';
-      statusLabel = 'Biaya tambahan';
+      final heuristic = isSpike ? UsageHeuristic.spike : UsageHeuristic.normal;
+      statusTitle = heuristicTitle(heuristic, l10n);
+      statusSubtitle = heuristicSubtitle(heuristic, l10n);
+      statusLabel = heuristicLabel(heuristic, l10n);
       additionalCost = extra > 0
           ? extra
           : ((insight?.latest.totalIdr ?? 0) > 0
                 ? ((insight!.latest.totalIdr) * 0.215).round()
                 : 45200);
-      causeTitle = 'Penyebab Lonjakan';
+      causeTitle = heuristicCauseTitle(heuristic, l10n);
       final applianceNames = (insight?.contributors.isNotEmpty ?? false)
           ? insight!.contributors
                 .take(3)
-                .map((c) => c.appliance.name.toLowerCase())
+                .map(
+                  (c) => c.appliance.name.isNotEmpty
+                      ? c.appliance.name.toLowerCase()
+                      : applianceKindLabel(
+                          c.appliance.kind,
+                          l10n,
+                        ).toLowerCase(),
+                )
                 .join(', ')
-          : 'oven, freezer, dan blender';
-      causeText =
-          '${applianceNames[0].toUpperCase()}${applianceNames.substring(1)} sering dipakai bersamaan sore hari.';
-      insightText =
-          'Pindahkan pemakaian alat berat ke jam 10.00\u201314.00 agar lebih hemat.';
+          : defaultSpikeApplianceNames(l10n);
+      final capitalizedNames =
+          '${applianceNames[0].toUpperCase()}${applianceNames.substring(1)}';
+      causeText = heuristicCauseText(
+        heuristic,
+        l10n,
+        applianceNames: capitalizedNames,
+      );
+      insightText = heuristicInsightText(heuristic, l10n);
 
       if (insight?.contributors.isNotEmpty ?? false) {
         final maxCost = insight!.contributors
@@ -192,21 +202,21 @@ class EnergyAnalysisScreen extends ConsumerWidget {
             ),
         ];
       } else {
-        displayAppliances = const [
+        displayAppliances = [
           _ApplianceDisplayItem(
-            name: 'Oven listrik',
+            name: applianceKindLabel('oven', l10n),
             kind: 'oven',
             costIdr: 20000,
             progress: 0.85,
           ),
           _ApplianceDisplayItem(
-            name: 'Freezer',
+            name: applianceKindLabel('refrigerator', l10n),
             kind: 'refrigerator',
             costIdr: 15200,
             progress: 0.72,
           ),
           _ApplianceDisplayItem(
-            name: 'Blender',
+            name: applianceKindLabel('blender', l10n),
             kind: 'blender',
             costIdr: 10000,
             progress: 0.48,
@@ -224,34 +234,25 @@ class EnergyAnalysisScreen extends ConsumerWidget {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: _brandGreen),
-          tooltip: 'Kembali',
+          tooltip: l10n.actionBack,
           onPressed: () {
             DemoAnalysisRepository.clear();
             context.pop();
           },
         ),
-        title: Stack(
-          alignment: Alignment.center,
-          children: [
-            Text(
-              l10n.energyAnalysisTitle,
-              style: const TextStyle(color: Colors.transparent, fontSize: 1),
-            ),
-            const Text(
-              'Analisis AI Energi',
-              style: TextStyle(
-                color: _brandGreen,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                letterSpacing: -0.2,
-              ),
-            ),
-          ],
+        title: Text(
+          l10n.energyAnalysisTitle,
+          style: const TextStyle(
+            color: _brandGreen,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.2,
+          ),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline_rounded, color: _brandGreen),
-            tooltip: 'Bantuan Analisis',
+            tooltip: l10n.scanAnalysisHelpTooltip,
             onPressed: () => _showHelpDialog(context, l10n, tariff),
           ),
         ],
@@ -264,12 +265,12 @@ class EnergyAnalysisScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Subtitle
-              const Padding(
-                padding: EdgeInsets.only(bottom: 16),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
                 child: Text(
-                  'IbuDaya menemukan biaya listrik usaha yang bisa dihemat.',
+                  l10n.scanAnalysisSubtitle,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: _textMuted,
                     fontSize: 13,
                     height: 1.3,
@@ -285,6 +286,7 @@ class EnergyAnalysisScreen extends ConsumerWidget {
                 additionalCost: additionalCost,
                 kwh: insight?.latest.kwh ?? 0.0,
                 isSpike: isSpike,
+                perMonthSuffix: l10n.scanAnalysisPerMonthSuffix,
               ),
               const SizedBox(height: 14),
 
@@ -293,20 +295,25 @@ class EnergyAnalysisScreen extends ConsumerWidget {
               const SizedBox(height: 14),
 
               // C. SECTION ALAT PENYUMBANG BIAYA
-              _buildAppliancesSection(displayAppliances),
+              _buildAppliancesSection(
+                displayAppliances,
+                l10n.scanAnalysisAppliancesSectionTitle,
+                l10n.scanAnalysisPerMonthSuffix,
+              ),
               const SizedBox(height: 14),
 
               // D. INSIGHT UTAMA
-              _buildInsightCard(insightText),
+              _buildInsightCard(insightText, l10n.scanAnalysisInsightTitle),
               const SizedBox(height: 16),
 
-              // E. CTA BUTTON
-              _buildCtaButton(
-                context,
-                top,
-                demo?.contributors.firstOrNull?.name,
-              ),
-              const SizedBox(height: 24),
+              // E. CTA BUTTON — hidden for a scan result (`demo != null`):
+              // Scan Tagihan is only about the analysis, not a Solar Hub
+              // pitch. The manual/real-usage analysis keeps the CTA.
+              if (demo == null) ...[
+                _buildCtaButton(context, top, l10n.scanAnalysisCtaSolarHub),
+                const SizedBox(height: 24),
+              ] else
+                const SizedBox(height: 8),
             ],
           ),
         ),
@@ -321,6 +328,7 @@ class EnergyAnalysisScreen extends ConsumerWidget {
     required int additionalCost,
     required double kwh,
     required bool isSpike,
+    required String perMonthSuffix,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -382,7 +390,10 @@ class EnergyAnalysisScreen extends ConsumerWidget {
                         ),
                         Text(
                           subtitle,
-                          style: const TextStyle(fontSize: 13, color: _textMuted),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: _textMuted,
+                          ),
                         ),
                       ],
                     ),
@@ -426,7 +437,7 @@ class EnergyAnalysisScreen extends ConsumerWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  '/ bln',
+                  perMonthSuffix,
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -441,7 +452,7 @@ class EnergyAnalysisScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCauseCard(String title, String causeText) {
+  Widget _buildCauseCard(String causeTitle, String causeText) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -472,9 +483,9 @@ class EnergyAnalysisScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Penyebab Lonjakan',
-                  style: TextStyle(
+                Text(
+                  causeTitle,
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: _brandGreen,
@@ -497,7 +508,11 @@ class EnergyAnalysisScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAppliancesSection(List<_ApplianceDisplayItem> appliances) {
+  Widget _buildAppliancesSection(
+    List<_ApplianceDisplayItem> appliances,
+    String sectionTitle,
+    String perMonthSuffix,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: _sectionBg,
@@ -511,10 +526,10 @@ class EnergyAnalysisScreen extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Alat Penyumbang Biaya',
-                  style: TextStyle(
+                  sectionTitle,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: _brandGreen,
@@ -546,14 +561,17 @@ class EnergyAnalysisScreen extends ConsumerWidget {
           const SizedBox(height: 12),
           for (int i = 0; i < appliances.length; i++) ...[
             if (i > 0) const SizedBox(height: 10),
-            _buildApplianceItemCard(appliances[i]),
+            _buildApplianceItemCard(appliances[i], perMonthSuffix),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildApplianceItemCard(_ApplianceDisplayItem item) {
+  Widget _buildApplianceItemCard(
+    _ApplianceDisplayItem item,
+    String perMonthSuffix,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -580,7 +598,7 @@ class EnergyAnalysisScreen extends ConsumerWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                '+${formatRupiah(item.costIdr)}/bln',
+                '+${formatRupiah(item.costIdr)}$perMonthSuffix',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -640,7 +658,7 @@ class EnergyAnalysisScreen extends ConsumerWidget {
     return Icon(icon, size: 24, color: _brandGreen);
   }
 
-  Widget _buildInsightCard(String insightText) {
+  Widget _buildInsightCard(String insightText, String insightTitle) {
     return Container(
       decoration: BoxDecoration(
         color: _insightBg,
@@ -667,9 +685,9 @@ class EnergyAnalysisScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Insight Utama',
-                  style: TextStyle(
+                Text(
+                  insightTitle,
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: _brandGreen,
@@ -694,10 +712,10 @@ class EnergyAnalysisScreen extends ConsumerWidget {
 
   Widget _buildCtaButton(
     BuildContext context,
-    ApplianceCost? top, [
-    String? fallbackApplianceName,
-  ]) {
-    final applianceParam = top?.appliance.name ?? fallbackApplianceName;
+    ApplianceCost? top,
+    String ctaLabel,
+  ) {
+    final applianceParam = top?.appliance.name;
     return Material(
       color: _brandGreen,
       borderRadius: BorderRadius.circular(14),
@@ -706,27 +724,29 @@ class EnergyAnalysisScreen extends ConsumerWidget {
         onTap: () => context.push(
           Uri(
             path: Paths.booking,
-            queryParameters: applianceParam != null ? {'alat': applianceParam} : null,
+            queryParameters: applianceParam != null
+                ? {'alat': applianceParam}
+                : null,
           ).toString(),
         ),
         child: Container(
           height: 52,
           padding: const EdgeInsets.symmetric(horizontal: 18),
-          child: const Row(
+          child: Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.calendar_month_outlined,
                 color: Colors.white,
                 size: 22,
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Expanded(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
-                    'Lihat Jadwal Solar Hub',
+                    ctaLabel,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 15,
                       fontWeight: FontWeight.bold,

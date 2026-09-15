@@ -102,9 +102,15 @@ class DemoAnalysisData {
   static DemoAnalysisData? fromMap(Object? raw) {
     if (raw is! Map) return null;
     return DemoAnalysisData(
-      status: raw['status'] is String ? raw['status'] as String : 'energy_spike',
-      title: raw['title'] is String ? raw['title'] as String : 'Analisis AI Energi',
-      description: raw['description'] is String ? raw['description'] as String : '',
+      status: raw['status'] is String
+          ? raw['status'] as String
+          : 'energy_spike',
+      title: raw['title'] is String
+          ? raw['title'] as String
+          : 'Analisis Energi',
+      description: raw['description'] is String
+          ? raw['description'] as String
+          : '',
       extraCost: raw['extra_cost'] is num
           ? (raw['extra_cost'] as num).round()
           : int.tryParse('${raw['extra_cost']}') ?? 0,

@@ -79,11 +79,7 @@ class _SolarQrScanScreenState extends State<SolarQrScanScreen> {
     if (data == null) {
       debugPrint('[SOLAR-SCAN] Panel ID: NOT FOUND for raw=$raw');
       if (mounted) {
-        showAppSnack(
-          context,
-          'QR Solar Panel tidak dikenali.',
-          error: true,
-        );
+        showAppSnack(context, 'QR Solar Panel tidak dikenali.', error: true);
       }
       return;
     }
@@ -157,9 +153,7 @@ class _SolarQrScanScreenState extends State<SolarQrScanScreen> {
             ),
 
             // Animated corner-bracket viewfinder (persegi untuk QR)
-            const IgnorePointer(
-              child: Center(child: _ScanFrame()),
-            ),
+            const IgnorePointer(child: Center(child: _ScanFrame())),
 
             // Petunjuk / status di bagian bawah
             Positioned(
@@ -223,9 +217,10 @@ class _ScanFrameState extends State<_ScanFrame>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
-    _opacity = Tween<double>(begin: 0.55, end: 1.0).animate(
-      CurvedAnimation(parent: _pulse, curve: Curves.easeInOut),
-    );
+    _opacity = Tween<double>(
+      begin: 0.55,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _pulse, curve: Curves.easeInOut));
   }
 
   @override

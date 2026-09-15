@@ -118,8 +118,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Hasil Scan'), findsOneWidget);
-    expect(find.text('Analisis AI Energi'), findsOneWidget);
+    expect(find.text('Analisis Energi'), findsOneWidget);
 
     await tapText(tester, 'Simpan');
     expect(find.text('Analisis Energi'), findsOneWidget);

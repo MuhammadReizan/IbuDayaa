@@ -35,8 +35,8 @@ class SolarAnalysisLoadingScreen extends StatefulWidget {
       _SolarAnalysisLoadingScreenState();
 }
 
-class _SolarAnalysisLoadingScreenState
-    extends State<SolarAnalysisLoadingScreen> with TickerProviderStateMixin {
+class _SolarAnalysisLoadingScreenState extends State<SolarAnalysisLoadingScreen>
+    with TickerProviderStateMixin {
   static const Color _brandGreen = Color(0xFF0F4E2D);
   static const Color _lightGreen = Color(0xFFEAF6EF);
   static const Color _accentGreen = Color(0xFF2E7D32);
@@ -60,7 +60,9 @@ class _SolarAnalysisLoadingScreenState
 
     _progressController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: _stepMs * SolarAnalysisLoadingScreen.steps.length),
+      duration: Duration(
+        milliseconds: _stepMs * SolarAnalysisLoadingScreen.steps.length,
+      ),
     )..forward();
 
     _stepTimer = Timer.periodic(Duration(milliseconds: _stepMs), (timer) {
@@ -77,10 +79,7 @@ class _SolarAnalysisLoadingScreenState
           if (!mounted) return;
           final data = widget.panelData;
           if (data != null) {
-            context.pushReplacement(
-              Paths.solarQrResult,
-              extra: data,
-            );
+            context.pushReplacement(Paths.solarQrResult, extra: data);
           } else {
             Navigator.of(context).pop();
           }
@@ -108,7 +107,7 @@ class _SolarAnalysisLoadingScreenState
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Badge "AI Solar Scanner"
+                // Badge "Solar Scanner" — never claim "AI" (rule-based estimate)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
@@ -122,10 +121,14 @@ class _SolarAnalysisLoadingScreenState
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.solar_power_rounded, size: 16, color: _brandGreen),
+                      Icon(
+                        Icons.solar_power_rounded,
+                        size: 16,
+                        color: _brandGreen,
+                      ),
                       SizedBox(width: 6),
                       Text(
-                        'AI Solar Scanner',
+                        'Solar Scanner',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -150,9 +153,8 @@ class _SolarAnalysisLoadingScreenState
                         animation: _pulseController,
                         builder: (context, child) {
                           final scale = 1.0 + (_pulseController.value * 0.22);
-                          final opacity =
-                              (1.0 - (_pulseController.value * 0.7))
-                                  .clamp(0.0, 1.0);
+                          final opacity = (1.0 - (_pulseController.value * 0.7))
+                              .clamp(0.0, 1.0);
                           return Transform.scale(
                             scale: scale,
                             child: Container(
@@ -172,8 +174,7 @@ class _SolarAnalysisLoadingScreenState
                       AnimatedBuilder(
                         animation: _pulseController,
                         builder: (context, child) {
-                          final scale =
-                              0.95 + (_pulseController.value * 0.12);
+                          final scale = 0.95 + (_pulseController.value * 0.12);
                           return Transform.scale(
                             scale: scale,
                             child: Container(
@@ -300,11 +301,10 @@ class _SolarAnalysisLoadingScreenState
                           SolarAnalysisLoadingScreen.steps[i],
                           style: TextStyle(
                             fontSize: 13,
-                            fontWeight:
-                                done ? FontWeight.w600 : FontWeight.w400,
-                            color: done
-                                ? _brandGreen
-                                : const Color(0xFFB8CAC0),
+                            fontWeight: done
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                            color: done ? _brandGreen : const Color(0xFFB8CAC0),
                           ),
                         ),
                       ],
@@ -327,8 +327,7 @@ class _SolarAnalysisLoadingScreenState
                     animation: _progressController,
                     builder: (context, child) {
                       return FractionallySizedBox(
-                        widthFactor:
-                            _progressController.value.clamp(0.05, 1.0),
+                        widthFactor: _progressController.value.clamp(0.05, 1.0),
                         child: Container(
                           decoration: BoxDecoration(
                             color: _accentGreen,

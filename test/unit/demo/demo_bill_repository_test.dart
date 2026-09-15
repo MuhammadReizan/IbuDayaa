@@ -88,7 +88,10 @@ void main() {
       final analysis = DemoAnalysisRepository.findByBarcode('IBUDAYA-DEMO-003');
       DemoAnalysisRepository.current = analysis;
       expect(DemoAnalysisRepository.current, isNotNull);
-      expect(DemoAnalysisRepository.current?.title, 'Potensi Penghematan Ditemukan');
+      expect(
+        DemoAnalysisRepository.current?.title,
+        'Potensi Penghematan Ditemukan',
+      );
 
       DemoAnalysisRepository.clear();
       expect(DemoAnalysisRepository.current, isNull);

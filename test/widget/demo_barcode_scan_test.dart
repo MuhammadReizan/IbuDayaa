@@ -5,6 +5,7 @@ import 'package:ibudaya/app/app.dart';
 import 'package:ibudaya/app/router.dart';
 import 'package:ibudaya/core/db/local_database.dart';
 import 'package:ibudaya/core/demo/demo_analysis_repository.dart';
+import 'package:ibudaya/core/demo/demo_bill_repository.dart';
 import 'package:ibudaya/core/paths.dart';
 import 'package:ibudaya/core/repositories/local/local_auth_repository.dart';
 import 'package:ibudaya/core/repositories/local/local_snapshot_repository.dart';
@@ -79,7 +80,43 @@ void main() {
     expect(find.byType(MobileScanner), findsOneWidget);
   });
 
-  testWidgets('IBUDAYA-DEMO-001 opens Analisis AI Energi with Energy Spike data', (
+  testWidgets(
+    'a leftover analysis from an earlier scan never leaks into a new one',
+    (tester) async {
+      // Regression test: DemoAnalysisRepository.current used to only be
+      // cleared by the analysis screen's explicit back button, so a member
+      // who left that screen any other way (hardware back, a bottom-nav
+      // tap) kept the previous scan's result in memory. A fresh scan
+      // attempt must discard it up front, even when that new attempt
+      // itself fails to match anything.
+      await pumpApp(tester);
+      DemoAnalysisRepository.current = DemoBillRepository.findByBarcode(
+        'IBUDAYA-DEMO-001',
+      )!.analysis;
+      expect(DemoAnalysisRepository.current, isNotNull);
+
+      final router = ProviderScope.containerOf(
+        tester.element(find.byType(IbuDayaApp)),
+      ).read(routerProvider);
+
+      router.push(Paths.scanDemo);
+      await tester.pumpAndSettle();
+
+      final scannerWidget = tester.widget<MobileScanner>(
+        find.byType(MobileScanner),
+      );
+      scannerWidget.onDetect!(
+        const BarcodeCapture(
+          barcodes: [Barcode(rawValue: 'UNKNOWN-RANDOM-BARCODE')],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(DemoAnalysisRepository.current, isNull);
+    },
+  );
+
+  testWidgets('IBUDAYA-DEMO-001 opens Analisis Energi with Energy Spike data', (
     tester,
   ) async {
     await pumpApp(tester);
@@ -95,9 +132,7 @@ void main() {
     final scannerWidget = tester.widget<MobileScanner>(scannerFinder);
 
     scannerWidget.onDetect!(
-      const BarcodeCapture(
-        barcodes: [Barcode(rawValue: 'IBUDAYA-DEMO-001')],
-      ),
+      const BarcodeCapture(barcodes: [Barcode(rawValue: 'IBUDAYA-DEMO-001')]),
     );
     await tester.pumpAndSettle();
 
@@ -107,7 +142,7 @@ void main() {
     expect(find.text('Kulkas'), findsWidgets);
   });
 
-  testWidgets('IBUDAYA-DEMO-002 opens Analisis AI Energi with Normal Usage data', (
+  testWidgets('IBUDAYA-DEMO-002 opens Analisis Energi with Normal Usage data', (
     tester,
   ) async {
     await pumpApp(tester);
@@ -123,9 +158,7 @@ void main() {
     final scannerWidget = tester.widget<MobileScanner>(scannerFinder);
 
     scannerWidget.onDetect!(
-      const BarcodeCapture(
-        barcodes: [Barcode(rawValue: 'IBUDAYA-DEMO-002')],
-      ),
+      const BarcodeCapture(barcodes: [Barcode(rawValue: 'IBUDAYA-DEMO-002')]),
     );
     await tester.pumpAndSettle();
 
@@ -134,30 +167,29 @@ void main() {
     expect(find.text('Kipas Angin'), findsWidgets);
   });
 
-  testWidgets('IBUDAYA-DEMO-003 opens Analisis AI Energi with Solar Recommendation', (
-    tester,
-  ) async {
-    await pumpApp(tester);
+  testWidgets(
+    'IBUDAYA-DEMO-003 opens Analisis Energi with Solar Recommendation',
+    (tester) async {
+      await pumpApp(tester);
 
-    final router = ProviderScope.containerOf(
-      tester.element(find.byType(IbuDayaApp)),
-    ).read(routerProvider);
+      final router = ProviderScope.containerOf(
+        tester.element(find.byType(IbuDayaApp)),
+      ).read(routerProvider);
 
-    router.push(Paths.scanDemo);
-    await tester.pumpAndSettle();
+      router.push(Paths.scanDemo);
+      await tester.pumpAndSettle();
 
-    final scannerFinder = find.byType(MobileScanner);
-    final scannerWidget = tester.widget<MobileScanner>(scannerFinder);
+      final scannerFinder = find.byType(MobileScanner);
+      final scannerWidget = tester.widget<MobileScanner>(scannerFinder);
 
-    scannerWidget.onDetect!(
-      const BarcodeCapture(
-        barcodes: [Barcode(rawValue: 'IBUDAYA-DEMO-003')],
-      ),
-    );
-    await tester.pumpAndSettle();
+      scannerWidget.onDetect!(
+        const BarcodeCapture(barcodes: [Barcode(rawValue: 'IBUDAYA-DEMO-003')]),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Potensi Penghematan Ditemukan'), findsOneWidget);
-    expect(find.textContaining('120.000'), findsWidgets);
-    expect(find.text('Oven Listrik'), findsWidgets);
-  });
+      expect(find.text('Potensi Penghematan Ditemukan'), findsOneWidget);
+      expect(find.textContaining('120.000'), findsWidgets);
+      expect(find.text('Oven'), findsWidgets);
+    },
+  );
 }

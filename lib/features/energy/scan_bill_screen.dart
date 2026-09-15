@@ -19,6 +19,7 @@ import '../../core/paths.dart';
 import '../../core/state/actions.dart';
 import '../../core/storage/device_services.dart';
 import 'ai_analysis_loading_screen.dart';
+import 'energy_analysis_copy.dart';
 
 /// Photographs a PLN bill or token receipt, reads it on the device, and hands
 /// the numbers to the form for the member to check.
@@ -36,9 +37,19 @@ class _ScanBillScreenState extends ConsumerState<ScanBillScreen> {
   // Completer that completes when applyDemoBillPayload finishes.
   // onComplete awaits this so navigation never races ahead of DB writes.
   Completer<void>? _payloadCompleter;
+  // Set for a real (non-demo) scan: onComplete pushes to the editable
+  // confirm form with this draft instead of straight to the analysis.
+  EnergyDraft? _pendingDraft;
 
   Future<void> _process(String path) async {
     setState(() => _reading = true);
+
+    // Every new capture discards whatever demo analysis was left over from
+    // an earlier scan first (e.g. the member scanned a demo barcode, left
+    // without using the explicit back button, then photographed a real
+    // bill) — otherwise this real scan's result could show stale data from
+    // that previous demo instead of a fresh reading.
+    DemoAnalysisRepository.clear();
 
     // Opportunistic shortcut: if the photo itself contains a barcode that
     // matches the bundled demo dataset (e.g. the PLN meter sticker used for
@@ -52,6 +63,13 @@ class _ScanBillScreenState extends ConsumerState<ScanBillScreen> {
       debugPrint('[PAYLOAD] Scenario = $scenario');
       DemoAnalysisRepository.current = demo.analysis;
 
+      // Shown to the member; the localised status title, not the internal
+      // English scenario name above (debug/log use only).
+      final l10n = AppLocalizations.of(context);
+      final displayScenario = demo.analysis != null
+          ? demoStatusTitle(demo.analysis!.status, l10n)
+          : null;
+
       // Prepare completer BEFORE showing loading screen.
       final completer = Completer<void>();
       _payloadCompleter = completer;
@@ -59,7 +77,7 @@ class _ScanBillScreenState extends ConsumerState<ScanBillScreen> {
       setState(() {
         _reading = false;
         _analyzing = true;
-        _analyzingScenario = scenario;
+        _analyzingScenario = displayScenario;
       });
 
       // Apply payload; signal completer when done so navigation waits.
@@ -83,20 +101,31 @@ class _ScanBillScreenState extends ConsumerState<ScanBillScreen> {
     if (!mounted) return;
 
     final parsed = raw == null ? null : parsePlnReceipt(raw);
-    context.pushReplacement(
-      Paths.energyAdd,
-      extra: EnergyDraft(
-        kind: parsed?.kind ?? EnergyKind.postpaid,
-        periodMonth: parsed?.periodMonth,
-        kwh: parsed?.kwh,
-        totalIdr: parsed?.totalIdr,
-        customerId: parsed?.customerId,
-        photoPath: kept,
-        source: RecordSource.scan,
-        rawText: raw,
-        readFailed: raw == null,
-      ),
+    final draft = EnergyDraft(
+      kind: parsed?.kind ?? EnergyKind.postpaid,
+      periodMonth: parsed?.periodMonth,
+      kwh: parsed?.kwh,
+      totalIdr: parsed?.totalIdr,
+      customerId: parsed?.customerId,
+      photoPath: kept,
+      source: RecordSource.scan,
+      rawText: raw,
+      readFailed: raw == null,
     );
+
+    if (raw == null) {
+      // Nothing was read: skip the analysis animation and go straight to
+      // the editable form so the member can fill it in by hand.
+      context.pushReplacement(Paths.energyAdd, extra: draft);
+      return;
+    }
+
+    _pendingDraft = draft;
+    setState(() {
+      _reading = false;
+      _analyzing = true;
+      _analyzingScenario = null;
+    });
   }
 
   /// Decodes any barcode in the photo and checks it against
@@ -128,8 +157,17 @@ class _ScanBillScreenState extends ConsumerState<ScanBillScreen> {
       return AiAnalysisLoadingScreen(
         scenarioName: _analyzingScenario,
         onComplete: () async {
-          // Wait for DB writes before navigating so analysis screen sees
-          // fresh data and never shows data from a previous demo scan.
+          final draft = _pendingDraft;
+          if (draft != null) {
+            // Real (non-demo) scan: land on the editable confirm form.
+            if (mounted) {
+              // ignore: use_build_context_synchronously
+              context.pushReplacement(Paths.energyAdd, extra: draft);
+            }
+            return;
+          }
+          // Demo barcode scan: wait for DB writes before navigating so the
+          // analysis screen sees fresh data instead of a previous scan's.
           await _payloadCompleter?.future;
           if (mounted) {
             // ignore: use_build_context_synchronously
@@ -147,10 +185,10 @@ class _ScanBillScreenState extends ConsumerState<ScanBillScreen> {
       busy: _reading,
       busyLabel: l10n.scanScanning,
       onCaptured: _process,
-      tips: const [
-        'Tempat terang, tanpa bayangan',
-        'Seluruh struk masuk bingkai',
-        'Tahan HP sampai tulisan jelas',
+      tips: [
+        l10n.scanTipBrightSpot,
+        l10n.scanTipFullFrame,
+        l10n.scanTipHoldSteady,
       ],
       extraActions: [
         IconButton(
@@ -183,7 +221,7 @@ class CaptureView extends StatefulWidget {
     required this.onCaptured,
     this.frameAspect = 0.75,
     this.busy = false,
-    this.busyLabel = 'Memproses…',
+    this.busyLabel,
     this.tips = const [],
     this.secondaryAction,
     this.extraActions = const [],
@@ -196,7 +234,9 @@ class CaptureView extends StatefulWidget {
   /// Frame width ÷ height.
   final double frameAspect;
   final bool busy;
-  final String busyLabel;
+
+  /// Falls back to [AppLocalizations.captureDefaultBusyLabel] when omitted.
+  final String? busyLabel;
   final List<String> tips;
   final Widget? secondaryAction;
 
@@ -263,7 +303,9 @@ class _CaptureViewState extends State<CaptureView>
       final cams = await availableCameras().timeout(_cameraTimeout);
       if (cams.isEmpty) {
         if (mounted) {
-          setState(() => _error = 'Kamera tidak ditemukan di HP ini.');
+          setState(
+            () => _error = AppLocalizations.of(context).captureCameraNotFound,
+          );
         }
         return;
       }
@@ -292,16 +334,16 @@ class _CaptureViewState extends State<CaptureView>
       });
     } on CameraException catch (e) {
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
       setState(
         () => _error = e.code.contains('Denied')
-            ? 'Izin kamera ditolak. Aktifkan di Pengaturan HP, atau pilih foto '
-                  'dari galeri.'
-            : 'Kamera tidak bisa dibuka. Pilih foto dari galeri.',
+            ? l10n.captureCameraDenied
+            : l10n.captureCameraUnavailable,
       );
     } catch (_) {
       if (mounted) {
         setState(
-          () => _error = 'Kamera tidak bisa dibuka. Pilih foto dari galeri.',
+          () => _error = AppLocalizations.of(context).captureCameraUnavailable,
         );
       }
     }
@@ -320,7 +362,11 @@ class _CaptureViewState extends State<CaptureView>
       await widget.onCaptured(file.path);
     } catch (e) {
       if (mounted) {
-        showAppSnack(context, 'Gagal mengambil foto. Coba lagi.', error: true);
+        showAppSnack(
+          context,
+          AppLocalizations.of(context).captureShootFailed,
+          error: true,
+        );
       }
     } finally {
       if (mounted) setState(() => _shooting = false);
@@ -337,7 +383,11 @@ class _CaptureViewState extends State<CaptureView>
       if (file != null) await widget.onCaptured(file.path);
     } catch (_) {
       if (mounted) {
-        showAppSnack(context, 'Galeri tidak bisa dibuka.', error: true);
+        showAppSnack(
+          context,
+          AppLocalizations.of(context).captureGalleryFailed,
+          error: true,
+        );
       }
     }
   }
@@ -353,8 +403,10 @@ class _CaptureViewState extends State<CaptureView>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final text = Theme.of(context).textTheme;
     final c = _controller;
+    final busyLabel = widget.busyLabel ?? l10n.captureDefaultBusyLabel;
 
     return Scaffold(
       backgroundColor: AppColors.scannerDark,
@@ -367,7 +419,7 @@ class _CaptureViewState extends State<CaptureView>
           style: text.titleLarge?.copyWith(color: Colors.white),
         ),
         leading: IconButton(
-          tooltip: 'Kembali',
+          tooltip: l10n.actionBack,
           icon: const Icon(Icons.close_rounded),
           onPressed: () => context.pop(),
         ),
@@ -375,7 +427,7 @@ class _CaptureViewState extends State<CaptureView>
           ...widget.extraActions,
           if (c != null)
             IconButton(
-              tooltip: _torch ? 'Matikan lampu' : 'Nyalakan lampu',
+              tooltip: _torch ? l10n.captureTorchOff : l10n.captureTorchOn,
               onPressed: _toggleTorch,
               icon: Icon(
                 _torch ? Icons.flash_on_rounded : Icons.flash_off_rounded,
@@ -474,7 +526,7 @@ class _CaptureViewState extends State<CaptureView>
                               borderRadius: AppRadius.pillBr,
                             ),
                             child: Text(
-                              widget.busy ? widget.busyLabel : widget.hint,
+                              widget.busy ? busyLabel : widget.hint,
                               textAlign: TextAlign.center,
                               style: text.labelMedium?.copyWith(
                                 color: Colors.white,
@@ -528,12 +580,12 @@ class _CaptureViewState extends State<CaptureView>
               children: [
                 _RoundButton(
                   icon: Icons.photo_library_rounded,
-                  label: 'Galeri',
+                  label: l10n.captureGalleryLabel,
                   onTap: widget.busy ? null : _gallery,
                 ),
                 Semantics(
                   button: true,
-                  label: 'Ambil foto',
+                  label: l10n.captureShootSemanticLabel,
                   child: GestureDetector(
                     onTap: _shoot,
                     child: Container(

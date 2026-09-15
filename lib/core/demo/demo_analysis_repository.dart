@@ -1,7 +1,7 @@
 import 'demo_bill_models.dart';
 import 'demo_bill_repository.dart';
 
-/// Repository for retrieving and holding pre-computed demo AI analysis data.
+/// Repository for retrieving and holding pre-computed demo analysis data.
 ///
 /// When a demo barcode (e.g. `IBUDAYA-DEMO-001`) is scanned, its analysis
 /// payload is set to [current] so the analysis screen can present exact,

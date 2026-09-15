@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
-/// Full-screen AI Energy Analysis Loading screen displayed after scanning
-/// a demo barcode.
+import '../../core/l10n/l10n.dart';
+
+/// Full-screen scan analysis loading screen displayed after scanning a
+/// bill or a demo barcode, before the result appears.
 ///
-/// Cycles smoothly through the 5 diagnostic steps over ~2 seconds before
-/// completing and invoking [onComplete].
+/// Cycles smoothly through 5 progress steps over ~2 seconds before
+/// completing and invoking [onComplete]. This is a rule-based lookup /
+/// computation, never a trained model — copy here must never claim "AI".
 class AiAnalysisLoadingScreen extends StatefulWidget {
   const AiAnalysisLoadingScreen({
     super.key,
@@ -16,13 +19,14 @@ class AiAnalysisLoadingScreen extends StatefulWidget {
   final VoidCallback onComplete;
   final String? scenarioName;
 
-  static const List<String> steps = [
-    'Membaca data tagihan...',
-    'Menganalisis pola penggunaan energi...',
-    'Mengidentifikasi sumber biaya terbesar...',
-    'Menyusun rekomendasi penghematan...',
-    'Analisis selesai',
+  static List<String> steps(AppLocalizations l10n) => [
+    l10n.scanStep1,
+    l10n.scanStep2,
+    l10n.scanStep3,
+    l10n.scanStep4,
+    l10n.scanStep5,
   ];
+  static const int stepCount = 5;
 
   @override
   State<AiAnalysisLoadingScreen> createState() =>
@@ -60,7 +64,7 @@ class _AiAnalysisLoadingScreenState extends State<AiAnalysisLoadingScreen>
         timer.cancel();
         return;
       }
-      if (_currentStep < AiAnalysisLoadingScreen.steps.length - 1) {
+      if (_currentStep < AiAnalysisLoadingScreen.stepCount - 1) {
         setState(() => _currentStep++);
       } else {
         timer.cancel();
@@ -81,6 +85,8 @@ class _AiAnalysisLoadingScreenState extends State<AiAnalysisLoadingScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final steps = AiAnalysisLoadingScreen.steps(l10n);
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -112,9 +118,7 @@ class _AiAnalysisLoadingScreenState extends State<AiAnalysisLoadingScreen>
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
-                          widget.scenarioName != null
-                              ? 'AI Engine • ${widget.scenarioName}'
-                              : 'AI Energy Engine',
+                          widget.scenarioName ?? l10n.scanAnalysisLoadingBadge,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -245,7 +249,7 @@ class _AiAnalysisLoadingScreenState extends State<AiAnalysisLoadingScreen>
                       );
                     },
                     child: Text(
-                      AiAnalysisLoadingScreen.steps[_currentStep],
+                      steps[_currentStep],
                       key: ValueKey<int>(_currentStep),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
@@ -259,10 +263,10 @@ class _AiAnalysisLoadingScreenState extends State<AiAnalysisLoadingScreen>
                 ),
                 const SizedBox(height: 10),
 
-                const Text(
-                  'Mohon tunggu sebentar, AI sedang memproses data tagihan...',
+                Text(
+                  l10n.scanAnalysisLoadingSubtitle,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 13,
                     color: Color(0xFF5A655F),
                     height: 1.4,

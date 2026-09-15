@@ -9,10 +9,12 @@ import '../../../core/paths.dart';
 import '../../../core/solar_demo/solar_panel_model.dart';
 
 /// Layar hasil scan QR solar panel — menampilkan data panel, estimasi
-/// penghematan, akurasi AI, ROI, tip, dan CTA booking.
+/// penghematan, akurasi sensor, ROI, tip, dan CTA booking. Ini adalah
+/// perhitungan berbasis aturan, bukan model terlatih — teks di layar ini
+/// tidak boleh mengklaim "AI" (lihat aturan kejujuran di CLAUDE.md).
 ///
-/// Mengikuti gaya visual Radar Atap AI yang bersih dan konsisten dengan
-/// sistem desain IbuDaya (HeroCard bergradien + BrandArt, NumberedSection,
+/// Mengikuti gaya visual Radar Atap yang bersih dan konsisten dengan sistem
+/// desain IbuDaya (HeroCard bergradien + BrandArt, NumberedSection,
 /// SectionCard, KeyValueRow, dan PrimaryButton).
 class SolarPanelResultScreen extends StatelessWidget {
   const SolarPanelResultScreen({super.key, required this.data});
@@ -33,8 +35,9 @@ class SolarPanelResultScreen extends StatelessWidget {
         icon: data.recommendation
             ? Icons.arrow_forward_rounded
             : Icons.block_rounded,
-        onPressed:
-            data.recommendation ? () => context.push(Paths.booking) : null,
+        onPressed: data.recommendation
+            ? () => context.push(Paths.booking)
+            : null,
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -43,7 +46,7 @@ class SolarPanelResultScreen extends StatelessWidget {
           _StatusHeroCard(data: data),
           const SizedBox(height: AppSpacing.xl),
 
-          // ── Section 2: Paparan Matahari & AI ─────────────────────────────
+          // ── Section 2: Paparan Matahari ───────────────────────────────────
           NumberedSection(
             number: 1,
             title: 'Paparan Matahari',
@@ -56,7 +59,7 @@ class SolarPanelResultScreen extends StatelessWidget {
                     emphasize: true,
                   ),
                   KeyValueRow(
-                    label: 'Akurasi sensor AI',
+                    label: 'Akurasi sensor',
                     value: '${data.accuracy}% (${data.accuracyLabel})',
                   ),
                 ],
@@ -117,7 +120,7 @@ class SolarPanelResultScreen extends StatelessWidget {
             leadingIcon: Icons.lightbulb_rounded,
             title: 'Tips IbuDaya',
             child: Text(
-              data.aiTip,
+              data.tip,
               style: text.bodySmall?.copyWith(
                 color: AppColors.onSolar,
                 height: 1.5,
@@ -148,15 +151,15 @@ class _StatusHeroCard extends StatelessWidget {
     final gradient = switch (data.status) {
       SolarPanelStatus.healthy => AppGradients.brand,
       SolarPanelStatus.warning => const LinearGradient(
-          colors: [Color(0xFFD9931B), Color(0xFFB07310)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        colors: [Color(0xFFD9931B), Color(0xFFB07310)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
       SolarPanelStatus.poor => const LinearGradient(
-          colors: [Color(0xFFD8412F), Color(0xFFA5291B)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        colors: [Color(0xFFD8412F), Color(0xFFA5291B)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
     };
 
     final (pillTone, pillLabel) = switch (data.status) {
@@ -199,4 +202,3 @@ class _StatusHeroCard extends StatelessWidget {
     );
   }
 }
-

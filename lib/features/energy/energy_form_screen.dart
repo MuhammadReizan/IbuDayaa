@@ -19,6 +19,7 @@ import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
 import '../shared/inputs.dart';
 import '../shared/labels.dart';
+import 'energy_analysis_copy.dart';
 
 class EnergyFormScreen extends ConsumerStatefulWidget {
   const EnergyFormScreen({super.key, this.draft});
@@ -86,14 +87,14 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.info_outline_rounded, color: _brandGreen),
-            SizedBox(width: 10),
+            const Icon(Icons.info_outline_rounded, color: _brandGreen),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Analisis AI Energi',
-                style: TextStyle(
+                l10n.energyAnalysisTitle,
+                style: const TextStyle(
                   color: _brandGreen,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -109,9 +110,12 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text(
-              'Mengerti',
-              style: TextStyle(color: _brandGreen, fontWeight: FontWeight.bold),
+            child: Text(
+              l10n.scanAnalysisHelpOk,
+              style: const TextStyle(
+                color: _brandGreen,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -132,8 +136,8 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
         : (parseDecimal(_kwh.text) ?? 0.0);
     final totalVal = fromScan
         ? (widget.draft?.totalIdr ??
-            parseDigits(_total.text) ??
-            (kwhVal * tariff).round())
+              parseDigits(_total.text) ??
+              (kwhVal * tariff).round())
         : (parseDigits(_total.text) ?? 0);
 
     final ok = await runAction(
@@ -145,12 +149,13 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
             periodMonth: widget.draft?.periodMonth ?? _month,
             kwh: kwhVal,
             totalIdr: totalVal,
-            customerId: widget.draft?.customerId ??
+            customerId:
+                widget.draft?.customerId ??
                 (_customer.text.trim().isEmpty ? null : _customer.text.trim()),
             photoPath: widget.draft?.photoPath,
             source: widget.draft?.source ?? RecordSource.manual,
           ),
-      success: 'Catatan listrik tersimpan.',
+      success: AppLocalizations.of(context).energySaveSuccess,
     );
     if (!mounted) return;
     setState(() => _busy = false);
@@ -185,7 +190,7 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
               sameMonth(r.periodMonth, _month),
         );
 
-    // Dynamic AI Analysis calculations based on scanned kwh & member history
+    // Dynamic analysis calculations based on scanned kwh & member history
     final userRecords = s.data.recordsOf(me.id);
     final userMonths = monthlyUsage(userRecords);
     final avgKwh = userMonths.isEmpty
@@ -207,82 +212,79 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
     final String insightText;
     final bool isSpike;
 
+    String spikeApplianceNames() {
+      final owned = s.data.appliancesOf(me.id);
+      final names = owned.isNotEmpty
+          ? owned
+                .take(3)
+                .map(
+                  (a) => a.name.isNotEmpty
+                      ? a.name.toLowerCase()
+                      : applianceKindLabel(a.kind, l10n).toLowerCase(),
+                )
+                .join(', ')
+          : defaultSpikeApplianceNames(l10n);
+      return '${names[0].toUpperCase()}${names.substring(1)}';
+    }
+
     if (demo != null) {
-      statusTitle = demo.title;
-      statusSubtitle = demo.description;
-      statusLabel = demo.status == 'solar_recommendation'
-          ? 'Estimasi penghematan'
-          : (demo.status == 'normal' ? 'Estimasi tagihan' : 'Biaya tambahan');
+      statusTitle = demoStatusTitle(demo.status, l10n);
+      statusSubtitle = demoStatusDescription(demo.status, l10n);
+      statusLabel = demoStatusLabel(demo.status, l10n);
       displayCost = demo.extraCost;
-      causeTitle = demo.status == 'solar_recommendation'
-          ? 'Peluang Penghematan'
-          : (demo.status == 'normal' ? 'Pola Pemakaian' : 'Penyebab Lonjakan');
-      causeText = demo.mainCause;
-      insightText = demo.insight;
+      causeTitle = demoCauseTitle(demo.status, l10n);
+      causeText = demoCauseText(demo.status, l10n);
+      insightText = demoInsightText(demo.status, l10n);
       isSpike = demo.status == 'energy_spike';
     } else if (avgKwh > 0 && currentKwh > avgKwh * 1.12) {
-      statusTitle = 'Lonjakan Energi Terdeteksi';
-      statusSubtitle = 'Pemakaian tinggi jam 18.00–21.00';
-      statusLabel = 'Biaya tambahan';
+      statusTitle = heuristicTitle(UsageHeuristic.spike, l10n);
+      statusSubtitle = heuristicSubtitle(UsageHeuristic.spike, l10n);
+      statusLabel = heuristicLabel(UsageHeuristic.spike, l10n);
       final diff = ((currentKwh - avgKwh) * tariff).round();
       displayCost = diff > 0 ? diff : 45200;
-      causeTitle = 'Penyebab Lonjakan';
-      final applianceNames = s.data.appliancesOf(me.id).isNotEmpty
-          ? s.data
-                .appliancesOf(me.id)
-                .take(3)
-                .map((a) => a.name.toLowerCase())
-                .join(', ')
-          : 'oven, freezer, dan blender';
-      causeText =
-          '${applianceNames[0].toUpperCase()}${applianceNames.substring(1)} sering dipakai bersamaan sore hari.';
-      insightText =
-          'Pindahkan pemakaian alat berat ke jam 10.00–14.00 agar lebih hemat.';
+      causeTitle = heuristicCauseTitle(UsageHeuristic.spike, l10n);
+      causeText = heuristicCauseText(
+        UsageHeuristic.spike,
+        l10n,
+        applianceNames: spikeApplianceNames(),
+      );
+      insightText = heuristicInsightText(UsageHeuristic.spike, l10n);
       isSpike = true;
     } else if (avgKwh > 0 && currentKwh < avgKwh * 0.90) {
-      statusTitle = 'Potensi Penghematan';
-      statusSubtitle = 'Pemakaian lebih hemat dibanding bulan lalu';
-      statusLabel = 'Estimasi hemat';
+      statusTitle = heuristicTitle(UsageHeuristic.savings, l10n);
+      statusSubtitle = heuristicSubtitle(UsageHeuristic.savings, l10n);
+      statusLabel = heuristicLabel(UsageHeuristic.savings, l10n);
       final diff = ((avgKwh - currentKwh) * tariff).round();
       displayCost = diff > 0 ? diff : 32000;
-      causeTitle = 'Peluang Penghematan';
-      causeText =
-          'Penggunaan energi lebih terkontrol dibanding rata-rata 3 bulan terakhir.';
-      insightText =
-          'Pertahankan efisiensi ini atau gunakan Solar Hub untuk penghematan lebih tinggi.';
+      causeTitle = heuristicCauseTitle(UsageHeuristic.savings, l10n);
+      causeText = heuristicCauseText(UsageHeuristic.savings, l10n);
+      insightText = heuristicInsightText(UsageHeuristic.savings, l10n);
       isSpike = false;
     } else if (avgKwh > 0) {
-      statusTitle = 'Pemakaian Normal';
-      statusSubtitle = 'Pola pemakaian listrik Anda stabil';
-      statusLabel = 'Estimasi tagihan';
+      statusTitle = heuristicTitle(UsageHeuristic.normal, l10n);
+      statusSubtitle = heuristicSubtitle(UsageHeuristic.normal, l10n);
+      statusLabel = heuristicLabel(UsageHeuristic.normal, l10n);
       displayCost = currentTotal > 0
           ? currentTotal
           : (currentKwh * tariff).round();
-      causeTitle = 'Pola Pemakaian';
-      causeText =
-          'Konsumsi listrik stabil sesuai aktivitas harian usaha Anda.';
-      insightText =
-          'Gunakan Solar Hub saat siang hari untuk menekan biaya lebih lanjut.';
+      causeTitle = heuristicCauseTitle(UsageHeuristic.normal, l10n);
+      causeText = heuristicCauseText(UsageHeuristic.normal, l10n);
+      insightText = heuristicInsightText(UsageHeuristic.normal, l10n);
       isSpike = false;
     } else {
-      statusTitle = 'Lonjakan Energi Terdeteksi';
-      statusSubtitle = 'Pemakaian tinggi jam 18.00–21.00';
-      statusLabel = 'Biaya tambahan';
+      statusTitle = heuristicTitle(UsageHeuristic.spike, l10n);
+      statusSubtitle = heuristicSubtitle(UsageHeuristic.spike, l10n);
+      statusLabel = heuristicLabel(UsageHeuristic.spike, l10n);
       displayCost = currentTotal > 0
           ? (currentTotal * 0.215).round()
           : (currentKwh > 0 ? (currentKwh * 0.25 * tariff).round() : 45200);
-      causeTitle = 'Penyebab Lonjakan';
-      final applianceNames = s.data.appliancesOf(me.id).isNotEmpty
-          ? s.data
-                .appliancesOf(me.id)
-                .take(3)
-                .map((a) => a.name.toLowerCase())
-                .join(', ')
-          : 'oven, freezer, dan blender';
-      causeText =
-          '${applianceNames[0].toUpperCase()}${applianceNames.substring(1)} sering dipakai bersamaan sore hari.';
-      insightText =
-          'Pindahkan pemakaian alat berat ke jam 10.00–14.00 agar lebih hemat.';
+      causeTitle = heuristicCauseTitle(UsageHeuristic.spike, l10n);
+      causeText = heuristicCauseText(
+        UsageHeuristic.spike,
+        l10n,
+        applianceNames: spikeApplianceNames(),
+      );
+      insightText = heuristicInsightText(UsageHeuristic.spike, l10n);
       isSpike = true;
     }
 
@@ -292,7 +294,7 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
       displayAppliances = [
         for (final c in demo.contributors)
           _ApplianceDisplayItem(
-            name: c.name,
+            name: applianceKindLabel(c.kind, l10n),
             kind: c.kind,
             costIdr: c.monthlyCost,
             progress: (c.percentage / 100.0).clamp(0.05, 1.0),
@@ -314,21 +316,21 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
           ),
       ]..sort((a, b) => b.costIdr.compareTo(a.costIdr));
     } else {
-      displayAppliances = const [
+      displayAppliances = [
         _ApplianceDisplayItem(
-          name: 'Oven listrik',
+          name: applianceKindLabel('oven', l10n),
           kind: 'oven',
           costIdr: 20000,
           progress: 0.85,
         ),
         _ApplianceDisplayItem(
-          name: 'Freezer',
+          name: applianceKindLabel('refrigerator', l10n),
           kind: 'refrigerator',
           costIdr: 15200,
           progress: 0.72,
         ),
         _ApplianceDisplayItem(
-          name: 'Blender',
+          name: applianceKindLabel('blender', l10n),
           kind: 'blender',
           costIdr: 10000,
           progress: 0.48,
@@ -345,35 +347,25 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: _brandGreen),
-          tooltip: 'Kembali',
+          tooltip: l10n.actionBack,
           onPressed: () {
             DemoAnalysisRepository.clear();
             context.pop();
           },
         ),
-        title: Stack(
-          alignment: Alignment.center,
-          children: [
-            if (fromScan)
-              const Text(
-                'Hasil Scan',
-                style: TextStyle(color: Colors.transparent, fontSize: 1),
-              ),
-            Text(
-              fromScan ? 'Analisis AI Energi' : 'Catat Listrik',
-              style: const TextStyle(
-                color: _brandGreen,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                letterSpacing: -0.2,
-              ),
-            ),
-          ],
+        title: Text(
+          fromScan ? l10n.energyAnalysisTitle : l10n.energyFormTitle,
+          style: const TextStyle(
+            color: _brandGreen,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.2,
+          ),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline_rounded, color: _brandGreen),
-            tooltip: 'Bantuan Analisis',
+            tooltip: l10n.scanAnalysisHelpTooltip,
             onPressed: () => _showHelpDialog(context, l10n, tariff),
           ),
         ],
@@ -393,7 +385,7 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
           top: false,
           minimum: const EdgeInsets.fromLTRB(20, 12, 20, 16),
           child: PrimaryButton(
-            label: 'Simpan',
+            label: l10n.actionSave,
             loading: _busy,
             onPressed: _save,
           ),
@@ -411,12 +403,12 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
               children: [
                 if (fromScan) ...[
                   // Subtitle
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 16),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
                     child: Text(
-                      'IbuDaya menemukan biaya listrik usaha yang bisa dihemat.',
+                      l10n.scanAnalysisSubtitle,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: _textMuted,
                         fontSize: 13,
                         height: 1.3,
@@ -424,13 +416,14 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
                     ),
                   ),
 
-                  // SECTION 1: AI ANALYSIS SUMMARY
+                  // SECTION 1: ANALYSIS SUMMARY
                   _buildAlertCard(
                     statusTitle: statusTitle,
                     statusSubtitle: statusSubtitle,
                     statusLabel: statusLabel,
                     amountIdr: displayCost,
                     isSpike: isSpike,
+                    perMonthSuffix: l10n.scanAnalysisPerMonthSuffix,
                   ),
                   const SizedBox(height: 14),
 
@@ -439,19 +432,17 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
                   const SizedBox(height: 14),
 
                   // SECTION 3: ALAT PENYUMBANG BIAYA
-                  _buildAppliancesSection(displayAppliances),
+                  _buildAppliancesSection(
+                    displayAppliances,
+                    l10n.scanAnalysisAppliancesSectionTitle,
+                    l10n.scanAnalysisPerMonthSuffix,
+                  ),
                   const SizedBox(height: 14),
 
                   // SECTION 4: INSIGHT UTAMA
-                  _buildInsightCard(insightText),
-                  const SizedBox(height: 16),
-
-                  // SECTION 5: SOLAR HUB CTA
-                  _buildCtaButton(
-                    context,
-                    appliances.isNotEmpty ? appliances.first : null,
-                    demo?.contributors.firstOrNull?.name,
-                  ),
+                  _buildInsightCard(insightText, l10n.scanAnalysisInsightTitle),
+                  // No Solar Hub CTA here: this screen is the result of
+                  // Scan Tagihan, which is only about the analysis.
                   const SizedBox(height: 18),
                 ],
 
@@ -479,6 +470,7 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
     required String statusSubtitle,
     required String statusLabel,
     required int amountIdr,
+    required String perMonthSuffix,
     bool isSpike = true,
   }) {
     final bg = isSpike ? _alertBg : const Color(0xFFEAF6EF);
@@ -572,7 +564,7 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  '/ bln',
+                  perMonthSuffix,
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -646,7 +638,11 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
     );
   }
 
-  Widget _buildAppliancesSection(List<_ApplianceDisplayItem> appliances) {
+  Widget _buildAppliancesSection(
+    List<_ApplianceDisplayItem> appliances,
+    String sectionTitle,
+    String perMonthSuffix,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: _sectionBg,
@@ -660,10 +656,10 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Alat Penyumbang Biaya',
-                  style: TextStyle(
+                  sectionTitle,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: _brandGreen,
@@ -695,14 +691,17 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
           const SizedBox(height: 12),
           for (int i = 0; i < appliances.length; i++) ...[
             if (i > 0) const SizedBox(height: 10),
-            _buildApplianceItemCard(appliances[i]),
+            _buildApplianceItemCard(appliances[i], perMonthSuffix),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildApplianceItemCard(_ApplianceDisplayItem item) {
+  Widget _buildApplianceItemCard(
+    _ApplianceDisplayItem item,
+    String perMonthSuffix,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -743,9 +742,12 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
                         color: _brandGreen,
                       ),
                     ),
-                    const Text(
-                      ' /bln',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                    Text(
+                      perMonthSuffix,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF6B7280),
+                      ),
                     ),
                   ],
                 ),
@@ -801,10 +803,7 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
     return Icon(icon, size: 24, color: _brandGreen);
   }
 
-  Widget _buildInsightCard([
-    String insightText =
-        'Pindahkan pemakaian alat berat ke jam 10.00–14.00 agar lebih hemat.',
-  ]) {
+  Widget _buildInsightCard(String insightText, String insightTitle) {
     return Container(
       decoration: BoxDecoration(
         color: _insightBg,
@@ -831,9 +830,9 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Insight Utama',
-                  style: TextStyle(
+                Text(
+                  insightTitle,
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: _brandGreen,
@@ -856,58 +855,6 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
     );
   }
 
-  Widget _buildCtaButton(
-    BuildContext context,
-    Appliance? top, [
-    String? fallbackApplianceName,
-  ]) {
-    final applianceParam = top?.name ?? fallbackApplianceName;
-    return Material(
-      color: _brandGreen,
-      borderRadius: BorderRadius.circular(14),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => context.push(
-          Uri(
-            path: Paths.booking,
-            queryParameters: applianceParam != null ? {'alat': applianceParam} : null,
-          ).toString(),
-        ),
-        child: Container(
-          height: 52,
-          padding: const EdgeInsets.symmetric(horizontal: 18),
-          child: const Row(
-            children: [
-              Icon(
-                Icons.calendar_month_outlined,
-                color: Colors.white,
-                size: 22,
-              ),
-              SizedBox(width: 10),
-              Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    'Lihat Jadwal Solar Hub',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 8),
-              Icon(Icons.chevron_right_rounded, color: Colors.white, size: 24),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-
   Widget _buildRawFormFields({
     required BuildContext context,
     required DateTime now,
@@ -917,20 +864,22 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
     required bool suspicious,
     required double tariff,
   }) {
+    final l10n = AppLocalizations.of(context);
+    final isPostpaid = _kind == EnergyKind.postpaid;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SegmentedButton<EnergyKind>(
-          segments: const [
+          segments: [
             ButtonSegment(
               value: EnergyKind.postpaid,
-              label: Text('Tagihan'),
-              icon: Icon(Icons.receipt_long_rounded),
+              label: Text(l10n.energyFormKindBill),
+              icon: const Icon(Icons.receipt_long_rounded),
             ),
             ButtonSegment(
               value: EnergyKind.token,
-              label: Text('Token'),
-              icon: Icon(Icons.bolt_rounded),
+              label: Text(l10n.energyFormKindToken),
+              icon: const Icon(Icons.bolt_rounded),
             ),
           ],
           selected: {_kind},
@@ -939,14 +888,14 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          _kind == EnergyKind.postpaid
-              ? 'Pascabayar: tagihan bulanan PLN.'
-              : 'Prabayar: struk pembelian token. Beberapa token dalam sebulan dijumlahkan.',
+          isPostpaid
+              ? l10n.energyFormKindHelpBill
+              : l10n.energyFormKindHelpToken,
           style: text.bodySmall,
         ),
         const SizedBox(height: AppSpacing.lg),
         Text(
-          _kind == EnergyKind.postpaid ? 'Bulan tagihan' : 'Bulan pembelian',
+          isPostpaid ? l10n.energyFormMonth : l10n.energyFormMonthToken,
           style: text.titleSmall,
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -963,37 +912,38 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
         ),
         if (replacing) ...[
           const SizedBox(height: AppSpacing.sm),
-          const InfoBanner(
+          InfoBanner(
             tone: InfoTone.warning,
-            message:
-                'Tagihan bulan ini sudah tercatat. Menyimpan akan menggantinya.',
+            message: l10n.energyFormReplaceWarning,
           ),
         ],
         const SizedBox(height: AppSpacing.lg),
         AppTextField(
-          label: _kind == EnergyKind.postpaid
-              ? 'Pemakaian listrik'
-              : 'Jumlah kWh token',
+          label: isPostpaid
+              ? l10n.energyFormKwhLabelBill
+              : l10n.energyFormKwhLabelToken,
           controller: _kwh,
-          hint: 'Contoh: 128',
+          hint: l10n.energyFormKwhHint,
           suffixText: 'kWh',
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: [decimalInput, LengthLimitingTextInputFormatter(8)],
-          helper: _kind == EnergyKind.postpaid
-              ? 'Lihat "Pemakaian" atau selisih Stand Meter.'
-              : 'Lihat "Jml kWh" di struk.',
+          helper: isPostpaid
+              ? l10n.energyFormKwhHelpBill
+              : l10n.energyFormKwhHelpToken,
           validator: (v) {
             final x = parseDecimal(v ?? '');
-            if (x == null || x <= 0) return 'Isi jumlah kWh.';
-            if (x > 20000) return 'Angka terlalu besar. Periksa lagi.';
+            if (x == null || x <= 0) return l10n.energyFormKwhValidatorEmpty;
+            if (x > 20000) return l10n.energyFormKwhValidatorTooLarge;
             return null;
           },
         ),
         const SizedBox(height: AppSpacing.lg),
         AppTextField(
-          label: _kind == EnergyKind.postpaid ? 'Total tagihan' : 'Total bayar',
+          label: isPostpaid
+              ? l10n.energyFormBillLabelBill
+              : l10n.energyFormBillLabelToken,
           controller: _total,
-          hint: 'Contoh: 185.000',
+          hint: l10n.energyFormBillHint,
           prefixText: 'Rp ',
           keyboardType: TextInputType.number,
           inputFormatters: [
@@ -1002,14 +952,14 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
           ],
           validator: (v) {
             final x = parseDigits(v ?? '');
-            if (x == null || x < 1000) return 'Isi total rupiah.';
+            if (x == null || x < 1000) return l10n.energyFormBillValidator;
             return null;
           },
         ),
-        if (_kind == EnergyKind.postpaid) ...[
+        if (isPostpaid) ...[
           const SizedBox(height: AppSpacing.lg),
           AppTextField(
-            label: 'ID pelanggan (boleh kosong)',
+            label: l10n.energyFormCustomerIdLabel,
             controller: _customer,
             keyboardType: TextInputType.number,
             inputFormatters: [
@@ -1022,18 +972,16 @@ class _EnergyFormScreenState extends ConsumerState<EnergyFormScreen> {
           const SizedBox(height: AppSpacing.lg),
           InfoBanner(
             tone: suspicious ? InfoTone.warning : InfoTone.success,
-            title: 'Harga per kWh: ${formatRupiah(perKwh)}',
+            title: l10n.energyFormPerKwhTitle(formatRupiah(perKwh)),
             message: suspicious
-                ? 'Jauh dari tarif Anda (${formatRupiah(tariff)}/kWh). '
-                      'Periksa lagi kWh dan totalnya.'
-                : 'Sesuai dengan tarif Anda (${formatRupiah(tariff)}/kWh).',
+                ? l10n.energyFormPerKwhSuspicious(formatRupiah(tariff))
+                : l10n.energyFormPerKwhOk(formatRupiah(tariff)),
           ),
         ],
       ],
     );
   }
 }
-
 
 class _ApplianceDisplayItem {
   const _ApplianceDisplayItem({

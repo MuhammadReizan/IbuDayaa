@@ -49,7 +49,8 @@ class SolarPanelData {
   /// Estimasi return on investment dalam tahun.
   final double roiYears;
 
-  /// Akurasi analisis AI dalam persen (0–100).
+  /// Akurasi estimasi sensor dalam persen (0–100). Ini bukan skor
+  /// kepercayaan model AI — jangan tampilkan sebagai "akurasi AI".
   final int accuracy;
 
   /// Estimasi penghematan per bulan dalam rupiah.
@@ -88,8 +89,8 @@ class SolarPanelData {
     _ => 'Rendah',
   };
 
-  /// Tip AI berdasarkan status panel.
-  String get aiTip => switch (status) {
+  /// Tip berdasarkan status panel.
+  String get tip => switch (status) {
     SolarPanelStatus.healthy =>
       'Lokasi sangat cocok untuk Solar Hub.\nPotensi penghematan tinggi.',
     SolarPanelStatus.warning =>
@@ -105,7 +106,7 @@ class SolarPanelData {
     SolarPanelStatus.poor => 'Belum Direkomendasikan',
   };
 
-  /// Label akurasi AI — diikuti label kualitas singkat.
+  /// Label akurasi — diikuti label kualitas singkat.
   String get accuracyLabel => switch (accuracy) {
     >= 90 => 'Optimal',
     >= 85 => 'Sangat Baik',

@@ -327,6 +327,47 @@ abstract class AppLocalizations {
   String get energyAnalysisTrend;
   String get energyAnalysisContributors;
 
+  // Manual "Catat Listrik" form fields (kind-specific copy)
+  String get energyFormKindBill;
+  String get energyFormKindToken;
+  String get energyFormKindHelpBill;
+  String get energyFormKindHelpToken;
+  String get energyFormMonthToken;
+  String get energyFormReplaceWarning;
+  String get energyFormKwhLabelBill;
+  String get energyFormKwhLabelToken;
+  String get energyFormKwhHint;
+  String get energyFormKwhHelpBill;
+  String get energyFormKwhHelpToken;
+  String get energyFormKwhValidatorEmpty;
+  String get energyFormKwhValidatorTooLarge;
+  String get energyFormBillLabelBill;
+  String get energyFormBillLabelToken;
+  String get energyFormBillHint;
+  String get energyFormBillValidator;
+  String get energyFormCustomerIdLabel;
+  String energyFormPerKwhTitle(String price);
+  String energyFormPerKwhSuspicious(String tariff);
+  String energyFormPerKwhOk(String tariff);
+
+  // Scan result / analysis screen (shared by the scan result and Analisis
+  // Energi screens so a translation never drifts between the two)
+  String get scanAnalysisSubtitle;
+  String get scanAnalysisHelpOk;
+  String get scanAnalysisHelpTooltip;
+  String get scanAnalysisAppliancesSectionTitle;
+  String get scanAnalysisPerMonthSuffix;
+  String get scanAnalysisInsightTitle;
+  String get scanAnalysisEmptyMessage;
+  String get scanAnalysisCtaSolarHub;
+  String get scanAnalysisLoadingSubtitle;
+  String get scanAnalysisLoadingBadge;
+  String get scanStep1;
+  String get scanStep2;
+  String get scanStep3;
+  String get scanStep4;
+  String get scanStep5;
+
   // ── Appliances ────────────────────────────────────────────────────────────
   String get appliancesTitle;
   String get appliancesEmpty;
@@ -360,6 +401,21 @@ abstract class AppLocalizations {
   String get scanDemoReading;
   String get scanDemoInvalid;
   String get scanDemoApplied;
+
+  // Shared camera capture chrome (Scan Tagihan and Radar Atap)
+  String get captureTorchOn;
+  String get captureTorchOff;
+  String get captureCameraNotFound;
+  String get captureCameraDenied;
+  String get captureCameraUnavailable;
+  String get captureShootFailed;
+  String get captureGalleryFailed;
+  String get captureGalleryLabel;
+  String get captureShootSemanticLabel;
+  String get captureDefaultBusyLabel;
+  String get scanTipBrightSpot;
+  String get scanTipFullFrame;
+  String get scanTipHoldSteady;
 
   // ── Solar Hub ─────────────────────────────────────────────────────────────
   String get solarTitle;
@@ -1222,6 +1278,89 @@ class _IdStrings extends AppLocalizations {
   @override
   String get energyAnalysisContributors => 'Kontributor Daya';
 
+  @override
+  String get energyFormKindBill => 'Tagihan';
+  @override
+  String get energyFormKindToken => 'Token';
+  @override
+  String get energyFormKindHelpBill => 'Pascabayar: tagihan bulanan PLN.';
+  @override
+  String get energyFormKindHelpToken =>
+      'Prabayar: struk pembelian token. Beberapa token dalam sebulan dijumlahkan.';
+  @override
+  String get energyFormMonthToken => 'Bulan pembelian';
+  @override
+  String get energyFormReplaceWarning =>
+      'Tagihan bulan ini sudah tercatat. Menyimpan akan menggantinya.';
+  @override
+  String get energyFormKwhLabelBill => 'Pemakaian listrik';
+  @override
+  String get energyFormKwhLabelToken => 'Jumlah kWh token';
+  @override
+  String get energyFormKwhHint => 'Contoh: 128';
+  @override
+  String get energyFormKwhHelpBill =>
+      'Lihat "Pemakaian" atau selisih Stand Meter.';
+  @override
+  String get energyFormKwhHelpToken => 'Lihat "Jml kWh" di struk.';
+  @override
+  String get energyFormKwhValidatorEmpty => 'Isi jumlah kWh.';
+  @override
+  String get energyFormKwhValidatorTooLarge =>
+      'Angka terlalu besar. Periksa lagi.';
+  @override
+  String get energyFormBillLabelBill => 'Total tagihan';
+  @override
+  String get energyFormBillLabelToken => 'Total bayar';
+  @override
+  String get energyFormBillHint => 'Contoh: 185.000';
+  @override
+  String get energyFormBillValidator => 'Isi total rupiah.';
+  @override
+  String get energyFormCustomerIdLabel => 'ID pelanggan (boleh kosong)';
+  @override
+  String energyFormPerKwhTitle(String price) => 'Harga per kWh: $price';
+  @override
+  String energyFormPerKwhSuspicious(String tariff) =>
+      'Jauh dari tarif Anda ($tariff/kWh). Periksa lagi kWh dan totalnya.';
+  @override
+  String energyFormPerKwhOk(String tariff) =>
+      'Sesuai dengan tarif Anda ($tariff/kWh).';
+
+  @override
+  String get scanAnalysisSubtitle =>
+      'IbuDaya menemukan biaya listrik usaha yang bisa dihemat.';
+  @override
+  String get scanAnalysisHelpOk => 'Mengerti';
+  @override
+  String get scanAnalysisHelpTooltip => 'Bantuan Analisis';
+  @override
+  String get scanAnalysisAppliancesSectionTitle => 'Alat Penyumbang Biaya';
+  @override
+  String get scanAnalysisPerMonthSuffix => '/ bln';
+  @override
+  String get scanAnalysisInsightTitle => 'Insight Utama';
+  @override
+  String get scanAnalysisEmptyMessage =>
+      'Scan tagihan listrik pertama Anda untuk melihat analisisnya.';
+  @override
+  String get scanAnalysisCtaSolarHub => 'Lihat Jadwal Solar Hub';
+  @override
+  String get scanAnalysisLoadingSubtitle =>
+      'Mohon tunggu sebentar, sistem sedang memproses data tagihan...';
+  @override
+  String get scanAnalysisLoadingBadge => 'Analisis Energi';
+  @override
+  String get scanStep1 => 'Membaca data tagihan...';
+  @override
+  String get scanStep2 => 'Menganalisis pola penggunaan energi...';
+  @override
+  String get scanStep3 => 'Mengidentifikasi sumber biaya terbesar...';
+  @override
+  String get scanStep4 => 'Menyusun rekomendasi penghematan...';
+  @override
+  String get scanStep5 => 'Analisis selesai';
+
   // Appliances
   @override
   String get appliancesTitle => 'Alat Usaha';
@@ -1288,6 +1427,35 @@ class _IdStrings extends AppLocalizations {
   String get scanDemoInvalid => 'Ini bukan barcode demo IbuDaya.';
   @override
   String get scanDemoApplied => 'Data demo diterapkan.';
+
+  @override
+  String get captureTorchOn => 'Nyalakan lampu';
+  @override
+  String get captureTorchOff => 'Matikan lampu';
+  @override
+  String get captureCameraNotFound => 'Kamera tidak ditemukan di HP ini.';
+  @override
+  String get captureCameraDenied =>
+      'Izin kamera ditolak. Aktifkan di Pengaturan HP, atau pilih foto dari galeri.';
+  @override
+  String get captureCameraUnavailable =>
+      'Kamera tidak bisa dibuka. Pilih foto dari galeri.';
+  @override
+  String get captureShootFailed => 'Gagal mengambil foto. Coba lagi.';
+  @override
+  String get captureGalleryFailed => 'Galeri tidak bisa dibuka.';
+  @override
+  String get captureGalleryLabel => 'Galeri';
+  @override
+  String get captureShootSemanticLabel => 'Ambil foto';
+  @override
+  String get captureDefaultBusyLabel => 'Memproses…';
+  @override
+  String get scanTipBrightSpot => 'Tempat terang, tanpa bayangan';
+  @override
+  String get scanTipFullFrame => 'Seluruh struk masuk bingkai';
+  @override
+  String get scanTipHoldSteady => 'Tahan HP sampai tulisan jelas';
 
   // Solar
   @override
@@ -2517,6 +2685,90 @@ class _EnStrings extends AppLocalizations {
   @override
   String get energyAnalysisContributors => 'Power Contributors';
 
+  @override
+  String get energyFormKindBill => 'Bill';
+  @override
+  String get energyFormKindToken => 'Token';
+  @override
+  String get energyFormKindHelpBill => 'Postpaid: PLN\'s monthly bill.';
+  @override
+  String get energyFormKindHelpToken =>
+      'Prepaid: token purchase receipt. Multiple tokens in a month are added together.';
+  @override
+  String get energyFormMonthToken => 'Purchase month';
+  @override
+  String get energyFormReplaceWarning =>
+      'This month\'s bill is already recorded. Saving will replace it.';
+  @override
+  String get energyFormKwhLabelBill => 'Electricity usage';
+  @override
+  String get energyFormKwhLabelToken => 'Token kWh amount';
+  @override
+  String get energyFormKwhHint => 'e.g. 128';
+  @override
+  String get energyFormKwhHelpBill =>
+      'See "Usage" or the meter-reading difference.';
+  @override
+  String get energyFormKwhHelpToken => 'See "kWh Amount" on the receipt.';
+  @override
+  String get energyFormKwhValidatorEmpty => 'Enter the kWh amount.';
+  @override
+  String get energyFormKwhValidatorTooLarge =>
+      'Number is too large. Check again.';
+  @override
+  String get energyFormBillLabelBill => 'Total bill';
+  @override
+  String get energyFormBillLabelToken => 'Total paid';
+  @override
+  String get energyFormBillHint => 'e.g. 185,000';
+  @override
+  String get energyFormBillValidator => 'Enter the total amount.';
+  @override
+  String get energyFormCustomerIdLabel => 'Customer ID (optional)';
+  @override
+  String energyFormPerKwhTitle(String price) => 'Price per kWh: $price';
+  @override
+  String energyFormPerKwhSuspicious(String tariff) =>
+      'Far from your tariff ($tariff/kWh). Check the kWh and total again.';
+  @override
+  String energyFormPerKwhOk(String tariff) =>
+      'Matches your tariff ($tariff/kWh).';
+
+  @override
+  String get scanAnalysisSubtitle =>
+      'IbuDaya found business electricity costs you could save on.';
+  @override
+  String get scanAnalysisHelpOk => 'Got it';
+  @override
+  String get scanAnalysisHelpTooltip => 'Analysis help';
+  @override
+  String get scanAnalysisAppliancesSectionTitle =>
+      'Cost-Contributing Appliances';
+  @override
+  String get scanAnalysisPerMonthSuffix => '/ mo';
+  @override
+  String get scanAnalysisInsightTitle => 'Key Insight';
+  @override
+  String get scanAnalysisEmptyMessage =>
+      'Scan your first electricity bill to see its analysis.';
+  @override
+  String get scanAnalysisCtaSolarHub => 'View Solar Hub Schedule';
+  @override
+  String get scanAnalysisLoadingSubtitle =>
+      'Please wait, the system is processing your bill data...';
+  @override
+  String get scanAnalysisLoadingBadge => 'Energy Analysis';
+  @override
+  String get scanStep1 => 'Reading bill data...';
+  @override
+  String get scanStep2 => 'Analysing energy usage patterns...';
+  @override
+  String get scanStep3 => 'Identifying the biggest cost sources...';
+  @override
+  String get scanStep4 => 'Building savings recommendations...';
+  @override
+  String get scanStep5 => 'Analysis complete';
+
   // Appliances
   @override
   String get appliancesTitle => 'Business Appliances';
@@ -2583,6 +2835,35 @@ class _EnStrings extends AppLocalizations {
   String get scanDemoInvalid => 'This is not an IbuDaya demo barcode.';
   @override
   String get scanDemoApplied => 'Demo data applied.';
+
+  @override
+  String get captureTorchOn => 'Turn on flash';
+  @override
+  String get captureTorchOff => 'Turn off flash';
+  @override
+  String get captureCameraNotFound => 'No camera found on this phone.';
+  @override
+  String get captureCameraDenied =>
+      'Camera permission denied. Enable it in phone Settings, or pick a photo from the gallery.';
+  @override
+  String get captureCameraUnavailable =>
+      'Camera can\'t be opened. Pick a photo from the gallery.';
+  @override
+  String get captureShootFailed => 'Failed to take the photo. Try again.';
+  @override
+  String get captureGalleryFailed => 'Gallery can\'t be opened.';
+  @override
+  String get captureGalleryLabel => 'Gallery';
+  @override
+  String get captureShootSemanticLabel => 'Take photo';
+  @override
+  String get captureDefaultBusyLabel => 'Processing…';
+  @override
+  String get scanTipBrightSpot => 'Bright spot, no shadows';
+  @override
+  String get scanTipFullFrame => 'The whole receipt fits the frame';
+  @override
+  String get scanTipHoldSteady => 'Hold steady until the text is clear';
 
   // Solar
   @override
