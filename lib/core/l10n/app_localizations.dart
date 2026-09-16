@@ -604,6 +604,11 @@ abstract class AppLocalizations {
   String get qualifierIlustrasi;
   String get qualifierDataContoh;
   String get qualifierDataKomunitas;
+  String get qualifierDataLangsung;
+
+  String get solarWeatherTitle;
+  String solarWeatherReason(int cloudPct, String condition);
+  String get solarWeatherSource;
 
   String get creditBandPerluPeningkatan;
   String get creditBandCukup;
@@ -1861,6 +1866,16 @@ class _IdStrings extends AppLocalizations {
   String get qualifierDataContoh => 'data contoh';
   @override
   String get qualifierDataKomunitas => 'data komunitas';
+  @override
+  String get qualifierDataLangsung => 'data langsung';
+
+  @override
+  String get solarWeatherTitle => 'Jam terbaik untuk produksi hari ini';
+  @override
+  String solarWeatherReason(int cloudPct, String condition) =>
+      'BMKG: $condition, tutupan awan $cloudPct%';
+  @override
+  String get solarWeatherSource => 'Sumber: BMKG (data.bmkg.go.id)';
 
   @override
   String get creditBandPerluPeningkatan => 'Perlu Peningkatan';
@@ -3284,6 +3299,16 @@ class _EnStrings extends AppLocalizations {
   String get qualifierDataContoh => 'sample data';
   @override
   String get qualifierDataKomunitas => 'community data';
+  @override
+  String get qualifierDataLangsung => 'live data';
+
+  @override
+  String get solarWeatherTitle => 'Best production window today';
+  @override
+  String solarWeatherReason(int cloudPct, String condition) =>
+      'BMKG: $condition, $cloudPct% cloud cover';
+  @override
+  String get solarWeatherSource => 'Source: BMKG (data.bmkg.go.id)';
 
   @override
   String get creditBandPerluPeningkatan => 'Needs Improvement';

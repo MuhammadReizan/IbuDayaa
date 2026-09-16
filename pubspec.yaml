@@ -62,6 +62,12 @@ dependencies:
   # recognition read prose off a bill; this reads structured demo data
   # reliably at a booth without depending on OCR accuracy on stage.
   mobile_scanner: ^6.0.10
+  # HTTP client for BmkgWeatherService (lib/core/weather/) — the one real
+  # network call in the app, used only for the opt-in Solar Hub weather
+  # panel. Every caller catches failures and hides the panel; nothing else
+  # in the app depends on network access (see RT-05 in
+  # docs/ASSUMPTIONS_AND_RISKS.md).
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:

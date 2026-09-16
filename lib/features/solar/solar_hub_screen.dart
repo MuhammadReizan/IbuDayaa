@@ -13,6 +13,7 @@ import '../../core/models/models.dart';
 import '../../core/paths.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
+import '../../core/weather/weather_providers.dart';
 import '../solar_hub/widgets/solar_qr_card.dart';
 
 class SolarHubScreen extends ConsumerWidget {
@@ -183,6 +184,12 @@ class SolarHubScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           const SolarQrCard(),
+          if (hub != null &&
+              hub.isConfigured &&
+              (hub.weatherAdm4Code ?? '').trim().isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.lg),
+            _WeatherOutlookCard(adm4Code: hub.weatherAdm4Code!.trim()),
+          ],
           if (hub != null && hub.isConfigured && slots.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.xl),
             SectionHeader(title: l10n.solarTodaySlots),
@@ -261,6 +268,60 @@ class _SlotRow extends StatelessWidget {
                   ? StatusPill(label: l10n.solarSlotFull, tone: PillTone.danger)
                   : Text(formatKwh(a.remainingKwh), style: text.labelMedium),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WeatherOutlookCard extends ConsumerWidget {
+  const _WeatherOutlookCard({required this.adm4Code});
+
+  final String adm4Code;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final outlook = ref.watch(solarOutlookProvider(adm4Code)).value;
+    if (outlook == null) return const SizedBox.shrink();
+
+    final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
+    String hh(DateTime t) => t.hour.toString().padLeft(2, '0');
+
+    return SectionCard(
+      tone: CardTone.solar,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.wb_sunny_rounded, color: AppColors.onSolar),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  l10n.solarWeatherTitle,
+                  style: text.titleSmall?.copyWith(color: AppColors.onSolar),
+                ),
+              ),
+              const QualifierLabel(QualifierKind.dataLangsung),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            '${hh(outlook.windowStart)}.00–${hh(outlook.windowEnd)}.00',
+            style: AppTypography.numeric(22, color: AppColors.onSolar),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            l10n.solarWeatherReason(outlook.cloudCoverPct, outlook.condition),
+            style: text.bodySmall?.copyWith(color: AppColors.onSolar),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            l10n.solarWeatherSource,
+            style: text.labelSmall?.copyWith(color: AppColors.onSolar),
           ),
         ],
       ),

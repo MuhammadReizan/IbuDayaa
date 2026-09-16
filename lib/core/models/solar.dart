@@ -12,6 +12,7 @@ class SolarHub {
     required this.location,
     required this.dailyCapacityKwh,
     required this.createdAt,
+    this.weatherAdm4Code,
   });
 
   final String id;
@@ -24,12 +25,20 @@ class SolarHub {
   final double dailyCapacityKwh;
   final DateTime createdAt;
 
+  /// BMKG's `adm4` (village-level) region code for this hub's location,
+  /// e.g. "16.71.05.1001" — set by the admin so the Solar Hub screen can
+  /// show a real weather-derived production window (see
+  /// lib/core/weather/). Null/empty means the panel stays hidden; this
+  /// feature is opt-in and never blocks booking or capacity.
+  final String? weatherAdm4Code;
+
   bool get isConfigured => dailyCapacityKwh > 0;
 
   SolarHub copyWith({
     String? name,
     String? location,
     double? dailyCapacityKwh,
+    String? weatherAdm4Code,
   }) => SolarHub(
     id: id,
     cooperativeId: cooperativeId,
@@ -37,6 +46,7 @@ class SolarHub {
     location: location ?? this.location,
     dailyCapacityKwh: dailyCapacityKwh ?? this.dailyCapacityKwh,
     createdAt: createdAt,
+    weatherAdm4Code: weatherAdm4Code ?? this.weatherAdm4Code,
   );
 
   factory SolarHub.fromRow(Map<String, dynamic> r) => SolarHub(
@@ -46,6 +56,7 @@ class SolarHub {
     location: rStr(r, 'location'),
     dailyCapacityKwh: rDbl(r, 'daily_capacity_kwh'),
     createdAt: rDate(r, 'created_at'),
+    weatherAdm4Code: rStrN(r, 'weather_adm4_code'),
   );
 
   Map<String, dynamic> toRow() => {
@@ -55,6 +66,7 @@ class SolarHub {
     'location': location,
     'daily_capacity_kwh': dailyCapacityKwh,
     'created_at': ts(createdAt),
+    'weather_adm4_code': weatherAdm4Code,
   };
 }
 

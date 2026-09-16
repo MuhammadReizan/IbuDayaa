@@ -33,6 +33,9 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
       'name': hub.name.trim(),
       'location': hub.location.trim(),
       'daily_capacity_kwh': hub.dailyCapacityKwh,
+      'weather_adm4_code': hub.weatherAdm4Code?.trim().isEmpty ?? true
+          ? null
+          : hub.weatherAdm4Code!.trim(),
     });
     return _hub(hub.id);
   }

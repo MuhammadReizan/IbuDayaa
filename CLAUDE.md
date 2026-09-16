@@ -120,3 +120,11 @@ Never mark a task complete while `flutter analyze` fails.
 - The Supabase migration is written but not yet run against a live project;
   the `submit-loan` Edge Function and Supabase repositories are not built.
 - Lending must be run by a legally registered savings-and-loan cooperative.
+- The Solar Hub "best production window today" panel (`lib/core/weather/`)
+  calls BMKG's public forecast API directly — the one place in the app that
+  needs network access. It is opt-in (admin sets a `weatherAdm4Code` on the
+  hub in Hub Settings) and hides itself on any failure; nothing else
+  depends on it. Verified against a live response on 2026-09-17: the `tcc`
+  cloud-cover field and the rest of the parsed shape are correct as coded.
+  `16.71.05.1001` (Kelurahan Delapan-belas Ilir, Kec. Ilir Timur Satu, Kota
+  Palembang) is a real adm4 code — usable as the pilot/demo default.

@@ -35,12 +35,15 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
   late final _quota = TextEditingController(
     text: decimalText(_coop?.memberMonthlyQuotaKwh ?? 30),
   );
+  late final _weatherCode = TextEditingController(
+    text: _hub?.weatherAdm4Code ?? '',
+  );
   final _kwp = TextEditingController();
   bool _busy = false;
 
   @override
   void dispose() {
-    for (final c in [_name, _location, _capacity, _quota, _kwp]) {
+    for (final c in [_name, _location, _capacity, _quota, _weatherCode, _kwp]) {
       c.dispose();
     }
     super.dispose();
@@ -58,6 +61,7 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
           name: _name.text,
           location: _location.text,
           dailyCapacityKwh: parseDecimal(_capacity.text) ?? 0,
+          weatherAdm4Code: _weatherCode.text.trim(),
         ),
       );
       final latest = ref.read(appStateProvider).data.cooperative ?? coop;
@@ -244,6 +248,17 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
                   ],
                 ],
               ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            AppTextField(
+              label: 'Kode wilayah cuaca (BMKG)',
+              controller: _weatherCode,
+              helper:
+                  'Opsional. Kode wilayah tingkat kelurahan dari '
+                  'data.bmkg.go.id, mis. 16.71.05.1001 — dipakai untuk '
+                  'menampilkan jam produksi terbaik berbasis cuaca nyata di '
+                  'layar Solar Hub anggota. Kosongkan jika belum tahu '
+                  'kodenya; panel itu tidak muncul sampai diisi.',
             ),
             const SizedBox(height: AppSpacing.lg),
             AppTextField(

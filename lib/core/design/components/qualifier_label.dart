@@ -12,7 +12,13 @@ enum QualifierKind {
   simulasi('simulasi'),
   ilustrasi('ilustrasi'),
   dataContoh('data contoh'),
-  dataKomunitas('data komunitas');
+  dataKomunitas('data komunitas'),
+
+  /// A figure read from a real, live source (e.g. the BMKG weather API) —
+  /// the opposite of every other qualifier here, which all mark something
+  /// simulated or illustrative. Still shown as a pill, never as a bare
+  /// fact, so the source is always one tap of attention away.
+  dataLangsung('data langsung');
 
   const QualifierKind(this.label);
   final String label;
@@ -24,6 +30,7 @@ enum QualifierKind {
     QualifierKind.ilustrasi => l10n.qualifierIlustrasi,
     QualifierKind.dataContoh => l10n.qualifierDataContoh,
     QualifierKind.dataKomunitas => l10n.qualifierDataKomunitas,
+    QualifierKind.dataLangsung => l10n.qualifierDataLangsung,
   };
 }
 
