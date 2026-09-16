@@ -68,6 +68,10 @@ dependencies:
   # in the app depends on network access (see RT-05 in
   # docs/ASSUMPTIONS_AND_RISKS.md).
   http: ^1.2.2
+  # Hosted backend (see docs/SUPABASE.md). Replaces LocalDatabase: Postgres +
+  # Auth + Storage + Realtime via one client. URL and anon key come from
+  # --dart-define, never hardcoded (lib/core/config/supabase_config.dart).
+  supabase_flutter: ^2.8.0
 
 dev_dependencies:
   flutter_test:

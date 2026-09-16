@@ -9,15 +9,23 @@ String? rStrN(Map<String, dynamic> r, String k) {
   return v is String && v.isNotEmpty ? v : null;
 }
 
-int rInt(Map<String, dynamic> r, String k, [int fallback = 0]) =>
-    (r[k] as num?)?.toInt() ?? fallback;
+/// Postgres `numeric` comes back from PostgREST as a JSON string (to keep
+/// precision), not a JSON number, so every numeric reader below accepts both.
+num? _asNum(Object? v) => switch (v) {
+  num n => n,
+  String s => num.tryParse(s),
+  _ => null,
+};
 
-int? rIntN(Map<String, dynamic> r, String k) => (r[k] as num?)?.toInt();
+int rInt(Map<String, dynamic> r, String k, [int fallback = 0]) =>
+    _asNum(r[k])?.toInt() ?? fallback;
+
+int? rIntN(Map<String, dynamic> r, String k) => _asNum(r[k])?.toInt();
 
 double rDbl(Map<String, dynamic> r, String k, [double fallback = 0]) =>
-    (r[k] as num?)?.toDouble() ?? fallback;
+    _asNum(r[k])?.toDouble() ?? fallback;
 
-double? rDblN(Map<String, dynamic> r, String k) => (r[k] as num?)?.toDouble();
+double? rDblN(Map<String, dynamic> r, String k) => _asNum(r[k])?.toDouble();
 
 DateTime rDate(Map<String, dynamic> r, String k) =>
     DateTime.tryParse((r[k] as String?) ?? '') ??

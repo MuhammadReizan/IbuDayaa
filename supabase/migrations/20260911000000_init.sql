@@ -29,7 +29,7 @@ create table public.cooperatives (
   city text not null default '',
   invite_code text not null unique check (invite_code ~ '^[A-HJ-NP-Z2-9]{6}$'),
   created_by uuid not null,
-  loan_flat_monthly_rate_pct numeric(5,2) not null default 2.0 check (loan_flat_monthly_rate_pct between 0 and 5),
+  loan_flat_monthly_rate_pct numeric(5,2) not null default 2.0 check (loan_flat_monthly_rate_pct between 0 and 10),
   loan_max_amount_idr bigint not null default 5000000 check (loan_max_amount_idr >= 500000),
   loan_min_score int not null default 60 check (loan_min_score between 0 and 100),
   loan_tenors int[] not null default '{3,6,12}',
@@ -101,6 +101,10 @@ create table public.solar_hubs (
   name text not null,
   location text not null default '',
   daily_capacity_kwh numeric not null default 0 check (daily_capacity_kwh >= 0),
+  -- BMKG adm4 (village-level) region code for the weather panel
+  -- (lib/core/weather/); null/empty hides that panel. Optional, never
+  -- required for booking.
+  weather_adm4_code text,
   created_at timestamptz not null default now()
 );
 
@@ -440,6 +444,11 @@ create policy notifications_mark on public.notifications for update
   using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 create policy scores_read on public.score_snapshots for select using (public.can_see_user(user_id));
+-- The score screen computes its own snapshot client-side and records it —
+-- same trust boundary as energy_write/appliances_write above. Nothing reads
+-- another member's score_snapshots row for anything but display.
+create policy scores_write on public.score_snapshots for all
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 -- ---------------------------------------------------------------------------
 -- Accounts
@@ -876,6 +885,144 @@ exception when unique_violation then
   raise exception 'Selesaikan pinjaman yang masih berjalan sebelum mengajukan lagi.';
 end $$;
 revoke execute on function public.private_insert_loan from public, anon, authenticated;
+
+-- Client-facing entry point for a loan application. Recomputes the credit
+-- score and eligibility ceiling from stored data (never trusts a
+-- client-supplied score) — a straight SQL port of
+-- lib/core/logic/credit_signals.dart + rule_based_credit_scoring_engine.dart
+-- + loan_math.dart, kept in lockstep with those files. Runs as the function
+-- owner (security definer), so it can call private_insert_loan even though
+-- that function's own EXECUTE grant is revoked from client roles above.
+create function public.submit_loan(p_amount bigint, p_purpose text, p_tenor int, p_note text default null)
+returns loan_applications language plpgsql security definer set search_path = public as $$
+declare
+  me profiles := private_require_member();
+  c cooperatives;
+  months_recorded int;
+  in_arisan boolean;
+  appliances_count int;
+  consistency numeric := 0;
+  recent_bookings int;
+  business numeric;
+  given_count int;
+  community numeric;
+  owed int := 0;
+  good int := 0;
+  payments numeric;
+  pts_energy int; pts_payment int; pts_business int; pts_community int;
+  score int;
+  band text;
+  share numeric;
+  ceiling_idr bigint;
+  factors jsonb;
+  l loan_applications;
+begin
+  select * into c from cooperatives where id = me.cooperative_id;
+
+  select count(distinct date_trunc('month', period_month)) into months_recorded
+    from energy_records where user_id = me.id and kind = 'postpaid';
+  if months_recorded < 3 then
+    raise exception 'Catat tagihan atau token minimal 3 bulan agar skor bisa dihitung.';
+  end if;
+
+  -- Energy usage consistency: coefficient of variation over the latest bill
+  -- per calendar month (mirrors monthlyUsage() picking the newest-created
+  -- bill when a month was re-scanned).
+  with monthly as (
+    select distinct on (date_trunc('month', period_month))
+      date_trunc('month', period_month) m, kwh
+    from energy_records
+    where user_id = me.id and kind = 'postpaid' and kwh > 0
+    order by date_trunc('month', period_month), created_at desc
+  )
+  select case
+    when count(*) < 2 or avg(kwh) = 0 then 0
+    else greatest(0, least(1, 1 - (stddev_pop(kwh) / avg(kwh)) * 2))
+  end into consistency from monthly;
+
+  select exists(select 1 from arisan_members where user_id = me.id) into in_arisan;
+  select count(*) into appliances_count from appliances where user_id = me.id;
+
+  select count(*) into recent_bookings from hub_bookings
+    where user_id = me.id and status = 'completed'
+      and booking_date > (current_date - interval '60 days');
+  business := least(1, greatest(0, appliances_count::numeric / 4)) * 0.4
+    + least(1, greatest(0, recent_bookings::numeric / 8)) * 0.6;
+
+  select count(*) into given_count from quota_offers
+    where status = 'completed'
+      and ((kind = 'share' and owner_id = me.id) or (kind = 'need' and counterparty_id = me.id));
+  community := case when not in_arisan then 0
+    else 0.4 + least(1, greatest(0, given_count::numeric / 3)) * 0.6 end;
+
+  -- Payment history: confirmed arisan months owed vs. paid, plus loan
+  -- installments already due vs. paid on time.
+  select coalesce(sum(greatest(0,
+      (extract(year from age(current_date, g.start_month)) * 12
+        + extract(month from age(current_date, g.start_month)))::int + 1
+    )), 0) into owed
+    from arisan_members am join arisan_groups g on g.id = am.group_id
+    where am.user_id = me.id;
+  select coalesce(sum(least(
+      (extract(year from age(current_date, g.start_month)) * 12
+        + extract(month from age(current_date, g.start_month)))::int + 1,
+      (select count(distinct date_trunc('month', ap.period_month)) from arisan_payments ap
+        where ap.group_id = g.id and ap.user_id = me.id
+          and ap.type = 'contribution' and ap.status = 'confirmed')
+    )), 0) into good
+    from arisan_members am join arisan_groups g on g.id = am.group_id
+    where am.user_id = me.id;
+
+  owed := owed + (select count(*) from loan_installments li
+    join loan_applications la on la.id = li.loan_id
+    where la.user_id = me.id and li.due_date <= current_date);
+  good := good + (select count(*) from loan_installments li
+    join loan_applications la on la.id = li.loan_id
+    where la.user_id = me.id and li.due_date <= current_date
+      and li.paid_at is not null and li.paid_at::date <= li.due_date);
+
+  payments := case when owed = 0 then 0 else greatest(0, least(1, good::numeric / owed)) end;
+
+  pts_energy := round(least(1, greatest(0, consistency)) * 35);
+  pts_payment := round(least(1, greatest(0, payments)) * 30);
+  pts_business := round(least(1, greatest(0, business)) * 20);
+  pts_community := round(least(1, greatest(0, community)) * 15);
+  score := pts_energy + pts_payment + pts_business + pts_community;
+  band := case
+    when score >= 80 then 'Baik Sekali'
+    when score >= 65 then 'Baik'
+    when score >= 50 then 'Cukup'
+    else 'Perlu Peningkatan'
+  end;
+
+  if score < c.loan_min_score then
+    raise exception 'Skor Anda belum mencapai batas minimum yang ditetapkan koperasi.';
+  end if;
+  if p_amount < 500000 then
+    raise exception 'Nominal minimal Rp 500.000.';
+  end if;
+  if not (p_tenor = any (c.loan_tenors)) then
+    raise exception 'Tenor ini tidak disediakan koperasi.';
+  end if;
+
+  share := case band
+    when 'Baik Sekali' then 1.0 when 'Baik' then 0.75
+    when 'Cukup' then 0.5 else 0.25 end;
+  ceiling_idr := floor(c.loan_max_amount_idr * share / 100000) * 100000;
+  if p_amount > ceiling_idr then
+    raise exception 'Nominal melebihi plafon Anda.';
+  end if;
+
+  factors := jsonb_build_array(
+    jsonb_build_object('label', 'Konsistensi pemakaian energi', 'points', pts_energy, 'max_points', 35),
+    jsonb_build_object('label', 'Riwayat pembayaran', 'points', pts_payment, 'max_points', 30),
+    jsonb_build_object('label', 'Aktivitas usaha', 'points', pts_business, 'max_points', 20),
+    jsonb_build_object('label', 'Partisipasi komunitas', 'points', pts_community, 'max_points', 15)
+  );
+
+  select * into l from private_insert_loan(me.id, p_amount, p_purpose, p_tenor, p_note, score, band, factors);
+  return l;
+end $$;
 
 create function public.cancel_loan(p_loan uuid) returns void
 language plpgsql security definer set search_path = public as $$

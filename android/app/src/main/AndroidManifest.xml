@@ -1,4 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Supabase (auth/database/storage) and the BMKG weather panel are the
+         app's only network calls. Without this, release builds silently lose
+         all connectivity — debug/profile builds only work today because
+         Flutter's own debug/profile manifests add it for the dev VM service,
+         which release builds don't include. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Scan tagihan PLN & foto atap. Not required: the app still works with
          gallery upload and manual entry on devices without a camera. -->
     <uses-permission android:name="android.permission.CAMERA"/>
