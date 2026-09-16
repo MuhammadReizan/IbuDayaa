@@ -154,7 +154,7 @@ class _ScanBillScreenState extends ConsumerState<ScanBillScreen> {
   @override
   Widget build(BuildContext context) {
     if (_analyzing) {
-      return AiAnalysisLoadingScreen(
+      return AnalysisLoadingScreen(
         scenarioName: _analyzingScenario,
         onComplete: () async {
           final draft = _pendingDraft;

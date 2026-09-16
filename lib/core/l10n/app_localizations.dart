@@ -367,6 +367,13 @@ abstract class AppLocalizations {
   String get scanStep3;
   String get scanStep4;
   String get scanStep5;
+  String get solarScanBadge;
+  String get solarScanTitle;
+  String get solarScanStep1;
+  String get solarScanStep2;
+  String get solarScanStep3;
+  String get solarScanStep4;
+  String get solarScanStep5;
 
   // ── Appliances ────────────────────────────────────────────────────────────
   String get appliancesTitle;
@@ -1360,6 +1367,20 @@ class _IdStrings extends AppLocalizations {
   String get scanStep4 => 'Menyusun rekomendasi penghematan...';
   @override
   String get scanStep5 => 'Analisis selesai';
+  @override
+  String get solarScanBadge => 'Solar Scanner';
+  @override
+  String get solarScanTitle => 'Menganalisis Solar Panel...';
+  @override
+  String get solarScanStep1 => 'QR terbaca';
+  @override
+  String get solarScanStep2 => 'Memeriksa kondisi panel';
+  @override
+  String get solarScanStep3 => 'Menghitung paparan matahari';
+  @override
+  String get solarScanStep4 => 'Mengestimasi penghematan';
+  @override
+  String get solarScanStep5 => 'Menyiapkan rekomendasi';
 
   // Appliances
   @override
@@ -2768,6 +2789,20 @@ class _EnStrings extends AppLocalizations {
   String get scanStep4 => 'Building savings recommendations...';
   @override
   String get scanStep5 => 'Analysis complete';
+  @override
+  String get solarScanBadge => 'Solar Scanner';
+  @override
+  String get solarScanTitle => 'Analysing solar panel...';
+  @override
+  String get solarScanStep1 => 'QR code read';
+  @override
+  String get solarScanStep2 => 'Checking panel condition';
+  @override
+  String get solarScanStep3 => 'Calculating sun exposure';
+  @override
+  String get solarScanStep4 => 'Estimating savings';
+  @override
+  String get solarScanStep5 => 'Preparing recommendation';
 
   // Appliances
   @override

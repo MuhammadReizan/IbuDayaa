@@ -9,6 +9,7 @@ export 'disclaimers.dart';
 export 'feature_badge.dart';
 export 'info_banner.dart';
 export 'qualifier_label.dart';
+export 'scan_loading_screen.dart';
 export 'score_ring.dart';
 export 'section_card.dart';
 export 'selectable_tile.dart';

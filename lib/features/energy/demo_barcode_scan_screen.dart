@@ -112,7 +112,7 @@ class _DemoBarcodeScanScreenState extends ConsumerState<DemoBarcodeScanScreen> {
   @override
   Widget build(BuildContext context) {
     if (_analyzing) {
-      return AiAnalysisLoadingScreen(
+      return AnalysisLoadingScreen(
         scenarioName: _analyzingScenario,
         onComplete: () async {
           // Wait for DB writes to finish before navigating so the analysis
