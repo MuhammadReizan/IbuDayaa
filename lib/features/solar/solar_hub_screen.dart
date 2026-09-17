@@ -13,6 +13,7 @@ import '../../core/models/models.dart';
 import '../../core/paths.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
+import '../../core/weather/weather_models.dart';
 import '../../core/weather/weather_providers.dart';
 import '../solar_hub/widgets/solar_qr_card.dart';
 
@@ -188,7 +189,7 @@ class SolarHubScreen extends ConsumerWidget {
               hub.isConfigured &&
               (hub.weatherAdm4Code ?? '').trim().isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
-            _WeatherOutlookCard(adm4Code: hub.weatherAdm4Code!.trim()),
+            _WeatherOutlookCard(adm4Code: hub.weatherAdm4Code!.trim(), now: now),
           ],
           if (hub != null && hub.isConfigured && slots.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.xl),
@@ -276,18 +277,32 @@ class _SlotRow extends StatelessWidget {
 }
 
 class _WeatherOutlookCard extends ConsumerWidget {
-  const _WeatherOutlookCard({required this.adm4Code});
+  const _WeatherOutlookCard({required this.adm4Code, required this.now});
 
   final String adm4Code;
+  final DateTime now;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final outlook = ref.watch(solarOutlookProvider(adm4Code)).value;
-    if (outlook == null) return const SizedBox.shrink();
+    final result = ref.watch(solarOutlookProvider(adm4Code)).value;
+    if (result == null) return const SizedBox.shrink();
+    final today = result.today;
+    final tomorrow = result.tomorrow;
+    if (today == null && tomorrow == null) return const SizedBox.shrink();
 
     final text = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context);
     String hh(DateTime t) => t.hour.toString().padLeft(2, '0');
+    String windowOf(SolarOutlook o) =>
+        '${hh(o.windowStart)}.00–${hh(o.windowEnd)}.00';
+    // The rule only ever picks one window per day, so once it's over there
+    // is nothing left to recommend today — say so instead of still showing
+    // it as if it were live and actionable, and point at tomorrow's window
+    // (BMKG's forecast already covers it) if there is one.
+    final passed = today == null || !today.windowEnd.isAfter(now);
+    // Whichever day is still actionable drives the headline number and the
+    // cloud-cover reason underneath it.
+    final highlight = passed ? tomorrow : today;
 
     return SectionCard(
       tone: CardTone.solar,
@@ -297,11 +312,14 @@ class _WeatherOutlookCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.wb_sunny_rounded, color: AppColors.onSolar),
+              Icon(
+                passed ? Icons.history_rounded : Icons.wb_sunny_rounded,
+                color: AppColors.onSolar,
+              ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
-                  l10n.solarWeatherTitle,
+                  passed ? l10n.solarWeatherPassedTitle : l10n.solarWeatherTitle,
                   style: text.titleSmall?.copyWith(color: AppColors.onSolar),
                 ),
               ),
@@ -309,20 +327,42 @@ class _WeatherOutlookCard extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
-          Text(
-            '${hh(outlook.windowStart)}.00–${hh(outlook.windowEnd)}.00',
-            style: AppTypography.numeric(22, color: AppColors.onSolar),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            l10n.solarWeatherReason(outlook.cloudCoverPct, outlook.condition),
-            style: text.bodySmall?.copyWith(color: AppColors.onSolar),
-          ),
+          if (highlight != null)
+            Text(
+              passed
+                  ? l10n.solarWeatherTomorrowWindow(windowOf(highlight))
+                  : windowOf(highlight),
+              style: AppTypography.numeric(22, color: AppColors.onSolar),
+            ),
+          if (passed && today != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              l10n.solarWeatherPassedWindow(windowOf(today)),
+              style: text.bodySmall?.copyWith(color: AppColors.onSolar),
+            ),
+          ],
+          if (highlight != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              l10n.solarWeatherReason(
+                highlight.cloudCoverPct,
+                highlight.condition,
+              ),
+              style: text.bodySmall?.copyWith(color: AppColors.onSolar),
+            ),
+          ],
           const SizedBox(height: AppSpacing.xs),
           Text(
             l10n.solarWeatherSource,
             style: text.labelSmall?.copyWith(color: AppColors.onSolar),
           ),
+          if (passed && tomorrow == null) ...[
+            const SizedBox(height: 2),
+            Text(
+              l10n.solarWeatherPassedHint,
+              style: text.labelSmall?.copyWith(color: AppColors.onSolar),
+            ),
+          ],
         ],
       ),
     );

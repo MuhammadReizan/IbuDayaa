@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../errors.dart';
+import '../../l10n/l10n.dart';
 import '../tokens.dart';
 import '../typography.dart';
 
@@ -1189,7 +1190,7 @@ Future<bool> runAction(
                 e.toString().isNotEmpty &&
                 !e.toString().startsWith('Instance')
             ? e.toString()
-            : 'Terjadi kesalahan. Coba lagi.',
+            : AppLocalizations.of(context).errorGenericRetry,
         error: true,
       );
     }
@@ -1204,6 +1205,7 @@ Future<bool> confirmDialog(
   required String confirmLabel,
   bool destructive = false,
 }) async {
+  final cancelLabel = AppLocalizations.of(context).actionCancel;
   final ok = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
@@ -1212,7 +1214,7 @@ Future<bool> confirmDialog(
       actions: [
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text('Batal'),
+          child: Text(cancelLabel),
         ),
         FilledButton(
           style: destructive
@@ -1242,6 +1244,7 @@ Future<String?> promptText(
   bool destructive = false,
 }) {
   final controller = TextEditingController();
+  final cancelLabel = AppLocalizations.of(context).actionCancel;
   return showDialog<String>(
     context: context,
     builder: (ctx) => StatefulBuilder(
@@ -1259,7 +1262,7 @@ Future<String?> promptText(
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Batal'),
+            child: Text(cancelLabel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(

@@ -79,8 +79,10 @@ class LoanDetailScreen extends ConsumerWidget {
         _reject(context, actions, loan, l10n),
         PrimaryButton(
           label: l10n.isEn ? 'Start review' : 'Mulai review',
-          onPressed: () =>
-              act(() => actions.startLoanReview(loan.id), 'Status: in review.'),
+          onPressed: () => act(
+            () => actions.startLoanReview(loan.id),
+            l10n.loanToastInReview,
+          ),
         ),
       ],
       if (isAdmin && loan.status == LoanStatus.inReview) ...[
@@ -98,7 +100,7 @@ class LoanDetailScreen extends ConsumerWidget {
             if (note == null || !context.mounted) return;
             await act(
               () => actions.approveLoan(loan.id, note: note),
-              'Loan approved.',
+              l10n.loanToastApproved,
             );
           },
         ),
@@ -118,7 +120,7 @@ class LoanDetailScreen extends ConsumerWidget {
             if (!ok || !context.mounted) return;
             await act(
               () => actions.disburseLoan(loan.id),
-              'Disbursement recorded.',
+              l10n.loanToastDisbursed,
             );
           },
         ),
@@ -136,7 +138,7 @@ class LoanDetailScreen extends ConsumerWidget {
               destructive: true,
             );
             if (!ok || !context.mounted) return;
-            await act(() => actions.cancelLoan(loan.id), 'Loan cancelled.');
+            await act(() => actions.cancelLoan(loan.id), l10n.loanToastCancelled);
           },
         ),
     ];
@@ -362,7 +364,7 @@ class LoanDetailScreen extends ConsumerWidget {
                                 if (!ok || !context.mounted) return;
                                 await act(
                                   () => actions.markInstallmentPaid(i.id),
-                                  'Installment recorded.',
+                                  l10n.loanToastInstallmentRecorded,
                                 );
                               },
                               child: Text(l10n.actionConfirm),
@@ -441,7 +443,7 @@ class LoanDetailScreen extends ConsumerWidget {
       await runAction(
         context,
         () => actions.rejectLoan(loan.id, reason),
-        success: 'Loan rejected.',
+        success: l10n.loanToastRejected,
       );
     },
   );

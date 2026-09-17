@@ -128,7 +128,7 @@ class PaymentsReviewScreen extends ConsumerWidget {
                                   approve: false,
                                   note: reason,
                                 ),
-                                success: 'Payment rejected.',
+                                success: l10n.paymentToastRejected,
                               );
                             },
                           ),
@@ -140,7 +140,7 @@ class PaymentsReviewScreen extends ConsumerWidget {
                             onPressed: () => runAction(
                               context,
                               () => actions.reviewPayment(p.id, approve: true),
-                              success: 'Confirmed.',
+                              success: l10n.paymentToastConfirmed,
                             ),
                           ),
                         ),

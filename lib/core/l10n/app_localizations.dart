@@ -114,6 +114,7 @@ abstract class AppLocalizations {
   String get labelSuccess;
   String get labelRequired;
   String get labelOptional;
+  String get errorGenericRetry;
   String get labelStatus;
   String get labelDate;
   String get labelAmount;
@@ -494,6 +495,14 @@ abstract class AppLocalizations {
   String get loanInstallments;
   String get loanApprovedBy;
   String get loanDisbursedOn;
+  String get loanToastInReview;
+  String get loanToastApproved;
+  String get loanToastDisbursed;
+  String get loanToastCancelled;
+  String get loanToastRejected;
+  String get loanToastInstallmentRecorded;
+  String get paymentToastRejected;
+  String get paymentToastConfirmed;
 
   // ── Messages ──────────────────────────────────────────────────────────────
   String get messagesTitle;
@@ -614,6 +623,10 @@ abstract class AppLocalizations {
   String get solarWeatherTitle;
   String solarWeatherReason(int cloudPct, String condition);
   String get solarWeatherSource;
+  String get solarWeatherPassedTitle;
+  String solarWeatherPassedWindow(String window);
+  String get solarWeatherPassedHint;
+  String solarWeatherTomorrowWindow(String window);
 
   String get creditBandPerluPeningkatan;
   String get creditBandCukup;
@@ -852,6 +865,8 @@ class _IdStrings extends AppLocalizations {
   String get labelRequired => 'wajib diisi';
   @override
   String get labelOptional => 'opsional';
+  @override
+  String get errorGenericRetry => 'Terjadi kesalahan. Coba lagi.';
   @override
   String get labelStatus => 'Status';
   @override
@@ -1630,6 +1645,22 @@ class _IdStrings extends AppLocalizations {
   String get loanApprovedBy => 'Disetujui oleh';
   @override
   String get loanDisbursedOn => 'Dicairkan pada';
+  @override
+  String get loanToastInReview => 'Status: sedang direview.';
+  @override
+  String get loanToastApproved => 'Pengajuan disetujui.';
+  @override
+  String get loanToastDisbursed => 'Pencairan dicatat.';
+  @override
+  String get loanToastCancelled => 'Pengajuan dibatalkan.';
+  @override
+  String get loanToastRejected => 'Pengajuan ditolak.';
+  @override
+  String get loanToastInstallmentRecorded => 'Cicilan dicatat.';
+  @override
+  String get paymentToastRejected => 'Setoran ditolak.';
+  @override
+  String get paymentToastConfirmed => 'Dikonfirmasi.';
 
   // Messages
   @override
@@ -1889,6 +1920,14 @@ class _IdStrings extends AppLocalizations {
       'BMKG: $condition, tutupan awan $cloudPct%';
   @override
   String get solarWeatherSource => 'Sumber: BMKG (data.bmkg.go.id)';
+  @override
+  String get solarWeatherPassedTitle => 'Jam terbaik hari ini sudah lewat';
+  @override
+  String solarWeatherPassedWindow(String window) => 'Tadi jam $window.';
+  @override
+  String get solarWeatherPassedHint => 'Coba lagi besok pagi.';
+  @override
+  String solarWeatherTomorrowWindow(String window) => 'Besok $window';
 
   @override
   String get creditBandPerluPeningkatan => 'Perlu Peningkatan';
@@ -2290,6 +2329,8 @@ class _EnStrings extends AppLocalizations {
   String get labelRequired => 'required';
   @override
   String get labelOptional => 'optional';
+  @override
+  String get errorGenericRetry => 'Something went wrong. Try again.';
   @override
   String get labelStatus => 'Status';
   @override
@@ -3073,6 +3114,22 @@ class _EnStrings extends AppLocalizations {
   String get loanApprovedBy => 'Approved by';
   @override
   String get loanDisbursedOn => 'Disbursed on';
+  @override
+  String get loanToastInReview => 'Status: in review.';
+  @override
+  String get loanToastApproved => 'Loan approved.';
+  @override
+  String get loanToastDisbursed => 'Disbursement recorded.';
+  @override
+  String get loanToastCancelled => 'Loan cancelled.';
+  @override
+  String get loanToastRejected => 'Loan rejected.';
+  @override
+  String get loanToastInstallmentRecorded => 'Installment recorded.';
+  @override
+  String get paymentToastRejected => 'Payment rejected.';
+  @override
+  String get paymentToastConfirmed => 'Confirmed.';
 
   // Messages
   @override
@@ -3332,6 +3389,14 @@ class _EnStrings extends AppLocalizations {
       'BMKG: $condition, $cloudPct% cloud cover';
   @override
   String get solarWeatherSource => 'Source: BMKG (data.bmkg.go.id)';
+  @override
+  String get solarWeatherPassedTitle => 'Today\'s best hours have passed';
+  @override
+  String solarWeatherPassedWindow(String window) => 'It was $window.';
+  @override
+  String get solarWeatherPassedHint => 'Check again tomorrow morning.';
+  @override
+  String solarWeatherTomorrowWindow(String window) => 'Tomorrow $window';
 
   @override
   String get creditBandPerluPeningkatan => 'Needs Improvement';
