@@ -283,12 +283,15 @@ class InviteCodeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     return HeroCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            memberCount == 0 ? 'Undang anggota pertama Anda' : 'Kode koperasi',
+            memberCount == 0
+                ? l10n.inviteCardFirstMember
+                : l10n.inviteCardTitle,
             style: text.labelLarge?.copyWith(color: AppColors.textOnDarkDim),
           ),
           const SizedBox(height: AppSpacing.xs),
@@ -308,17 +311,18 @@ class InviteCodeCard extends StatelessWidget {
                 ),
               ),
               IconButton.filledTonal(
-                tooltip: 'Salin kode',
+                tooltip: l10n.inviteCardCopyTooltip,
                 onPressed: () async {
                   await Clipboard.setData(
                     ClipboardData(
-                      text:
-                          'Gabung ke ${coop.name} di aplikasi IbuDaya. Pilih Daftar → '
-                          'Anggota koperasi, lalu masukkan kode ${coop.inviteCode}.',
+                      text: l10n.inviteCardShareMessage(
+                        coop.name,
+                        coop.inviteCode,
+                      ),
                     ),
                   );
                   if (context.mounted) {
-                    showAppSnack(context, 'Pesan undangan disalin.');
+                    showAppSnack(context, l10n.inviteCardCopiedToast);
                   }
                 },
                 icon: const Icon(Icons.copy_rounded),
@@ -327,8 +331,7 @@ class InviteCodeCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Anggota memasukkan kode ini saat mendaftar. Jangan sebar ke orang di '
-            'luar koperasi.',
+            l10n.inviteCardCaption,
             style: text.bodySmall?.copyWith(color: AppColors.textOnDarkDim),
           ),
         ],
@@ -395,6 +398,7 @@ class AdminLoanRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     return SectionCard(
       padding: const EdgeInsets.all(AppSpacing.md),
       onTap: () => context.push(Paths.adminLoan(loan.id)),
@@ -416,7 +420,7 @@ class AdminLoanRow extends StatelessWidget {
                   style: AppTypography.numeric(16, color: AppColors.infoText),
                 ),
                 Text(
-                  'skor',
+                  l10n.scoreShortLabel.toLowerCase(),
                   style: text.labelSmall?.copyWith(
                     fontSize: 9,
                     color: AppColors.infoText,
@@ -432,13 +436,18 @@ class AdminLoanRow extends StatelessWidget {
               children: [
                 Text(name, style: text.titleSmall),
                 Text(
-                  '${formatRupiah(loan.amountIdr)} · ${loan.tenorMonths} bln · ${loan.purpose.label}',
+                  '${formatRupiah(loan.amountIdr)} · '
+                  '${l10n.unitMonths(loan.tenorMonths)} · '
+                  '${loan.purpose.localizedLabel(l10n)}',
                   style: text.bodySmall,
                 ),
               ],
             ),
           ),
-          StatusPill(label: loan.status.label, tone: loanTone(loan.status)),
+          StatusPill(
+            label: loan.status.localizedLabel(l10n),
+            tone: loanTone(loan.status),
+          ),
         ],
       ),
     );

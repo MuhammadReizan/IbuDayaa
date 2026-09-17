@@ -30,16 +30,15 @@ class ArisanAdminScreen extends ConsumerWidget {
       onBack: () => context.pop(),
       scrollable: data.groups.isNotEmpty,
       bottomBar: PrimaryButton(
-        label: 'Buat grup arisan',
+        label: l10n.arisanAdminCreateGroupButton,
         icon: Icons.add_rounded,
         onPressed: () => context.push(Paths.adminArisanNew),
       ),
       body: data.groups.isEmpty
-          ? const EmptyState(
+          ? EmptyState(
               motif: BrandArtMotif.arisan,
-              title: 'Belum ada grup arisan',
-              message:
-                  'Buat grup, pilih anggotanya, dan tentukan urutan giliran.',
+              title: l10n.arisanAdminEmptyTitle,
+              message: l10n.arisanAdminEmptyMessage,
             )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -73,20 +72,22 @@ class ArisanAdminScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             KeyValueRow(
-                              label: 'Iuran per bulan',
+                              label: l10n.arisanAdminDuesPerMonth,
                               value: formatRupiah(g.contributionIdr),
                             ),
                             KeyValueRow(
-                              label: 'Anggota',
-                              value: '${members.length} orang',
+                              label: l10n.adminMembers,
+                              value: l10n.arisanAdminMemberCount(
+                                members.length,
+                              ),
                             ),
                             KeyValueRow(
-                              label: 'Mulai',
+                              label: l10n.arisanAdminStartMonth,
                               value: monthYearLabel(g.startMonth),
                             ),
                             if (started) ...[
                               KeyValueRow(
-                                label: 'Lunas bulan ini',
+                                label: l10n.arisanAdminPaidThisMonth,
                                 value: '$paid / ${members.length}',
                               ),
                               const SizedBox(height: AppSpacing.xs),
@@ -99,23 +100,38 @@ class ArisanAdminScreen extends ConsumerWidget {
                               if (payout != null)
                                 InfoBanner(
                                   tone: InfoTone.success,
-                                  message:
-                                      'Sudah dicairkan ke ${data.nameOf(payout.userId)} '
-                                      '(${formatRupiah(payout.amountIdr)}).',
+                                  message: l10n.arisanAdminDisbursedTo(
+                                    data.nameOf(payout.userId),
+                                    formatRupiah(payout.amountIdr),
+                                  ),
                                 )
                               else if (recipient != null)
                                 PrimaryButton(
-                                  label:
-                                      'Catat pencairan ke ${data.nameOf(recipient.userId)}',
+                                  label: l10n.arisanAdminRecordPayoutTo(
+                                    data.nameOf(recipient.userId),
+                                  ),
                                   onPressed: () async {
                                     final ok = await confirmDialog(
                                       context,
-                                      title: 'Catat pencairan?',
+                                      title: l10n
+                                          .arisanAdminRecordPayoutConfirmTitle,
                                       message:
-                                          '${formatRupiah(g.contributionIdr * members.length)} diserahkan ke '
-                                          '${data.nameOf(recipient.userId)} untuk ${monthYearLabel(now)}.'
-                                          '${paid < members.length ? '\n\nPerhatian: baru $paid dari ${members.length} anggota yang lunas.' : ''}',
-                                      confirmLabel: 'Catat',
+                                          l10n.arisanAdminRecordPayoutConfirmMessage(
+                                            formatRupiah(
+                                              g.contributionIdr *
+                                                  members.length,
+                                            ),
+                                            data.nameOf(recipient.userId),
+                                            monthYearLabel(now),
+                                          ) +
+                                          (paid < members.length
+                                              ? l10n.arisanAdminRecordPayoutWarning(
+                                                  paid,
+                                                  members.length,
+                                                )
+                                              : ''),
+                                      confirmLabel:
+                                          l10n.arisanAdminRecordPayoutAction,
                                     );
                                     if (!ok || !context.mounted) return;
                                     await runAction(
@@ -123,13 +139,16 @@ class ArisanAdminScreen extends ConsumerWidget {
                                       () => ref
                                           .read(actionsProvider)
                                           .recordPayout(g.id, recipient.userId),
-                                      success: 'Pencairan dicatat.',
+                                      success: l10n.arisanAdminPayoutRecordedToast,
                                     );
                                   },
                                 ),
                             ],
                             const SizedBox(height: AppSpacing.md),
-                            Text('Urutan giliran', style: text.titleSmall),
+                            Text(
+                              l10n.arisanAdminTurnOrderSection,
+                              style: text.titleSmall,
+                            ),
                             const SizedBox(height: AppSpacing.xs),
                             for (final m in members)
                               Padding(
@@ -203,13 +222,14 @@ class _ArisanCreateScreenState extends ConsumerState<ArisanCreateScreen> {
     final data = ref.watch(appStateProvider).data;
     final now = ref.read(clockProvider)();
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final members = data.memberProfiles;
 
     return AppScaffold(
-      title: 'Buat Grup Arisan',
+      title: l10n.arisanAdminCreateTitle,
       onBack: () => context.pop(),
       bottomBar: PrimaryButton(
-        label: 'Buat grup (${_order.length} anggota)',
+        label: l10n.arisanAdminCreateButton(_order.length),
         loading: _busy,
         onPressed: _order.length < 2 ? null : _submit,
       ),
@@ -219,15 +239,16 @@ class _ArisanCreateScreenState extends ConsumerState<ArisanCreateScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             AppTextField(
-              label: 'Nama grup',
+              label: l10n.adminArisanGroupName,
               controller: _name,
               textCapitalization: TextCapitalization.words,
-              validator: (v) =>
-                  (v ?? '').trim().isEmpty ? 'Isi nama grup.' : null,
+              validator: (v) => (v ?? '').trim().isEmpty
+                  ? l10n.arisanAdminGroupNameRequired
+                  : null,
             ),
             const SizedBox(height: AppSpacing.lg),
             AppTextField(
-              label: 'Iuran per bulan',
+              label: l10n.arisanAdminDuesPerMonth,
               controller: _amount,
               prefixText: 'Rp ',
               keyboardType: TextInputType.number,
@@ -236,11 +257,11 @@ class _ArisanCreateScreenState extends ConsumerState<ArisanCreateScreen> {
                 LengthLimitingTextInputFormatter(11),
               ],
               validator: (v) => (parseDigits(v ?? '') ?? 0) < 1000
-                  ? 'Minimal Rp 1.000.'
+                  ? l10n.arisanAdminMinAmount
                   : null,
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text('Bulan mulai', style: text.titleSmall),
+            Text(l10n.arisanAdminStartMonthLabel, style: text.titleSmall),
             const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<DateTime>(
               value: _start,
@@ -256,25 +277,29 @@ class _ArisanCreateScreenState extends ConsumerState<ArisanCreateScreen> {
               onChanged: (v) => setState(() => _start = v ?? _start),
             ),
             const SizedBox(height: AppSpacing.xl),
-            Text('Pilih anggota sesuai urutan giliran', style: text.titleSmall),
+            Text(l10n.arisanAdminPickMembersTitle, style: text.titleSmall),
             const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Ketuk anggota yang menerima pertama, lalu kedua, dan seterusnya.',
-              style: text.bodySmall,
-            ),
+            Text(l10n.arisanAdminPickMembersHint, style: text.bodySmall),
             const SizedBox(height: AppSpacing.md),
             if (members.length < 2)
-              const InfoBanner(
+              InfoBanner(
                 tone: InfoTone.warning,
-                message:
-                    'Butuh minimal 2 anggota terdaftar. Bagikan kode koperasi dulu.',
+                message: l10n.arisanAdminNeedMoreMembers,
               ),
             for (final m in members) ...[
               SelectableTile(
                 label: m.fullName,
                 sublabel: _order.contains(m.id)
-                    ? 'Giliran ke-${_order.indexOf(m.id) + 1} · '
-                          '${shortMonthYear(DateTime(_start.year, _start.month + _order.indexOf(m.id)))}'
+                    ? l10n.arisanTurnFormat(
+                        _order.indexOf(m.id) + 1,
+                        shortMonthYear(
+                          DateTime(
+                            _start.year,
+                            _start.month + _order.indexOf(m.id),
+                          ),
+                          l10n: l10n,
+                        ),
+                      )
                     : m.businessName,
                 icon: Icons.person_rounded,
                 selected: _order.contains(m.id),
@@ -309,7 +334,7 @@ class _ArisanCreateScreenState extends ConsumerState<ArisanCreateScreen> {
             startMonth: _start,
             memberIds: _order,
           ),
-      success: 'Grup arisan dibuat. Anggota sudah diberi tahu.',
+      success: AppLocalizations.of(context).arisanAdminGroupCreatedToast,
     );
     if (!mounted) return;
     setState(() => _busy = false);

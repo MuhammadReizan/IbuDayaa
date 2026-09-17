@@ -68,24 +68,25 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
       await actions.updateCooperative(
         latest.copyWith(memberMonthlyQuotaKwh: parseDecimal(_quota.text)),
       );
-    }, success: 'Pengaturan Solar Hub tersimpan.');
+    }, success: AppLocalizations.of(context).adminSettingsSave);
     if (mounted) setState(() => _busy = false);
   }
 
   Future<void> _addSlot(SolarHub hub) async {
+    final l10n = AppLocalizations.of(context);
     int start = 8;
     int end = 10;
     final picked = await showDialog<(int, int)>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, set) => AlertDialog(
-          title: const Text('Tambah slot'),
+          title: Text(l10n.hubAddSlotDialogTitle),
           content: Row(
             children: [
               Expanded(
                 child: DropdownButtonFormField<int>(
                   value: start,
-                  decoration: const InputDecoration(labelText: 'Mulai'),
+                  decoration: InputDecoration(labelText: l10n.hubSlotStart),
                   items: [
                     for (int h = 5; h < 19; h++)
                       DropdownMenuItem(
@@ -103,7 +104,7 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
               Expanded(
                 child: DropdownButtonFormField<int>(
                   value: end,
-                  decoration: const InputDecoration(labelText: 'Selesai'),
+                  decoration: InputDecoration(labelText: l10n.hubSlotEnd),
                   items: [
                     for (int h = start + 1; h <= 19; h++)
                       DropdownMenuItem(
@@ -119,14 +120,14 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Batal'),
+              child: Text(l10n.actionCancel),
             ),
             FilledButton(
               style: FilledButton.styleFrom(
                 minimumSize: const Size(kMinTapTarget, kMinTapTarget),
               ),
               onPressed: () => Navigator.of(ctx).pop((start, end)),
-              child: const Text('Tambah'),
+              child: Text(l10n.actionAdd),
             ),
           ],
         ),
@@ -136,7 +137,7 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
     await runAction(
       context,
       () => ref.read(actionsProvider).addSlot(hub.id, picked.$1, picked.$2),
-      success: 'Slot ditambahkan.',
+      success: l10n.hubSlotAddedToast,
     );
   }
 
@@ -154,7 +155,7 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
         title: l10n.adminHubTitle,
         onBack: () => context.pop(),
         scrollable: false,
-        body: const EmptyState(title: 'Solar Hub tidak ditemukan'),
+        body: EmptyState(title: l10n.hubNotFound),
       );
     }
 
@@ -171,10 +172,10 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
           ..sort((a, b) => a.bookingDate.compareTo(b.bookingDate));
 
     return AppScaffold(
-      title: 'Solar Hub',
+      title: l10n.adminHubTitle,
       onBack: () => context.pop(),
       bottomBar: PrimaryButton(
-        label: 'Simpan pengaturan',
+        label: l10n.adminSettingsSave,
         loading: _busy,
         onPressed: _save,
       ),
@@ -184,25 +185,26 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             AppTextField(
-              label: 'Nama hub',
+              label: l10n.hubFieldName,
               controller: _name,
               validator: (v) =>
-                  (v ?? '').trim().isEmpty ? 'Isi nama hub.' : null,
+                  (v ?? '').trim().isEmpty ? l10n.hubFieldNameRequired : null,
             ),
             const SizedBox(height: AppSpacing.lg),
-            AppTextField(label: 'Lokasi', controller: _location),
+            AppTextField(label: l10n.hubFieldLocation, controller: _location),
             const SizedBox(height: AppSpacing.lg),
             AppTextField(
-              label: 'Kapasitas energi per hari',
+              label: l10n.hubFieldCapacity,
               controller: _capacity,
               suffixText: 'kWh',
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
               inputFormatters: [decimalInput],
-              helper: 'Isi 0 untuk menutup booking sementara.',
-              validator: (v) =>
-                  parseDecimal(v ?? '') == null ? 'Isi kapasitas.' : null,
+              helper: l10n.hubFieldCapacityHelper,
+              validator: (v) => parseDecimal(v ?? '') == null
+                  ? l10n.hubFieldCapacityRequired
+                  : null,
             ),
             const SizedBox(height: AppSpacing.sm),
             SectionCard(
@@ -211,7 +213,7 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Belum tahu kapasitasnya?', style: text.titleSmall),
+                  Text(l10n.hubCapacityUnknownTitle, style: text.titleSmall),
                   const SizedBox(height: AppSpacing.sm),
                   TextField(
                     controller: _kwp,
@@ -220,8 +222,8 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
                     ),
                     inputFormatters: [decimalInput],
                     onChanged: (_) => setState(() {}),
-                    decoration: const InputDecoration(
-                      hintText: 'Daya panel terpasang',
+                    decoration: InputDecoration(
+                      hintText: l10n.hubCapacityHint,
                       suffixText: 'kWp',
                     ),
                   ),
@@ -231,7 +233,7 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            '≈ ${formatKwh(suggested)} per hari (kWp × 4 jam matahari × 80%)',
+                            l10n.hubCapacitySuggestion(formatKwh(suggested)),
                             style: text.bodySmall?.copyWith(
                               color: AppColors.onSolar,
                             ),
@@ -241,7 +243,7 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
                           onPressed: () => setState(
                             () => _capacity.text = decimalText(suggested),
                           ),
-                          child: const Text('Pakai'),
+                          child: Text(l10n.hubCapacityUse),
                         ),
                       ],
                     ),
@@ -251,33 +253,28 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
             ),
             const SizedBox(height: AppSpacing.lg),
             AppTextField(
-              label: 'Kode wilayah cuaca (BMKG)',
+              label: l10n.hubFieldWeatherCode,
               controller: _weatherCode,
-              helper:
-                  'Opsional. Kode wilayah tingkat kelurahan dari '
-                  'data.bmkg.go.id, mis. 16.71.05.1001 — dipakai untuk '
-                  'menampilkan jam produksi terbaik berbasis cuaca nyata di '
-                  'layar Solar Hub anggota. Kosongkan jika belum tahu '
-                  'kodenya; panel itu tidak muncul sampai diisi.',
+              helper: l10n.hubFieldWeatherCodeHelper,
             ),
             const SizedBox(height: AppSpacing.lg),
             AppTextField(
-              label: 'Kuota tiap anggota per bulan',
+              label: l10n.hubFieldQuota,
               controller: _quota,
               suffixText: 'kWh',
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
               inputFormatters: [decimalInput],
-              helper:
-                  'Batas energi hub yang boleh dibooking satu anggota dalam sebulan.',
-              validator: (v) =>
-                  (parseDecimal(v ?? '') ?? -1) < 0 ? 'Isi kuota.' : null,
+              helper: l10n.hubFieldQuotaHelper,
+              validator: (v) => (parseDecimal(v ?? '') ?? -1) < 0
+                  ? l10n.hubFieldQuotaRequired
+                  : null,
             ),
             const SizedBox(height: AppSpacing.xl),
             SectionHeader(
-              title: 'Slot jam',
-              actionLabel: 'Tambah',
+              title: l10n.hubSlotsSection,
+              actionLabel: l10n.actionAdd,
               onAction: () => _addSlot(hub),
             ),
             for (final sl in data.orderedSlots)
@@ -287,24 +284,23 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
                   icon: Icons.schedule_rounded,
                   tone: PillTone.solar,
                   title: sl.label,
-                  subtitle: '${sl.hours} jam',
+                  subtitle: l10n.hubSlotHours(sl.hours),
                   trailing: IconButton(
-                    tooltip: 'Hapus slot',
+                    tooltip: l10n.hubSlotDeleteTooltip,
                     icon: const Icon(Icons.delete_outline_rounded),
                     onPressed: () async {
                       final ok = await confirmDialog(
                         context,
-                        title: 'Hapus slot ${sl.label}?',
-                        message:
-                            'Slot yang masih punya booking tidak bisa dihapus.',
-                        confirmLabel: 'Hapus',
+                        title: l10n.hubSlotDeleteConfirmTitle(sl.label),
+                        message: l10n.hubSlotDeleteConfirmMessage,
+                        confirmLabel: l10n.actionDelete,
                         destructive: true,
                       );
                       if (!ok || !context.mounted) return;
                       await runAction(
                         context,
                         () => ref.read(actionsProvider).removeSlot(sl.id),
-                        success: 'Slot dihapus.',
+                        success: l10n.hubSlotDeletedToast,
                       );
                     },
                   ),
@@ -312,9 +308,7 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
               ),
             if (toConfirm.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.xl),
-              const SectionHeader(
-                title: 'Booking hari ini & belum dikonfirmasi',
-              ),
+              SectionHeader(title: l10n.hubBookingsToConfirmSection),
               for (final b in toConfirm)
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -331,9 +325,9 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
                         () => ref
                             .read(actionsProvider)
                             .setBookingStatus(b.id, BookingStatus.completed),
-                        success: 'Ditandai sudah dipakai.',
+                        success: l10n.hubBookingMarkedUsedToast,
                       ),
-                      child: const Text('Dipakai'),
+                      child: Text(l10n.hubBookingMarkUsed),
                     ),
                   ),
                 ),

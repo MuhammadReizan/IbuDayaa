@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/design/components/components.dart';
 import '../../../core/design/tokens.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/paths.dart';
 
 /// Card "Scan QR Solar Panel" yang tampil di SolarHubScreen.
@@ -15,6 +16,7 @@ class SolarQrCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     return SectionCard(
       child: Row(
@@ -41,7 +43,7 @@ class SolarQrCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Scan QR Solar Panel',
+                  l10n.solarQrCardTitle,
                   style: text.titleSmall?.copyWith(
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.w700,
@@ -49,14 +51,14 @@ class SolarQrCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Lihat status panel secara langsung melalui QR Code',
+                  l10n.solarQrCardSubtitle,
                   style: text.bodySmall?.copyWith(
                     color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 PrimaryButton(
-                  label: 'Scan Sekarang',
+                  label: l10n.solarQrCardAction,
                   icon: Icons.qr_code_scanner_rounded,
                   onPressed: () => context.push(Paths.solarQrScan),
                 ),

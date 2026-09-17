@@ -1,6 +1,8 @@
 /// Model untuk data panel surya yang dibaca dari QR code demo.
 library;
 
+import '../l10n/l10n.dart';
+
 /// Status kondisi solar panel.
 enum SolarPanelStatus {
   /// Panel dalam kondisi prima, sangat direkomendasikan.
@@ -82,34 +84,31 @@ class SolarPanelData {
     );
   }
 
-  /// Label paparan matahari dalam Bahasa Indonesia.
-  String get sunExposureLabel => switch (sunExposure) {
-    'excellent' => 'Sangat Baik',
-    'good' => 'Baik',
-    _ => 'Rendah',
+  /// Label paparan matahari.
+  String sunExposureLabel(AppLocalizations l10n) => switch (sunExposure) {
+    'excellent' => l10n.solarScanSunExcellent,
+    'good' => l10n.solarScanSunGood,
+    _ => l10n.solarScanSunLow,
   };
 
   /// Tip berdasarkan status panel.
-  String get tip => switch (status) {
-    SolarPanelStatus.healthy =>
-      'Lokasi sangat cocok untuk Solar Hub.\nPotensi penghematan tinggi.',
-    SolarPanelStatus.warning =>
-      'Masih layak digunakan,\nnamun efisiensi belum optimal.',
-    SolarPanelStatus.poor =>
-      'Paparan matahari rendah.\nDisarankan evaluasi lokasi pemasangan.',
+  String tip(AppLocalizations l10n) => switch (status) {
+    SolarPanelStatus.healthy => l10n.solarScanTipHealthy,
+    SolarPanelStatus.warning => l10n.solarScanTipWarning,
+    SolarPanelStatus.poor => l10n.solarScanTipPoor,
   };
 
-  /// Label status dalam Bahasa Indonesia.
-  String get statusLabel => switch (status) {
-    SolarPanelStatus.healthy => 'Cocok untuk Solar Hub',
-    SolarPanelStatus.warning => 'Perlu Optimasi',
-    SolarPanelStatus.poor => 'Belum Direkomendasikan',
+  /// Label status.
+  String statusLabel(AppLocalizations l10n) => switch (status) {
+    SolarPanelStatus.healthy => l10n.solarScanStatusHealthy,
+    SolarPanelStatus.warning => l10n.solarScanStatusWarning,
+    SolarPanelStatus.poor => l10n.solarScanStatusPoor,
   };
 
   /// Label akurasi — diikuti label kualitas singkat.
-  String get accuracyLabel => switch (accuracy) {
-    >= 90 => 'Optimal',
-    >= 85 => 'Sangat Baik',
-    _ => 'Baik',
+  String accuracyLabel(AppLocalizations l10n) => switch (accuracy) {
+    >= 90 => l10n.solarScanAccuracyOptimal,
+    >= 85 => l10n.solarScanAccuracyVeryGood,
+    _ => l10n.solarScanAccuracyGood,
   };
 }

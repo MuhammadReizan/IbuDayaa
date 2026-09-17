@@ -5,6 +5,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../core/design/components/components.dart';
 import '../../../core/design/tokens.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/solar_demo/solar_panel_model.dart';
 import '../../../core/solar_demo/solar_panel_repository.dart';
 import '../analysis/solar_analysis_loading_screen.dart';
@@ -79,7 +80,11 @@ class _SolarQrScanScreenState extends State<SolarQrScanScreen> {
     if (data == null) {
       debugPrint('[SOLAR-SCAN] Panel ID: NOT FOUND for raw=$raw');
       if (mounted) {
-        showAppSnack(context, 'QR Solar Panel tidak dikenali.', error: true);
+        showAppSnack(
+          context,
+          AppLocalizations.of(context).solarQrUnrecognized,
+          error: true,
+        );
       }
       return;
     }
@@ -113,6 +118,7 @@ class _SolarQrScanScreenState extends State<SolarQrScanScreen> {
     }
 
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.scannerDark,
@@ -121,7 +127,7 @@ class _SolarQrScanScreenState extends State<SolarQrScanScreen> {
         foregroundColor: Colors.white,
         centerTitle: true,
         title: Text(
-          'Scan QR Solar Panel',
+          l10n.solarQrScanTitle,
           style: text.titleLarge?.copyWith(color: Colors.white),
         ),
         leading: IconButton(
@@ -171,9 +177,7 @@ class _SolarQrScanScreenState extends State<SolarQrScanScreen> {
                     borderRadius: AppRadius.pillBr,
                   ),
                   child: Text(
-                    _busy
-                        ? 'Membaca QR...'
-                        : 'Arahkan kamera ke QR Code pada solar panel',
+                    _busy ? l10n.solarQrReading : l10n.solarQrInstruction,
                     textAlign: TextAlign.center,
                     style: text.labelMedium?.copyWith(color: Colors.white),
                   ),

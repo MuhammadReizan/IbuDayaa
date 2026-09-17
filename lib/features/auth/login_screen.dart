@@ -41,7 +41,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         scrollable: false,
         body: PinEntryView(
           title: l10n.loginPinSubtitle,
-          subtitle: 'Masukkan PIN untuk $phone',
+          subtitle: l10n.loginPinForPhone(phone),
           onSubmit: (pin) async {
             try {
               await ref.read(actionsProvider).login(phone, pin);

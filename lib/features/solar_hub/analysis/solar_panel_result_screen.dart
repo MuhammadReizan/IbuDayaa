@@ -5,6 +5,7 @@ import '../../../core/brand/brand.dart';
 import '../../../core/design/components/components.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/format/format.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/paths.dart';
 import '../../../core/solar_demo/solar_panel_model.dart';
 
@@ -24,14 +25,15 @@ class SolarPanelResultScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     return AppScaffold(
-      title: 'Hasil Scan Solar Panel',
+      title: l10n.solarScanResultTitle,
       onBack: () => context.pop(),
       bottomBar: PrimaryButton(
         label: data.recommendation
-            ? 'Lanjut ke Booking Solar Hub'
-            : 'Solar Hub Belum Direkomendasikan',
+            ? l10n.solarScanContinueToBooking
+            : l10n.solarScanNotRecommended,
         icon: data.recommendation
             ? Icons.arrow_forward_rounded
             : Icons.block_rounded,
@@ -49,18 +51,18 @@ class SolarPanelResultScreen extends StatelessWidget {
           // ── Section 2: Paparan Matahari ───────────────────────────────────
           NumberedSection(
             number: 1,
-            title: 'Paparan Matahari',
+            title: l10n.solarScanSunSection,
             child: SectionCard(
               child: Column(
                 children: [
                   KeyValueRow(
-                    label: 'Kualitas paparan',
-                    value: data.sunExposureLabel,
+                    label: l10n.solarScanExposureQuality,
+                    value: data.sunExposureLabel(l10n),
                     emphasize: true,
                   ),
                   KeyValueRow(
-                    label: 'Akurasi sensor',
-                    value: '${data.accuracy}% (${data.accuracyLabel})',
+                    label: l10n.solarScanSensorAccuracy,
+                    value: '${data.accuracy}% (${data.accuracyLabel(l10n)})',
                   ),
                 ],
               ),
@@ -71,17 +73,17 @@ class SolarPanelResultScreen extends StatelessWidget {
           // ── Section 3: Data Atap ───────────────────────────────────────────
           NumberedSection(
             number: 2,
-            title: 'Data Atap',
+            title: l10n.solarScanRoofSection,
             child: SectionCard(
               child: Column(
                 children: [
                   KeyValueRow(
-                    label: 'Luas atap',
+                    label: l10n.solarScanRoofArea,
                     value: '${data.roofArea} m²',
                     emphasize: true,
                   ),
                   KeyValueRow(
-                    label: 'Kemiringan atap',
+                    label: l10n.solarScanRoofSlope,
                     value: '${data.roofSlope}°',
                   ),
                 ],
@@ -93,19 +95,21 @@ class SolarPanelResultScreen extends StatelessWidget {
           // ── Section 4: Estimasi Penghematan ───────────────────────────────
           NumberedSection(
             number: 3,
-            title: 'Estimasi Penghematan',
+            title: l10n.solarScanSavingsSection,
             child: SectionCard(
               tone: CardTone.mint,
               child: Column(
                 children: [
                   KeyValueRow(
-                    label: 'Hemat per bulan',
-                    value: '${formatRupiah(data.monthlySaving)} / bulan',
+                    label: l10n.solarScanSavingsPerMonth,
+                    value: l10n.solarScanPerMonth(
+                      formatRupiah(data.monthlySaving),
+                    ),
                     emphasize: true,
                     valueColor: AppColors.primaryDark,
                   ),
                   KeyValueRow(
-                    label: 'Hemat per tahun',
+                    label: l10n.solarScanSavingsPerYear,
                     value: formatRupiah(data.monthlySaving * 12),
                   ),
                 ],
@@ -118,9 +122,9 @@ class SolarPanelResultScreen extends StatelessWidget {
           SectionCard(
             tone: CardTone.solar,
             leadingIcon: Icons.lightbulb_rounded,
-            title: 'Tips IbuDaya',
+            title: l10n.solarScanTipsTitle,
             child: Text(
-              data.tip,
+              data.tip(l10n),
               style: text.bodySmall?.copyWith(
                 color: AppColors.onSolar,
                 height: 1.5,
@@ -147,6 +151,7 @@ class _StatusHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     final gradient = switch (data.status) {
       SolarPanelStatus.healthy => AppGradients.brand,
@@ -163,9 +168,18 @@ class _StatusHeroCard extends StatelessWidget {
     };
 
     final (pillTone, pillLabel) = switch (data.status) {
-      SolarPanelStatus.healthy => (PillTone.success, 'Sangat Layak'),
-      SolarPanelStatus.warning => (PillTone.warning, 'Perlu Optimasi'),
-      SolarPanelStatus.poor => (PillTone.danger, 'Kurang Layak'),
+      SolarPanelStatus.healthy => (
+        PillTone.success,
+        l10n.solarScanPillVeryFeasible,
+      ),
+      SolarPanelStatus.warning => (
+        PillTone.warning,
+        l10n.solarScanPillNeedsOptimization,
+      ),
+      SolarPanelStatus.poor => (
+        PillTone.danger,
+        l10n.solarScanPillLessFeasible,
+      ),
     };
 
     return HeroCard(
@@ -184,7 +198,7 @@ class _StatusHeroCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  data.statusLabel,
+                  data.statusLabel(l10n),
                   style: text.titleLarge?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,

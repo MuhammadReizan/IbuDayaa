@@ -159,7 +159,7 @@ class _BookingCard extends ConsumerWidget {
                         () => ref
                             .read(actionsProvider)
                             .setBookingStatus(b.id, BookingStatus.cancelled),
-                        success: 'Booking cancelled.',
+                        success: l10n.bookingCancelledToast,
                       );
                     },
                   ),
@@ -177,7 +177,7 @@ class _BookingCard extends ConsumerWidget {
                                   b.id,
                                   BookingStatus.completed,
                                 ),
-                            success: 'Recorded.',
+                            success: l10n.bookingRecordedToast,
                           )
                         : null,
                   ),

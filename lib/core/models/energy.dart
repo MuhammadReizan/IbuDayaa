@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../db/row.dart';
+import '../l10n/l10n.dart';
 
 /// Pascabayar bill (monthly usage) or prabayar token purchase.
 enum EnergyKind {
@@ -9,7 +10,8 @@ enum EnergyKind {
 
   static EnergyKind fromDb(String? v) => v == 'token' ? token : postpaid;
   String get db => name;
-  String get label => this == token ? 'Token Listrik' : 'Tagihan Bulanan';
+  String localizedLabel(AppLocalizations l10n) =>
+      this == token ? l10n.energyKindToken : l10n.energyKindBill;
 }
 
 enum RecordSource {
@@ -198,12 +200,12 @@ enum RoofOrientation {
     unknown => 'unknown',
   };
 
-  String get label => switch (this) {
-    north => 'Menghadap utara',
-    eastWest => 'Timur–barat',
-    south => 'Menghadap selatan',
-    flat => 'Datar (dak)',
-    unknown => 'Tidak tahu',
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+    north => l10n.roofOrientationNorth,
+    eastWest => l10n.roofOrientationEastWest,
+    south => l10n.roofOrientationSouth,
+    flat => l10n.roofOrientationFlat,
+    unknown => l10n.roofOrientationUnknown,
   };
 }
 
@@ -220,10 +222,10 @@ enum RoofShading {
 
   String get db => name;
 
-  String get label => switch (this) {
-    none => 'Tidak terhalang',
-    partial => 'Sebagian terhalang',
-    heavy => 'Banyak terhalang',
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+    none => l10n.roofShadingNone,
+    partial => l10n.roofShadingPartial,
+    heavy => l10n.roofShadingHeavy,
   };
 }
 

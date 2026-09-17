@@ -59,7 +59,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               tariffIdrPerKwh: parseDecimal(_tariff.text),
             ),
           ),
-      success: 'Profil tersimpan.',
+      success: AppLocalizations.of(context).editProfileSuccess,
     );
     if (!mounted) return;
     setState(() => _busy = false);

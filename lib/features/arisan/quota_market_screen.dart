@@ -164,7 +164,7 @@ class QuotaMarketScreen extends ConsumerWidget {
                     () => ref
                         .read(actionsProvider)
                         .settleQuota(o.id, accept: true),
-                    success: 'Quota updated.',
+                    success: l10n.arisanQuotaUpdatedToast,
                   ),
                 ],
               ),
@@ -214,7 +214,7 @@ class QuotaMarketScreen extends ConsumerWidget {
                     confirm: o.kind == QuotaKind.need
                         ? '${formatKwh(o.kwh)} (${data.nameOf(o.ownerId)})'
                         : null,
-                    success: 'Sent.',
+                    success: l10n.arisanQuotaSentToast,
                   ),
                 ],
               ),
@@ -237,6 +237,7 @@ class QuotaMarketScreen extends ConsumerWidget {
                     secondary: true,
                     () => ref.read(actionsProvider).cancelQuota(o.id),
                     confirm: l10n.actionCancel,
+                    destructive: true,
                   ),
                 ],
               ),
@@ -274,15 +275,16 @@ class QuotaMarketScreen extends ConsumerWidget {
     bool secondary = false,
     String? confirm,
     String? success,
+    bool destructive = false,
   }) {
     Future<void> go() async {
       if (confirm != null) {
         final ok = await confirmDialog(
           context,
-          title: '$label kuota?',
+          title: AppLocalizations.of(context).arisanQuotaActionConfirmTitle(label),
           message: confirm,
           confirmLabel: label,
-          destructive: label == 'Batalkan',
+          destructive: destructive,
         );
         if (!ok || !context.mounted) return;
       }

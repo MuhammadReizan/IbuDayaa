@@ -46,14 +46,12 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
         scrollable: false,
         body: EmptyState(
           motif: BrandArtMotif.arisan,
-          title: 'Anda belum ikut arisan',
-          message:
-              'Grup arisan dibuat oleh admin koperasi. Minta admin memasukkan '
-              'Anda ke grup.',
+          title: l10n.arisanNotJoinedTitle,
+          message: l10n.arisanNotJoinedMsg,
           action: support == null
               ? null
               : SecondaryButton(
-                  label: 'Kirim pesan ke admin',
+                  label: l10n.arisanSendMessageToAdmin,
                   expand: false,
                   onPressed: () => context.push(Paths.thread(support.id)),
                 ),

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/auth/credentials.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/models/models.dart';
 import '../../core/state/actions.dart';
 import 'pin_views.dart';
@@ -50,6 +51,7 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
   }
 
   Future<void> _checkCode() async {
+    final l10n = AppLocalizations.of(context);
     setState(() {
       _busy = true;
       _codeError = null;
@@ -59,9 +61,7 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
     setState(() {
       _busy = false;
       _coop = coop;
-      _codeError = coop == null
-          ? 'Kode tidak ditemukan. Periksa lagi atau tanyakan ke admin.'
-          : null;
+      _codeError = coop == null ? l10n.registerMemberCodeError : null;
       if (coop != null) {
         if (_city.text.isEmpty) _city.text = coop.city;
         _step = 1;
@@ -70,6 +70,7 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
   }
 
   Future<void> _submit(String pin) async {
+    final l10n = AppLocalizations.of(context);
     setState(() => _busy = true);
     await runAction(
       context,
@@ -83,7 +84,9 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
             city: _city.text,
             inviteCode: _code.text,
           ),
-      success: 'Selamat bergabung di ${_coop?.name ?? 'koperasi'}!',
+      success: l10n.registerMemberSuccessNamed(
+        _coop?.name ?? l10n.registerMemberGenericCoop,
+      ),
     );
     if (mounted) setState(() => _busy = false);
   }
@@ -91,11 +94,12 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final steps = const ['Kode', 'Data diri', 'PIN'];
+    final l10n = AppLocalizations.of(context);
+    final steps = [l10n.registerStepCode, l10n.registerStepPerson, l10n.labelPin];
 
     if (_step == 2) {
       return AppScaffold(
-        title: 'Daftar Anggota',
+        title: l10n.registerMemberTitle,
         onBack: _back,
         scrollable: false,
         body: Column(
@@ -110,10 +114,10 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
     }
 
     return AppScaffold(
-      title: 'Daftar Anggota',
+      title: l10n.registerMemberTitle,
       onBack: _back,
       bottomBar: PrimaryButton(
-        label: 'Lanjut',
+        label: l10n.actionContinue,
         loading: _busy,
         onPressed: _step == 0
             ? (_code.text.trim().length == 6 ? _checkCode : null)
@@ -130,12 +134,9 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
           StepDots(labels: steps, current: _step),
           const SizedBox(height: AppSpacing.xl),
           if (_step == 0) ...[
-            Text('Masukkan kode koperasi', style: text.headlineSmall),
+            Text(l10n.registerMemberStep0Title, style: text.headlineSmall),
             const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Kode 6 huruf/angka ini diberikan oleh admin koperasi Anda.',
-              style: text.bodyMedium,
-            ),
+            Text(l10n.registerMemberStep0Subtitle, style: text.bodyMedium),
             const SizedBox(height: AppSpacing.xl),
             TextField(
               controller: _code,
@@ -150,7 +151,7 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
               ],
               style: text.headlineMedium?.copyWith(letterSpacing: 8),
               decoration: InputDecoration(
-                hintText: 'KODE',
+                hintText: l10n.registerMemberCodeHint,
                 counterText: '',
                 errorText: _codeError,
               ),
@@ -170,7 +171,7 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Bergabung ke', style: text.bodySmall),
+                          Text(l10n.registerMemberJoiningTo, style: text.bodySmall),
                           Text(_coop!.name, style: text.titleMedium),
                           Text(_coop!.city, style: text.bodySmall),
                         ],
@@ -185,43 +186,43 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
               child: Column(
                 children: [
                   AppTextField(
-                    label: 'Nama lengkap',
+                    label: l10n.registerMemberFieldName,
                     controller: _name,
-                    hint: 'Contoh: Clara Wulandari',
+                    hint: l10n.registerMemberFieldNameHint,
                     textCapitalization: TextCapitalization.words,
                     textInputAction: TextInputAction.next,
-                    validator: _required('Nama'),
+                    validator: _required(l10n, l10n.registerMemberFieldName),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   AppTextField(
-                    label: 'Nama usaha',
+                    label: l10n.registerMemberFieldBusiness,
                     controller: _business,
-                    hint: 'Contoh: Katering Clara',
+                    hint: l10n.registerMemberFieldBusinessHint,
                     textCapitalization: TextCapitalization.words,
                     textInputAction: TextInputAction.next,
-                    validator: _required('Nama usaha'),
+                    validator: _required(l10n, l10n.registerMemberFieldBusiness),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   AppTextField(
-                    label: 'Kota',
+                    label: l10n.registerMemberFieldCity,
                     controller: _city,
                     textCapitalization: TextCapitalization.words,
                     textInputAction: TextInputAction.next,
-                    validator: _required('Kota'),
+                    validator: _required(l10n, l10n.registerMemberFieldCity),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   AppTextField(
-                    label: 'Nomor HP',
+                    label: l10n.registerMemberFieldPhone,
                     controller: _phone,
-                    hint: '0812 3456 7890',
+                    hint: l10n.loginPhoneHint,
                     keyboardType: TextInputType.phone,
-                    helper: 'Dipakai untuk masuk ke aplikasi.',
+                    helper: l10n.registerMemberFieldPhoneHelper,
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[0-9+ \-]')),
                       LengthLimitingTextInputFormatter(17),
                     ],
                     validator: (v) => normalizeIndonesianPhone(v ?? '') == null
-                        ? 'Nomor HP tidak valid.'
+                        ? l10n.registerMemberFieldPhoneError
                         : null,
                   ),
                 ],
@@ -234,8 +235,8 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
   }
 }
 
-FormFieldValidator<String> _required(String label) =>
-    (v) => (v ?? '').trim().isEmpty ? '$label wajib diisi.' : null;
+FormFieldValidator<String> _required(AppLocalizations l10n, String label) =>
+    (v) => (v ?? '').trim().isEmpty ? l10n.fieldRequired(label) : null;
 
 class _UpperCase extends TextInputFormatter {
   @override

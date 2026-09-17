@@ -48,7 +48,7 @@ class _AnnounceScreenState extends ConsumerState<AnnounceScreen> {
       title: l10n.scaffoldAdminAnnounce,
       onBack: () => context.pop(),
       bottomBar: PrimaryButton(
-        label: 'Kirim ke ${data.memberProfiles.length} anggota',
+        label: l10n.adminAnnounceSendCount(data.memberProfiles.length),
         icon: Icons.campaign_rounded,
         loading: _busy,
         onPressed: thread == null || _body.text.trim().isEmpty
@@ -56,9 +56,9 @@ class _AnnounceScreenState extends ConsumerState<AnnounceScreen> {
             : () async {
                 final ok = await confirmDialog(
                   context,
-                  title: 'Kirim pengumuman?',
-                  message: 'Semua anggota akan mendapat notifikasi.',
-                  confirmLabel: 'Kirim',
+                  title: l10n.adminAnnounceConfirmTitle,
+                  message: l10n.adminAnnounceConfirmMessage,
+                  confirmLabel: l10n.adminAnnounceConfirmSend,
                 );
                 if (!ok || !context.mounted) return;
                 setState(() => _busy = true);
@@ -67,7 +67,7 @@ class _AnnounceScreenState extends ConsumerState<AnnounceScreen> {
                   () => ref
                       .read(actionsProvider)
                       .sendMessage(thread.id, _body.text.trim()),
-                  success: 'Pengumuman terkirim.',
+                  success: l10n.adminAnnounceSent,
                 );
                 if (!mounted) return;
                 setState(() => _busy = false);
@@ -78,21 +78,18 @@ class _AnnounceScreenState extends ConsumerState<AnnounceScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AppTextField(
-            label: 'Isi pengumuman',
+            label: l10n.adminAnnounceMessage,
             controller: _body,
             maxLines: 6,
             textCapitalization: TextCapitalization.sentences,
-            hint: 'Contoh: Solar Hub tutup hari Jumat untuk perawatan panel.',
+            hint: l10n.adminAnnounceHint,
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(
-            'Tulis singkat dan jelas. Sebutkan tanggal dan jam bila perlu.',
-            style: text.bodySmall,
-          ),
+          Text(l10n.adminAnnounceHelper, style: text.bodySmall),
           if (past.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.xl),
-            const SectionHeader(title: 'Pengumuman sebelumnya'),
+            SectionHeader(title: l10n.adminAnnouncePreviousSection),
             for (final m in past.take(10))
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),

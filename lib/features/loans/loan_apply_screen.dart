@@ -195,7 +195,7 @@ class _LoanApplyScreenState extends ConsumerState<LoanApplyScreen> {
             children: [
               for (final t in coop.loanTenors)
                 ChoiceChip(
-                  label: Text('$t bulan'),
+                  label: Text(l10n.unitMonths(t)),
                   selected: tenor == t,
                   onSelected: (_) => setState(() => _tenor = t),
                 ),

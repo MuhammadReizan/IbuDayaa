@@ -73,7 +73,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     if (done != null) {
       return SuccessPanel(
         title: l10n.solarBookingSuccess,
-        message: 'Datang ke ${hub?.name ?? 'Solar Hub'} sesuai jadwal.',
+        message: l10n.solarBookingComeOnTime(hub?.name ?? 'Solar Hub'),
         primaryLabel: l10n.solarMyBookings,
         onPrimary: () => context.pushReplacement(Paths.bookings),
         secondaryLabel: l10n.actionBack,
@@ -205,7 +205,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           SelectableTile(
             icon: Icons.add_rounded,
             label: l10n.appliancePresetLainnya,
-            sublabel: 'Custom appliance',
+            sublabel: l10n.bookingCustomApplianceSublabel,
             selected: _applianceId == _custom,
             onTap: () => setState(() => _applianceId = _custom),
           ),

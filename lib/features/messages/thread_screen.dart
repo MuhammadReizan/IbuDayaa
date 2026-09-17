@@ -80,7 +80,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
         title: l10n.scaffoldMessages,
         onBack: () => context.pop(),
         scrollable: false,
-        body: const EmptyState(title: 'Percakapan tidak ditemukan'),
+        body: EmptyState(title: l10n.threadNotFound),
       );
     }
 
@@ -201,14 +201,14 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                         maxLines: 5,
                         textCapitalization: TextCapitalization.sentences,
                         onChanged: (_) => setState(() {}),
-                        decoration: const InputDecoration(
-                          hintText: 'Tulis pesan…',
+                        decoration: InputDecoration(
+                          hintText: l10n.threadMessageHint,
                         ),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     IconButton.filled(
-                      tooltip: 'Kirim',
+                      tooltip: l10n.actionSend,
                       style: IconButton.styleFrom(
                         minimumSize: const Size(kMinTapTarget, kMinTapTarget),
                         backgroundColor: AppColors.primary,

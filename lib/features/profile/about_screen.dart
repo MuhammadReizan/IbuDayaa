@@ -24,8 +24,8 @@ class AboutScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: AppSpacing.md),
-          const Center(
-            child: IbuDayaLogo(height: 40, tagline: 'Energi hemat, usaha kuat'),
+          Center(
+            child: IbuDayaLogo(height: 40, tagline: l10n.aboutTagline),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
@@ -34,40 +34,25 @@ class AboutScreen extends ConsumerWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.xl),
-          Text(
-            'IbuDaya membantu usaha mikro milik perempuan mengelola biaya listrik, '
-            'memakai Solar Hub koperasi, ikut arisan energi, dan mengajukan '
-            'pinjaman usaha ke koperasinya.',
-            style: text.bodyLarge,
-          ),
+          Text(l10n.aboutDescription, style: text.bodyLarge),
           const SizedBox(height: AppSpacing.xl),
           SectionCard(
-            title: 'Dari mana angka-angkanya',
+            title: l10n.aboutNumbersSection,
             leadingIcon: Icons.calculate_outlined,
             child: Text(
-              '• Scan tagihan dibaca di HP (Google ML Kit), tidak dikirim ke '
-              'internet. Anda selalu memeriksa angkanya sebelum disimpan.\n'
-              '• Rincian per alat = watt × jam pakai × tarif Anda. Ini perkiraan.\n'
-              '• Skor Kredit Energi memakai aturan tetap dengan 4 faktor yang '
-              'terlihat di layar skor. Bukan kecerdasan buatan, bukan skor bank.\n'
-              '• Keputusan pinjaman dibuat oleh admin koperasi.\n'
-              '• CO₂ memakai asumsi 0,87 kg per kWh listrik PLN.',
+              l10n.aboutNumbersBody,
               style: text.bodySmall?.copyWith(height: 1.7),
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          const SectionCard(
-            title: 'Penyimpanan data',
+          SectionCard(
+            title: l10n.aboutDataStorageSection,
             leadingIcon: Icons.storage_rounded,
-            child: Text(
-              'Saat ini semua data tersimpan di HP ini saja. Versi berikutnya '
-              'tersambung ke server koperasi agar anggota dan admin bisa saling '
-              'melihat data dari HP masing-masing.',
-            ),
+            child: Text(l10n.aboutDataStorageBody),
           ),
           const SizedBox(height: AppSpacing.xl),
           Text(
-            'Dibuat oleh tim ${AppConfig.teamName}.',
+            l10n.aboutFooter(AppConfig.teamName),
             style: text.bodySmall,
             textAlign: TextAlign.center,
           ),

@@ -96,7 +96,7 @@ class MemberDetailScreen extends ConsumerWidget {
           SectionCard(
             title: score == null
                 ? l10n.adminMemberNoScore
-                : l10n.scoreWithBand(score.score, score.band.label),
+                : l10n.scoreWithBand(score.score, score.band.localizedLabel(l10n)),
             child: score == null
                 ? Text(readiness.missing.join('\n'), style: text.bodySmall)
                 : Column(
@@ -157,7 +157,7 @@ class MemberDetailScreen extends ConsumerWidget {
                             StatusPill(
                               label: p == null
                                   ? l10n.arisanNotPaidYet
-                                  : p.status.label,
+                                  : p.status.localizedLabel(l10n),
                               tone: p == null
                                   ? PillTone.neutral
                                   : paymentTone(p.status),

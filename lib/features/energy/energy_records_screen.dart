@@ -88,24 +88,23 @@ class _RecordTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final r = record;
     final photo = r.photoPath;
 
     Future<void> delete() async {
       final ok = await confirmDialog(
         context,
-        title: 'Hapus catatan?',
-        message:
-            '${r.kind.label} ${monthYearLabel(r.periodMonth)} '
-            '(${formatKwh(r.kwh)}, ${formatRupiah(r.totalIdr)}) akan dihapus.',
-        confirmLabel: 'Hapus',
+        title: l10n.energyDeleteConfirmTitle,
+        message: l10n.energyDeleteConfirmBody,
+        confirmLabel: l10n.actionDelete,
         destructive: true,
       );
       if (!ok || !context.mounted) return;
       await runAction(
         context,
         () => ref.read(actionsProvider).deleteRecord(r.id),
-        success: 'Catatan dihapus.',
+        success: l10n.energyDeletedToast,
       );
     }
 
@@ -157,7 +156,7 @@ class _RecordTile extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${r.kind.label} · ${monthYearLabel(r.periodMonth)}',
+                      '${r.kind.localizedLabel(l10n)} · ${monthYearLabel(r.periodMonth)}',
                       style: text.titleSmall,
                     ),
                     const SizedBox(height: 2),

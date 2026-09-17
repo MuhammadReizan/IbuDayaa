@@ -53,8 +53,9 @@ class _CoopSettingsScreenState extends ConsumerState<CoopSettingsScreen> {
 
   Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
+    final l10n = AppLocalizations.of(context);
     if (_tenors.isEmpty) {
-      showAppSnack(context, 'Pilih minimal satu tenor.', error: true);
+      showAppSnack(context, l10n.coopSettingsTenorRequiredToast, error: true);
       return;
     }
     setState(() => _busy = true);
@@ -75,7 +76,7 @@ class _CoopSettingsScreenState extends ConsumerState<CoopSettingsScreen> {
               arisanBankAccount: _bankAccount.text,
             ),
           ),
-      success: 'Pengaturan koperasi tersimpan.',
+      success: l10n.adminSettingsSaved,
     );
     if (!mounted) return;
     setState(() => _busy = false);
@@ -99,7 +100,7 @@ class _CoopSettingsScreenState extends ConsumerState<CoopSettingsScreen> {
       title: l10n.scaffoldAdminSettings,
       onBack: () => context.pop(),
       bottomBar: PrimaryButton(
-        label: 'Simpan',
+        label: l10n.actionSave,
         loading: _busy,
         onPressed: _save,
       ),
@@ -112,65 +113,59 @@ class _CoopSettingsScreenState extends ConsumerState<CoopSettingsScreen> {
             InviteCodeCard(coop: coop, memberCount: members),
             const SizedBox(height: AppSpacing.sm),
             TextLinkButton(
-              label: 'Buat kode baru',
+              label: l10n.coopSettingsNewCodeButton,
               icon: Icons.refresh_rounded,
               onPressed: () async {
                 final ok = await confirmDialog(
                   context,
-                  title: 'Buat kode undangan baru?',
-                  message:
-                      'Kode lama ${coop.inviteCode} tidak bisa dipakai lagi. Anggota '
-                      'yang sudah bergabung tidak terpengaruh.',
-                  confirmLabel: 'Buat kode baru',
+                  title: l10n.coopSettingsNewCodeConfirmTitle,
+                  message: l10n.coopSettingsNewCodeConfirmMessage(
+                    coop.inviteCode,
+                  ),
+                  confirmLabel: l10n.coopSettingsNewCodeButton,
                   destructive: true,
                 );
                 if (!ok || !context.mounted) return;
                 await runAction(
                   context,
                   ref.read(actionsProvider).regenerateInviteCode,
-                  success: 'Kode undangan diganti.',
+                  success: l10n.coopSettingsNewCodeToast,
                 );
               },
             ),
             const SizedBox(height: AppSpacing.lg),
             AppTextField(
-              label: 'Nama koperasi',
+              label: l10n.coopSettingsNameLabel,
               controller: _name,
               textCapitalization: TextCapitalization.words,
-              validator: (v) =>
-                  (v ?? '').trim().isEmpty ? 'Isi nama koperasi.' : null,
+              validator: (v) => (v ?? '').trim().isEmpty
+                  ? l10n.coopSettingsNameRequired
+                  : null,
             ),
             const SizedBox(height: AppSpacing.lg),
             AppTextField(
-              label: 'Kota',
+              label: l10n.labelCity,
               controller: _city,
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: AppSpacing.xl),
-            Text('Setoran arisan', style: text.titleLarge),
+            Text(l10n.coopSettingsArisanSection, style: text.titleLarge),
             const SizedBox(height: AppSpacing.sm),
             AppTextField(
-              label: 'Rekening bendahara (opsional)',
+              label: l10n.coopSettingsBankAccountLabel,
               controller: _bankAccount,
-              helper:
-                  'Ditampilkan ke anggota saat menyetor iuran, mis. "BCA '
-                  '1234567890 a.n. Koperasi Energi Melati". Kosongkan kalau '
-                  'setoran hanya diterima tunai — jangan isi kalau '
-                  'rekeningnya belum pasti, supaya anggota tidak transfer ke '
-                  'tempat yang salah.',
+              helper: l10n.coopSettingsBankAccountHelper,
             ),
             const SizedBox(height: AppSpacing.xl),
-            Text('Kebijakan pinjaman', style: text.titleLarge),
+            Text(l10n.coopSettingsLoanPolicySection, style: text.titleLarge),
             const SizedBox(height: AppSpacing.sm),
-            const InfoBanner(
+            InfoBanner(
               tone: InfoTone.warning,
-              message:
-                  'Pastikan kebijakan ini sesuai AD/ART dan izin usaha simpan pinjam '
-                  'koperasi Anda. Perubahan hanya berlaku untuk pengajuan baru.',
+              message: l10n.coopSettingsLoanPolicyWarning,
             ),
             const SizedBox(height: AppSpacing.lg),
             AppTextField(
-              label: 'Plafon maksimal',
+              label: l10n.adminSettingsLoanCeiling,
               controller: _max,
               prefixText: 'Rp ',
               keyboardType: TextInputType.number,
@@ -179,18 +174,22 @@ class _CoopSettingsScreenState extends ConsumerState<CoopSettingsScreen> {
                 LengthLimitingTextInputFormatter(13),
               ],
               validator: (v) => (parseDigits(v ?? '') ?? 0) < 500000
-                  ? 'Minimal Rp 500.000.'
+                  ? l10n.coopSettingsCeilingRequired
                   : null,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Plafon tiap anggota mengikuti skornya: '
-              '${[for (final e in kCeilingShareByBand.entries.toList().reversed) '${e.key.label} ${formatRupiah((max * e.value / 100000).floor() * 100000)}'].join(' · ')}.',
+              l10n.coopSettingsCeilingByScore(
+                [
+                  for (final e in kCeilingShareByBand.entries.toList().reversed)
+                    '${e.key.label} ${formatRupiah((max * e.value / 100000).floor() * 100000)}',
+                ].join(' · '),
+              ),
               style: text.bodySmall,
             ),
             const SizedBox(height: AppSpacing.lg),
             AppTextField(
-              label: 'Jasa per bulan (flat)',
+              label: l10n.adminSettingsInterest,
               controller: _rate,
               suffixText: '%',
               keyboardType: const TextInputType.numberWithOptions(
@@ -199,7 +198,9 @@ class _CoopSettingsScreenState extends ConsumerState<CoopSettingsScreen> {
               inputFormatters: [decimalInput],
               validator: (v) {
                 final x = parseDecimal(v ?? '');
-                if (x == null || x < 0 || x > 5) return 'Isi 0 sampai 5%.';
+                if (x == null || x < 0 || x > 5) {
+                  return l10n.coopSettingsInterestRequired;
+                }
                 return null;
               },
             ),
@@ -208,7 +209,7 @@ class _CoopSettingsScreenState extends ConsumerState<CoopSettingsScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    'Skor minimum untuk mengajukan',
+                    l10n.adminSettingsLoanMin,
                     style: text.titleSmall,
                   ),
                 ),
@@ -224,7 +225,7 @@ class _CoopSettingsScreenState extends ConsumerState<CoopSettingsScreen> {
               onChanged: (v) => setState(() => _minScore = v),
             ),
             const SizedBox(height: AppSpacing.sm),
-            Text('Pilihan tenor', style: text.titleSmall),
+            Text(l10n.coopSettingsTenorSection, style: text.titleSmall),
             const SizedBox(height: AppSpacing.sm),
             Wrap(
               spacing: AppSpacing.sm,
@@ -232,7 +233,7 @@ class _CoopSettingsScreenState extends ConsumerState<CoopSettingsScreen> {
               children: [
                 for (final t in _tenorOptions)
                   FilterChip(
-                    label: Text('$t bulan'),
+                    label: Text(l10n.unitMonths(t)),
                     selected: _tenors.contains(t),
                     onSelected: (on) =>
                         setState(() => on ? _tenors.add(t) : _tenors.remove(t)),

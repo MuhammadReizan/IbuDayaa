@@ -48,13 +48,13 @@ class AppliancesScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: StatTile(
-                          label: 'Perkiraan per bulan',
+                          label: l10n.appliancesMonthlyEstimateLabel,
                           value: formatKwh(totalKwh),
                         ),
                       ),
                       Expanded(
                         child: StatTile(
-                          label: 'Biaya',
+                          label: l10n.applianceMonthlyCostLabel,
                           value: formatRupiah(totalKwh * me.tariffIdrPerKwh),
                         ),
                       ),

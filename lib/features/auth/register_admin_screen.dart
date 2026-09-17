@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/auth/credentials.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/state/actions.dart';
 import 'pin_views.dart';
 
@@ -37,6 +38,7 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
   }
 
   Future<void> _submit(String pin) async {
+    final l10n = AppLocalizations.of(context);
     setState(() => _busy = true);
     await runAction(
       context,
@@ -49,7 +51,7 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
             city: _city.text,
             cooperativeName: _coopName.text,
           ),
-      success: 'Koperasi berhasil dibuat.',
+      success: l10n.registerAdminPinCreated,
     );
     if (mounted) setState(() => _busy = false);
   }
@@ -57,17 +59,18 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    const steps = ['Data diri', 'Koperasi', 'PIN'];
+    final l10n = AppLocalizations.of(context);
+    final steps = [l10n.registerStepPerson, l10n.registerStepCoop, l10n.labelPin];
     void back() => _step == 0 ? context.pop() : setState(() => _step--);
 
     if (_step == 2) {
       return AppScaffold(
-        title: 'Daftar Admin',
+        title: l10n.registerAdminTitle,
         onBack: back,
         scrollable: false,
         body: Column(
           children: [
-            const StepDots(labels: steps, current: 2),
+            StepDots(labels: steps, current: 2),
             Expanded(
               child: PinCreateView(onCreated: _submit, busy: _busy),
             ),
@@ -77,10 +80,10 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
     }
 
     return AppScaffold(
-      title: 'Daftar Admin',
+      title: l10n.registerAdminTitle,
       onBack: back,
       bottomBar: PrimaryButton(
-        label: 'Lanjut',
+        label: l10n.actionContinue,
         onPressed: () {
           final form = _step == 0 ? _personForm : _coopForm;
           if (!form.currentState!.validate()) return;
@@ -99,34 +102,34 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Data pengurus', style: text.headlineSmall),
+                  Text(l10n.registerAdminSectionPerson, style: text.headlineSmall),
                   const SizedBox(height: AppSpacing.xl),
                   AppTextField(
-                    label: 'Nama lengkap',
+                    label: l10n.registerMemberFieldName,
                     controller: _name,
                     textCapitalization: TextCapitalization.words,
-                    validator: _required('Nama'),
+                    validator: _required(l10n, l10n.registerMemberFieldName),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   AppTextField(
-                    label: 'Nomor HP',
+                    label: l10n.labelPhone,
                     controller: _phone,
-                    hint: '0812 3456 7890',
+                    hint: l10n.loginPhoneHint,
                     keyboardType: TextInputType.phone,
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[0-9+ \-]')),
                       LengthLimitingTextInputFormatter(17),
                     ],
                     validator: (v) => normalizeIndonesianPhone(v ?? '') == null
-                        ? 'Nomor HP tidak valid.'
+                        ? l10n.registerMemberFieldPhoneError
                         : null,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   AppTextField(
-                    label: 'Kota',
+                    label: l10n.labelCity,
                     controller: _city,
                     textCapitalization: TextCapitalization.words,
-                    validator: _required('Kota'),
+                    validator: _required(l10n, l10n.labelCity),
                   ),
                 ],
               ),
@@ -137,31 +140,25 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Koperasi Anda', style: text.headlineSmall),
+                  Text(l10n.registerAdminCoopHeading, style: text.headlineSmall),
                   const SizedBox(height: AppSpacing.xl),
                   AppTextField(
-                    label: 'Nama koperasi',
+                    label: l10n.registerAdminCoopName,
                     controller: _coopName,
-                    hint: 'Contoh: Koperasi Energi Melati',
+                    hint: l10n.registerAdminCoopNameHint,
                     textCapitalization: TextCapitalization.words,
-                    validator: _required('Nama koperasi'),
+                    validator: _required(l10n, l10n.registerAdminCoopName),
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  const InfoBanner(
+                  InfoBanner(
                     tone: InfoTone.info,
-                    title: 'Setelah ini',
-                    message:
-                        'Anda mendapat kode koperasi untuk dibagikan ke anggota. '
-                        'Atur kapasitas Solar Hub dan kebijakan pinjaman di menu '
-                        'Lainnya → Pengaturan koperasi.',
+                    title: l10n.registerAdminAfterTitle,
+                    message: l10n.registerAdminAfterBody,
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  const InfoBanner(
+                  InfoBanner(
                     tone: InfoTone.warning,
-                    message:
-                        'Pinjaman ke anggota harus dijalankan oleh koperasi '
-                        'yang berbadan hukum dan berizin simpan pinjam. '
-                        'Aplikasi hanya membantu mencatat dan meninjau.',
+                    message: l10n.registerAdminLegalWarning,
                   ),
                 ],
               ),
@@ -172,5 +169,5 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
   }
 }
 
-FormFieldValidator<String> _required(String label) =>
-    (v) => (v ?? '').trim().isEmpty ? '$label wajib diisi.' : null;
+FormFieldValidator<String> _required(AppLocalizations l10n, String label) =>
+    (v) => (v ?? '').trim().isEmpty ? l10n.fieldRequired(label) : null;
