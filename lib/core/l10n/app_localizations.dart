@@ -464,21 +464,18 @@ abstract class AppLocalizations {
   String get arisanQuotaAmount;
 
   // ── Credit Score ──────────────────────────────────────────────────────────
-  String get scoreTitle;
-  String get scoreNotReady;
-  String scoreMonthsNeeded(int current, int needed);
   String get scoreFactors;
   String get scoreAbout;
   String get scoreAboutBody;
   String get scoreApply;
   String get scoreViewLoans;
-  String get scoreDelta0;
-  String scoreDeltaUp(int delta, String month);
-  String scoreDeltaDown(int delta, String month);
-  String get scoreFirst;
   String get scoreCanApply;
   String scoreCanApplyAmount(String amount);
   String get scoreDecision;
+  String scoreWithBand(int score, String band);
+  String get scoreShortLabel;
+  String get scoreHistoryTitle;
+  String scoreUpdatedAt(String when);
 
   // ── Loans ─────────────────────────────────────────────────────────────────
   String get loansTitle;
@@ -562,6 +559,14 @@ abstract class AppLocalizations {
   String get adminMembersEmpty;
   String get adminMembersEmptyMessage;
   String get adminMemberDetailTitle;
+  String get adminMemberNotFound;
+  String get adminMemberSendMessage;
+  String get adminMemberElectricityLast3Months;
+  String get adminMemberLoansSection;
+  String get adminMemberNoLoans;
+  String get adminMemberNoScore;
+  String get adminMemberScorePendingShort;
+  String get adminMemberArisanSection;
 
   String get adminPaymentsTitle;
   String get adminPaymentsEmpty;
@@ -1562,13 +1567,6 @@ class _IdStrings extends AppLocalizations {
 
   // Score
   @override
-  String get scoreTitle => 'Skor Kredit Energi';
-  @override
-  String get scoreNotReady => 'Skor belum bisa dihitung';
-  @override
-  String scoreMonthsNeeded(int current, int needed) =>
-      'Catatan listrik $current/$needed bulan';
-  @override
   String get scoreFactors => 'Yang membentuk skor Anda';
   @override
   String get scoreAbout => 'Tentang skor ini';
@@ -1583,22 +1581,20 @@ class _IdStrings extends AppLocalizations {
   @override
   String get scoreViewLoans => 'Lihat Pembiayaan';
   @override
-  String get scoreDelta0 => 'Sama dengan bulan lalu.';
-  @override
-  String scoreDeltaUp(int delta, String month) =>
-      'Naik $delta poin dari $month.';
-  @override
-  String scoreDeltaDown(int delta, String month) =>
-      'Turun $delta poin dari $month.';
-  @override
-  String get scoreFirst => 'Skor pertama Anda bulan ini.';
-  @override
   String get scoreCanApply => 'Skor mendukung pengajuan';
   @override
   String scoreCanApplyAmount(String amount) =>
       'Skor Anda mendukung pengajuan hingga $amount';
   @override
   String get scoreDecision => 'Keputusan tetap di tangan admin koperasi.';
+  @override
+  String scoreWithBand(int score, String band) => 'Skor $score · $band';
+  @override
+  String get scoreShortLabel => 'Skor';
+  @override
+  String get scoreHistoryTitle => 'Riwayat skor';
+  @override
+  String scoreUpdatedAt(String when) => 'Diperbarui $when';
 
   // Loans
   @override
@@ -1757,6 +1753,22 @@ class _IdStrings extends AppLocalizations {
       'Bagikan kode undangan agar anggota bisa mendaftar.';
   @override
   String get adminMemberDetailTitle => 'Detail Anggota';
+  @override
+  String get adminMemberNotFound => 'Anggota tidak ditemukan';
+  @override
+  String get adminMemberSendMessage => 'Kirim pesan';
+  @override
+  String get adminMemberElectricityLast3Months => 'Listrik 3 bulan terakhir';
+  @override
+  String get adminMemberLoansSection => 'Pinjaman';
+  @override
+  String get adminMemberNoLoans => 'Belum pernah mengajukan.';
+  @override
+  String get adminMemberNoScore => 'Skor belum bisa dihitung';
+  @override
+  String get adminMemberScorePendingShort => 'Belum ada skor';
+  @override
+  String get adminMemberArisanSection => 'Arisan';
 
   @override
   String get adminPaymentsTitle => 'Konfirmasi Setoran';
@@ -2997,13 +3009,6 @@ class _EnStrings extends AppLocalizations {
 
   // Score
   @override
-  String get scoreTitle => 'Energy Credit Score';
-  @override
-  String get scoreNotReady => 'Score cannot be calculated yet';
-  @override
-  String scoreMonthsNeeded(int current, int needed) =>
-      'Electricity records $current/$needed months';
-  @override
   String get scoreFactors => 'What makes up your score';
   @override
   String get scoreAbout => 'About this score';
@@ -3018,16 +3023,6 @@ class _EnStrings extends AppLocalizations {
   @override
   String get scoreViewLoans => 'View Financing';
   @override
-  String get scoreDelta0 => 'Same as last month.';
-  @override
-  String scoreDeltaUp(int delta, String month) =>
-      'Up $delta point${delta == 1 ? '' : 's'} from $month.';
-  @override
-  String scoreDeltaDown(int delta, String month) =>
-      'Down $delta point${delta == 1 ? '' : 's'} from $month.';
-  @override
-  String get scoreFirst => 'Your first score this month.';
-  @override
   String get scoreCanApply => 'Score supports application';
   @override
   String scoreCanApplyAmount(String amount) =>
@@ -3035,6 +3030,14 @@ class _EnStrings extends AppLocalizations {
   @override
   String get scoreDecision =>
       'Final decision remains with the cooperative admin.';
+  @override
+  String scoreWithBand(int score, String band) => 'Score $score · $band';
+  @override
+  String get scoreShortLabel => 'Score';
+  @override
+  String get scoreHistoryTitle => 'Score history';
+  @override
+  String scoreUpdatedAt(String when) => 'Updated $when';
 
   // Loans
   @override
@@ -3193,6 +3196,22 @@ class _EnStrings extends AppLocalizations {
       'Share the invite code so members can register.';
   @override
   String get adminMemberDetailTitle => 'Member Details';
+  @override
+  String get adminMemberNotFound => 'Member not found';
+  @override
+  String get adminMemberSendMessage => 'Send message';
+  @override
+  String get adminMemberElectricityLast3Months => 'Electricity, last 3 months';
+  @override
+  String get adminMemberLoansSection => 'Loans';
+  @override
+  String get adminMemberNoLoans => 'Never submitted an application.';
+  @override
+  String get adminMemberNoScore => 'Score cannot be calculated yet';
+  @override
+  String get adminMemberScorePendingShort => 'No score';
+  @override
+  String get adminMemberArisanSection => 'Arisan';
 
   @override
   String get adminPaymentsTitle => 'Payment Confirmation';

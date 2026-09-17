@@ -178,6 +178,21 @@ void main() {
       }
     });
 
+    test('ratio in [0.4, 0.6) → neutral direction', () {
+      final result = engine.compute(
+        const CreditScoreInputs(
+          energyUsageConsistency: 0.5, // round(0.5*35)=18 → 18/35 ≈ 0.514
+          paymentHistory: 0.5, // round(0.5*30)=15 → 15/30 = 0.5
+          businessActivity: 0.5, // round(0.5*20)=10 → 10/20 = 0.5
+          communityParticipation: 0.5, // round(0.5*15)=8 → 8/15 ≈ 0.533
+        ),
+      );
+      for (final f in result.factors) {
+        expect(f.direction, equals(FactorDirection.neutral));
+        expect(f.reason, isNotEmpty);
+      }
+    });
+
     test('ratio < 0.4 → negative direction', () {
       final result = engine.compute(
         const CreditScoreInputs(

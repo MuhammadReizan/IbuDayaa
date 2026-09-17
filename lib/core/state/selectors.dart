@@ -230,6 +230,27 @@ extension SnapshotQueries on CoopSnapshot {
     return list.firstOrNull;
   }
 
+  /// Up to [months] recorded snapshots ending at (and including) the current
+  /// month, oldest first, for a trend view. A snapshot only exists for a
+  /// month once the member has done something in it, so this can be shorter
+  /// than [months] even for a long-standing member.
+  List<ScoreSnapshot> scoreHistoryOf(
+    String userId,
+    DateTime now, {
+    int months = 6,
+  }) {
+    final cutoff = DateTime(now.year, now.month - (months - 1));
+    return scoreSnapshots
+        .where(
+          (s) =>
+              s.userId == userId &&
+              !s.month.isBefore(cutoff) &&
+              !s.month.isAfter(monthOf(now)),
+        )
+        .toList()
+      ..sort((a, b) => a.month.compareTo(b.month));
+  }
+
   // -- Loans -----------------------------------------------------------------
 
   List<LoanApplication> loansOf(String userId) =>

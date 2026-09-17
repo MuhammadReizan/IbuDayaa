@@ -263,6 +263,27 @@ class SampleSeeder {
       );
     }
 
+    // Past months' Skor Kredit Energi for Clara, so the score trend chart
+    // has something to show on a fresh sample install — a real member only
+    // gets one of these per month, on login (see actions._recordScoreSnapshot).
+    // Trends up into the documented canonical 82 for the current month
+    // (RuleBasedCreditScoringEngine's doc comment), which is computed live.
+    const claraPastScores = [68, 72, 76, 79]; // oldest to newest, back=4..1
+    for (int i = 0; i < claraPastScores.length; i++) {
+      final month = monthsAgo(claraPastScores.length - i);
+      await db.insert(
+        Tbl.scoreSnapshots,
+        ScoreSnapshot(
+          id: newId(),
+          userId: clara,
+          month: month,
+          score: claraPastScores[i],
+          factorPoints: const {},
+          createdAt: month.add(const Duration(days: 25)),
+        ).toRow(),
+      );
+    }
+
     // One application in the admin's queue, submitted through the real rules.
     try {
       await LocalLoanRepository(db, now, engine).submit(

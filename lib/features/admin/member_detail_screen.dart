@@ -34,7 +34,7 @@ class MemberDetailScreen extends ConsumerWidget {
         title: l10n.adminMembersTitle,
         onBack: () => context.pop(),
         scrollable: false,
-        body: const EmptyState(title: 'Anggota tidak ditemukan'),
+        body: EmptyState(title: l10n.adminMemberNotFound),
       );
     }
 
@@ -59,7 +59,7 @@ class MemberDetailScreen extends ConsumerWidget {
       bottomBar: support == null
           ? null
           : PrimaryButton(
-              label: 'Kirim pesan',
+              label: l10n.adminMemberSendMessage,
               icon: Icons.chat_bubble_outline_rounded,
               onPressed: () => context.push(Paths.thread(support.id)),
             ),
@@ -73,16 +73,19 @@ class MemberDetailScreen extends ConsumerWidget {
               children: [
                 Expanded(
                   child: StatTile(
-                    label: 'Bulan tercatat',
+                    label: l10n.profileMonthsRecorded,
                     value: '${months.length}',
                   ),
                 ),
                 Expanded(
-                  child: StatTile(label: 'Sesi hub', value: '$sessions'),
+                  child: StatTile(
+                    label: l10n.profileHubSessions,
+                    value: '$sessions',
+                  ),
                 ),
                 Expanded(
                   child: StatTile(
-                    label: 'Skor',
+                    label: l10n.scoreShortLabel,
                     value: score == null ? '–' : '${score.score}',
                   ),
                 ),
@@ -92,8 +95,8 @@ class MemberDetailScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.lg),
           SectionCard(
             title: score == null
-                ? 'Skor belum bisa dihitung'
-                : 'Skor ${score.score} · ${score.band.label}',
+                ? l10n.adminMemberNoScore
+                : l10n.scoreWithBand(score.score, score.band.label),
             child: score == null
                 ? Text(readiness.missing.join('\n'), style: text.bodySmall)
                 : Column(
@@ -123,7 +126,7 @@ class MemberDetailScreen extends ConsumerWidget {
           if (months.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
             SectionCard(
-              title: 'Listrik 3 bulan terakhir',
+              title: l10n.adminMemberElectricityLast3Months,
               child: Column(
                 children: [
                   for (final u in months.take(3))
@@ -139,7 +142,7 @@ class MemberDetailScreen extends ConsumerWidget {
           if (groups.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
             SectionCard(
-              title: 'Arisan',
+              title: l10n.adminMemberArisanSection,
               child: Column(
                 children: [
                   for (final g in groups)
@@ -153,7 +156,7 @@ class MemberDetailScreen extends ConsumerWidget {
                             ),
                             StatusPill(
                               label: p == null
-                                  ? 'Belum setor bulan ini'
+                                  ? l10n.arisanNotPaidYet
                                   : p.status.label,
                               tone: p == null
                                   ? PillTone.neutral
@@ -168,9 +171,9 @@ class MemberDetailScreen extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: AppSpacing.lg),
-          const SectionHeader(title: 'Pinjaman'),
+          SectionHeader(title: l10n.adminMemberLoansSection),
           if (loans.isEmpty)
-            Text('Belum pernah mengajukan.', style: text.bodyMedium)
+            Text(l10n.adminMemberNoLoans, style: text.bodyMedium)
           else
             for (final l in loans) ...[
               AdminLoanRow(loan: l, name: formatShortDate(l.createdAt)),

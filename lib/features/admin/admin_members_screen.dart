@@ -93,8 +93,8 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
                           children: [
                             StatusPill(
                               label: score == null
-                                  ? (l10n.isEn ? 'No score' : 'Belum ada skor')
-                                  : 'Skor ${score.score}',
+                                  ? l10n.adminMemberScorePendingShort
+                                  : '${l10n.scoreShortLabel} ${score.score}',
                               tone: score == null
                                   ? PillTone.neutral
                                   : PillTone.info,

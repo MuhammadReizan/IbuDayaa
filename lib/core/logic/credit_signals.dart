@@ -128,7 +128,11 @@ double _payments(CreditContext c) {
   owed += due.length;
   good += due.where((i) => i.paidOnTime).length;
 
-  return owed == 0 ? 0 : (good / owed).clamp(0.0, 1.0);
+  // No dues have come due yet (e.g. she just joined an arisan group this
+  // period) — neutral, not a default. `dir == negative` would otherwise
+  // claim a late payment that never happened.
+  if (owed == 0) return 0.5;
+  return (good / owed).clamp(0.0, 1.0);
 }
 
 /// Equipment shows capacity; recent hub sessions show it is actually used.

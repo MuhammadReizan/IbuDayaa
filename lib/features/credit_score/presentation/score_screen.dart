@@ -9,6 +9,7 @@ import '../../../core/format/format.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/logic/credit_signals.dart';
 import '../../../core/logic/loan_math.dart';
+import '../../../core/models/models.dart';
 import '../../../core/paths.dart';
 import '../../../core/state/app_state.dart';
 import '../../../core/state/selectors.dart';
@@ -171,9 +172,28 @@ class ScoreScreen extends ConsumerWidget {
                         : AppColors.dangerText,
                   ),
                 ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  l10n.scoreUpdatedAt(
+                    formatDateTime(score.computedAt, l10n: l10n),
+                  ),
+                  style: text.bodySmall?.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                ),
               ],
             ),
           ),
+          if (data.scoreHistoryOf(me.id, now).length > 1) ...[
+            const SizedBox(height: AppSpacing.md),
+            SectionCard(
+              title: l10n.scoreHistoryTitle,
+              child: _ScoreHistoryChart(
+                history: data.scoreHistoryOf(me.id, now),
+                l10n: l10n,
+              ),
+            ),
+          ],
           if (eligibility != null) ...[
             const SizedBox(height: AppSpacing.md),
             InfoBanner(
@@ -254,6 +274,68 @@ class _FactorCard extends StatelessWidget {
           Text(f.reason, style: text.bodySmall),
         ],
       ),
+    );
+  }
+}
+
+/// A row of month bars scaled to the highest score in view, so a member can
+/// see her trajectory rather than only last month's delta.
+class _ScoreHistoryChart extends StatelessWidget {
+  const _ScoreHistoryChart({required this.history, required this.l10n});
+
+  final List<ScoreSnapshot> history;
+  final AppLocalizations l10n;
+
+  static const double _barAreaHeight = 96;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final maxScore = history.map((s) => s.score).reduce((a, b) => a > b ? a : b);
+    final last = history.last;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        for (final s in history) ...[
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('${s.score}', style: text.labelSmall),
+                const SizedBox(height: AppSpacing.xs),
+                SizedBox(
+                  height: _barAreaHeight,
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: FractionallySizedBox(
+                      heightFactor: maxScore == 0
+                          ? 0
+                          : (s.score / maxScore).clamp(0.05, 1.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: s.month == last.month
+                              ? AppColors.primary
+                              : AppColors.primaryContainerDim,
+                          borderRadius: AppRadius.xsBr,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  monthAbbr(s.month, l10n: l10n),
+                  style: text.labelSmall?.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (s != history.last) const SizedBox(width: AppSpacing.xs),
+        ],
+      ],
     );
   }
 }

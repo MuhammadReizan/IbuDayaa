@@ -193,5 +193,16 @@ void main() {
       // (2 confirmed dues + 1 on-time installment) / (3 owed + 2 due).
       expect(creditSignals(c).paymentHistory, closeTo(3 / 5, 1e-9));
     });
+
+    test(
+      'no dues owed yet scores payment history as neutral, not a default',
+      () {
+        // Not in any arisan group and no loan installments due — there is
+        // nothing to have paid late, so this must not read as a negative
+        // signal (see rule_based_credit_scoring_engine's reason strings).
+        final c = _ctx();
+        expect(creditSignals(c).paymentHistory, 0.5);
+      },
+    );
   });
 }
