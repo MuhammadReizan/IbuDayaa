@@ -707,6 +707,7 @@ abstract class AppLocalizations {
   String get arisanPrevRejected;
   String get arisanPrevRejectedNote;
   String arisanPayInstruction(String amount);
+  String arisanPayInstructionWithBank(String amount, String bankAccount);
   String get arisanPaidBtn;
   String get arisanPaidSuccess;
   String get arisanPaidPending;
@@ -2078,7 +2079,10 @@ class _IdStrings extends AppLocalizations {
   String get arisanPrevRejectedNote => 'Hubungi admin untuk detailnya.';
   @override
   String arisanPayInstruction(String amount) =>
-      'Serahkan iuran $amount ke bendahara koperasi (tunai atau transfer), lalu tekan tombol di bawah. Admin akan mengonfirmasi.';
+      'Serahkan iuran $amount tunai ke bendahara koperasi, lalu tekan tombol di bawah. Admin akan mengonfirmasi.';
+  @override
+  String arisanPayInstructionWithBank(String amount, String bankAccount) =>
+      'Serahkan iuran $amount tunai ke bendahara koperasi, atau transfer ke $bankAccount. Setelah itu tekan tombol di bawah — admin akan mengonfirmasi.';
   @override
   String get arisanPaidBtn => 'Saya sudah setor';
   @override
@@ -3512,7 +3516,10 @@ class _EnStrings extends AppLocalizations {
   String get arisanPrevRejectedNote => 'Contact admin for details.';
   @override
   String arisanPayInstruction(String amount) =>
-      'Hand in dues of $amount to the treasurer (cash or transfer), then tap the button below. Admin will confirm.';
+      'Hand in dues of $amount to the treasurer in cash, then tap the button below. Admin will confirm.';
+  @override
+  String arisanPayInstructionWithBank(String amount, String bankAccount) =>
+      'Hand in dues of $amount to the treasurer in cash, or transfer to $bankAccount. Then tap the button below — admin will confirm.';
   @override
   String get arisanPaidBtn => 'I have paid';
   @override

@@ -191,6 +191,9 @@ class LocalMessageRepository extends LocalRepo
       'loan_tenors': ([...updated.loanTenors]..sort()),
       'member_monthly_quota_kwh': updated.memberMonthlyQuotaKwh,
       'solar_cost_per_kwp_idr': updated.solarCostPerKwpIdr,
+      'arisan_bank_account': updated.arisanBankAccount?.trim().isEmpty ?? true
+          ? null
+          : updated.arisanBankAccount!.trim(),
     });
     return cooperativeById(updated.id);
   }

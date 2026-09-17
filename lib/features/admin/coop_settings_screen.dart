@@ -36,13 +36,16 @@ class _CoopSettingsScreenState extends ConsumerState<CoopSettingsScreen> {
   late final _solarCost = TextEditingController(
     text: thousands(_coop.solarCostPerKwpIdr),
   );
+  late final _bankAccount = TextEditingController(
+    text: _coop.arisanBankAccount ?? '',
+  );
   late double _minScore = _coop.loanMinScore.toDouble();
   late final Set<int> _tenors = {..._coop.loanTenors};
   bool _busy = false;
 
   @override
   void dispose() {
-    for (final c in [_name, _city, _max, _rate, _solarCost]) {
+    for (final c in [_name, _city, _max, _rate, _solarCost, _bankAccount]) {
       c.dispose();
     }
     super.dispose();
@@ -69,6 +72,7 @@ class _CoopSettingsScreenState extends ConsumerState<CoopSettingsScreen> {
               loanMinScore: _minScore.round(),
               loanTenors: (_tenors.toList()..sort()),
               solarCostPerKwpIdr: parseDigits(_solarCost.text),
+              arisanBankAccount: _bankAccount.text,
             ),
           ),
       success: 'Pengaturan koperasi tersimpan.',
@@ -141,6 +145,19 @@ class _CoopSettingsScreenState extends ConsumerState<CoopSettingsScreen> {
               label: 'Kota',
               controller: _city,
               textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            Text('Setoran arisan', style: text.titleLarge),
+            const SizedBox(height: AppSpacing.sm),
+            AppTextField(
+              label: 'Rekening bendahara (opsional)',
+              controller: _bankAccount,
+              helper:
+                  'Ditampilkan ke anggota saat menyetor iuran, mis. "BCA '
+                  '1234567890 a.n. Koperasi Energi Melati". Kosongkan kalau '
+                  'setoran hanya diterima tunai — jangan isi kalau '
+                  'rekeningnya belum pasti, supaya anggota tidak transfer ke '
+                  'tempat yang salah.',
             ),
             const SizedBox(height: AppSpacing.xl),
             Text('Kebijakan pinjaman', style: text.titleLarge),

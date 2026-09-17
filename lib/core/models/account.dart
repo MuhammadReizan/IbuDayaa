@@ -131,6 +131,7 @@ class Cooperative {
     this.loanTenors = const [3, 6, 12],
     this.memberMonthlyQuotaKwh = 30,
     this.solarCostPerKwpIdr = 15000000,
+    this.arisanBankAccount,
     required this.createdAt,
   });
 
@@ -149,6 +150,13 @@ class Cooperative {
 
   /// Installed cost per kWp, used for the roof payback estimate.
   final int solarCostPerKwpIdr;
+
+  /// Where a member transfers arisan dues if she doesn't hand cash to the
+  /// treasurer directly, e.g. "BCA 1234567890 a.n. Koperasi Energi Melati".
+  /// Free text, set once by the admin. Null/empty means the app only offers
+  /// "cash to the treasurer" as an instruction — it never implies a transfer
+  /// option with no destination to send it to.
+  final String? arisanBankAccount;
   final DateTime createdAt;
 
   Cooperative copyWith({
@@ -161,6 +169,7 @@ class Cooperative {
     List<int>? loanTenors,
     double? memberMonthlyQuotaKwh,
     int? solarCostPerKwpIdr,
+    String? arisanBankAccount,
   }) => Cooperative(
     id: id,
     name: name ?? this.name,
@@ -174,6 +183,7 @@ class Cooperative {
     loanTenors: loanTenors ?? this.loanTenors,
     memberMonthlyQuotaKwh: memberMonthlyQuotaKwh ?? this.memberMonthlyQuotaKwh,
     solarCostPerKwpIdr: solarCostPerKwpIdr ?? this.solarCostPerKwpIdr,
+    arisanBankAccount: arisanBankAccount ?? this.arisanBankAccount,
     createdAt: createdAt,
   );
 
@@ -194,6 +204,7 @@ class Cooperative {
         const [3, 6, 12],
     memberMonthlyQuotaKwh: rDbl(r, 'member_monthly_quota_kwh', 30),
     solarCostPerKwpIdr: rInt(r, 'solar_cost_per_kwp_idr', 15000000),
+    arisanBankAccount: rStrN(r, 'arisan_bank_account'),
     createdAt: rDate(r, 'created_at'),
   );
 
@@ -209,6 +220,7 @@ class Cooperative {
     'loan_tenors': loanTenors,
     'member_monthly_quota_kwh': memberMonthlyQuotaKwh,
     'solar_cost_per_kwp_idr': solarCostPerKwpIdr,
+    'arisan_bank_account': arisanBankAccount,
     'created_at': ts(createdAt),
   };
 }

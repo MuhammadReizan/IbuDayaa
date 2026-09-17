@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "IbuDaya (Supabase)",
+      "request": "launch",
+      "type": "dart",
+      "args": [
+        "--dart-define=SUPABASE_URL=https://tztljvackxhildsgafci.supabase.co",
+        "--dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_9p3JxuTJ4KknOuoACxTXAg_z2YeafTX"
+      ]
+    }
+  ]
+}

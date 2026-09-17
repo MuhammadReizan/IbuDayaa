@@ -48,6 +48,11 @@ class SampleSeeder {
       city: 'Palembang',
       cooperativeName: 'Koperasi Energi Melati',
     );
+    await db.update(Tbl.cooperatives, admin.cooperativeId, {
+      // Shows the arisan payment screen how it looks once an admin has
+      // filled this in, instead of the cash-only fallback.
+      'arisan_bank_account': 'BCA 1234567890 a.n. Koperasi Energi Melati',
+    });
     final coop = Cooperative.fromRow(
       db.find(Tbl.cooperatives, admin.cooperativeId)!,
     );

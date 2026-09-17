@@ -194,10 +194,16 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                   ],
-                  Text(
-                    l10n.arisanPayInstruction(formatRupiah(g.contributionIdr)),
-                    style: text.bodyMedium,
-                  ),
+                  Text(() {
+                    final bank = data.cooperative?.arisanBankAccount;
+                    final amount = formatRupiah(g.contributionIdr);
+                    return (bank == null || bank.trim().isEmpty)
+                        ? l10n.arisanPayInstruction(amount)
+                        : l10n.arisanPayInstructionWithBank(
+                            amount,
+                            bank.trim(),
+                          );
+                  }(), style: text.bodyMedium),
                   const SizedBox(height: AppSpacing.md),
                   PrimaryButton(
                     label: l10n.arisanPaidBtn,
