@@ -7,6 +7,7 @@ import '../../core/design/tokens.dart';
 import '../../core/design/typography.dart';
 import '../../core/format/format.dart';
 import '../../core/l10n/l10n.dart';
+import '../../core/logic/quota_insights.dart';
 import '../../core/models/models.dart';
 import '../../core/state/actions.dart';
 import '../../core/state/app_state.dart';
@@ -26,15 +27,17 @@ class QuotaPostScreen extends ConsumerStatefulWidget {
 class _QuotaPostScreenState extends ConsumerState<QuotaPostScreen> {
   double _kwh = 2;
   final _custom = TextEditingController();
-  final _when = TextEditingController();
   final _note = TextEditingController();
   bool _busy = false;
   QuotaOffer? _done;
 
+  /// Share only: false = to anyone (market), true = to one chosen member.
+  bool _direct = false;
+  String? _toMember;
+
   @override
   void dispose() {
     _custom.dispose();
-    _when.dispose();
     _note.dispose();
     super.dispose();
   }
@@ -56,7 +59,11 @@ class _QuotaPostScreenState extends ConsumerState<QuotaPostScreen> {
     if (done != null) {
       return SuccessPanel(
         title: l10n.labelSuccess,
-        message: share ? l10n.arisanQuotaShare : l10n.arisanQuotaNeed,
+        message: done.counterpartyId != null
+            ? l10n.quotaGiftSentMessage(s.data.nameOf(done.counterpartyId))
+            : share
+            ? l10n.arisanQuotaShare
+            : l10n.arisanQuotaNeed,
         primaryLabel: l10n.arisanEnergyTrading,
         onPrimary: () => context.pop(),
         child: SectionCard(
@@ -72,8 +79,6 @@ class _QuotaPostScreenState extends ConsumerState<QuotaPostScreen> {
                 value: formatKwh(done.kwh),
                 emphasize: true,
               ),
-              if (done.slotNote.isNotEmpty)
-                KeyValueRow(label: l10n.labelDate, value: done.slotNote),
               if (share)
                 KeyValueRow(
                   label: l10n.solarQuotaThisMonth,
@@ -85,7 +90,19 @@ class _QuotaPostScreenState extends ConsumerState<QuotaPostScreen> {
       );
     }
 
-    final slots = s.data.orderedSlots;
+    final members = [
+      for (final m in s.data.memberProfiles)
+        if (m.id != me.id) m,
+    ];
+    final suggestions = _direct
+        ? const <QuotaMatch>[]
+        : matchQuotaOffers(
+            offers: s.data.activeOffers,
+            myId: me.id,
+            wantKind: widget.kind,
+            wantedKwh: kwh,
+            availableKwh: quota.availableKwh,
+          ).take(3).toList();
 
     return AppScaffold(
       title: share ? l10n.arisanQuotaShare : l10n.arisanQuotaNeed,
@@ -93,7 +110,9 @@ class _QuotaPostScreenState extends ConsumerState<QuotaPostScreen> {
       bottomBar: PrimaryButton(
         label: l10n.actionSubmit,
         loading: _busy,
-        onPressed: kwh <= 0 || tooMuch ? null : () => _submit(kwh),
+        onPressed: kwh <= 0 || tooMuch || (_direct && _toMember == null)
+            ? null
+            : () => _submit(kwh),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -154,30 +173,88 @@ class _QuotaPostScreenState extends ConsumerState<QuotaPostScreen> {
               style: text.bodySmall?.copyWith(color: AppColors.dangerText),
             ),
           ],
-          const SizedBox(height: AppSpacing.xl),
-          AppTextField(
-            label: l10n.labelDate,
-            controller: _when,
-            onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            children: [
-              for (final label in [for (final sl in slots.take(3)) sl.label])
-                ActionChip(
-                  label: Text(label),
-                  onPressed: () => setState(() {
-                    _when.text =
-                        _when.text.isEmpty ||
-                            label.contains('.') == _when.text.contains('.')
-                        ? label
-                        : '${_when.text}, $label';
-                  }),
+          if (share) ...[
+            const SizedBox(height: AppSpacing.xl),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                ChoiceChip(
+                  label: Text(l10n.quotaShareToAny),
+                  selected: !_direct,
+                  onSelected: (_) => setState(() => _direct = false),
                 ),
+                ChoiceChip(
+                  label: Text(l10n.quotaShareToMember),
+                  selected: _direct,
+                  onSelected: (_) => setState(() => _direct = true),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              _direct ? l10n.quotaShareToMemberHint : l10n.quotaShareToAnyHint,
+              style: text.bodySmall,
+            ),
+            if (_direct) ...[
+              const SizedBox(height: AppSpacing.md),
+              Text(l10n.quotaPickMember, style: text.titleSmall),
+              const SizedBox(height: AppSpacing.sm),
+              for (final m in members) ...[
+                SelectableTile(
+                  icon: Icons.person_rounded,
+                  label: m.fullName,
+                  sublabel: m.businessName,
+                  selected: _toMember == m.id,
+                  onTap: () => setState(() => _toMember = m.id),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+              ],
             ],
-          ),
+          ],
+          if (suggestions.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xl),
+            Text(l10n.quotaMatchTitle, style: text.titleMedium),
+            const SizedBox(height: AppSpacing.sm),
+            for (final m in suggestions) ...[
+              SectionCard(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            s.data.nameOf(m.offer.ownerId),
+                            style: text.titleSmall,
+                          ),
+                          Text(
+                            _reason(l10n, m, kwh),
+                            style: text.bodySmall?.copyWith(
+                              color: AppColors.primaryDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    SizedBox(
+                      width: 110,
+                      child: PrimaryButton(
+                        label: share
+                            ? l10n.arisanQuotaShare
+                            : l10n.arisanQuotaNeed,
+                        onPressed: () => _trade(m.offer),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+            Text(l10n.quotaMatchRule, style: text.bodySmall),
+          ],
+          const SizedBox(height: AppSpacing.xl),
           const SizedBox(height: AppSpacing.xl),
           AppTextField(
             label: '${l10n.labelNote} (${l10n.labelOptional})',
@@ -190,6 +267,44 @@ class _QuotaPostScreenState extends ConsumerState<QuotaPostScreen> {
     );
   }
 
+  String _reason(AppLocalizations l10n, QuotaMatch m, double wanted) {
+    if (widget.kind == QuotaKind.share) {
+      return l10n.quotaMatchNeedFits(formatKwh(m.offer.kwh));
+    }
+    return m.covers
+        ? l10n.quotaMatchShareCovers(formatKwh(m.offer.kwh))
+        : l10n.quotaMatchShareShort(
+            formatKwh(m.offer.kwh),
+            formatKwh(wanted - m.offer.kwh),
+          );
+  }
+
+  /// One tap trades with a suggested offer: it completes at once.
+  Future<void> _trade(QuotaOffer offer) async {
+    final l10n = AppLocalizations.of(context);
+    final data = ref.read(appStateProvider).data;
+    final ok = await confirmDialog(
+      context,
+      title: widget.kind == QuotaKind.share
+          ? l10n.arisanQuotaShare
+          : l10n.arisanQuotaNeed,
+      message: l10n.quotaTradeConfirm(
+        formatKwh(offer.kwh),
+        data.nameOf(offer.ownerId),
+      ),
+      confirmLabel: widget.kind == QuotaKind.share
+          ? l10n.arisanQuotaShare
+          : l10n.arisanQuotaNeed,
+    );
+    if (!ok || !mounted) return;
+    final done = await runAction(
+      context,
+      () => ref.read(actionsProvider).respondToQuota(offer.id),
+      success: l10n.quotaTradedToast,
+    );
+    if (done && mounted) context.pop();
+  }
+
   Future<void> _submit(double kwh) async {
     setState(() => _busy = true);
     QuotaOffer? result;
@@ -200,8 +315,8 @@ class _QuotaPostScreenState extends ConsumerState<QuotaPostScreen> {
           .postQuota(
             kind: widget.kind,
             kwh: kwh,
-            slotNote: _when.text,
             note: _note.text,
+            toMemberId: _direct ? _toMember : null,
           ),
     );
     if (!mounted) return;

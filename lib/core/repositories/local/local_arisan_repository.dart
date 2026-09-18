@@ -298,14 +298,28 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
     required Profile me,
     required QuotaKind kind,
     required double kwh,
-    required String slotNote,
     String? note,
+    String? toMemberId,
   }) async {
     requireMember(me);
     if (kwh <= 0 || kwh > 1000) {
       throw const AppException('Jumlah kuota harus lebih dari 0 kWh.');
     }
     if (kind == QuotaKind.share) _requireAvailable(me, kwh);
+    Profile? target;
+    if (toMemberId != null) {
+      if (kind != QuotaKind.share) {
+        throw const AppException(
+          'Hanya kuota yang dibagikan yang bisa dikirim ke anggota tertentu.',
+        );
+      }
+      target = profileById(toMemberId);
+      if (target.cooperativeId != me.cooperativeId ||
+          target.id == me.id ||
+          target.isAdmin) {
+        throw const AppException('Anggota penerima tidak valid.');
+      }
+    }
     final t = now();
     final offer = QuotaOffer(
       id: newId(),
@@ -313,14 +327,64 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
       ownerId: me.id,
       kind: kind,
       kwh: kwh,
-      slotNote: slotNote.trim(),
+      slotNote: '',
       note: (note == null || note.trim().isEmpty) ? null : note.trim(),
-      status: QuotaStatus.open,
+      status: target == null ? QuotaStatus.open : QuotaStatus.pending,
+      counterpartyId: target?.id,
       createdAt: t,
       updatedAt: t,
     );
-    await db.insert(Tbl.quotaOffers, offer.toRow());
+    await db.transaction(() async {
+      await db.insert(Tbl.quotaOffers, offer.toRow());
+      if (target != null) {
+        await notify(
+          userId: target.id,
+          type: 'quota',
+          title: '${me.fullName} membagikan kuota untuk Anda',
+          body:
+              '${kwh.toStringAsFixed(1)} kWh. Terima atau tolak di Arisan Energi.',
+          route: Paths.quota,
+        );
+      }
+    });
     return offer;
+  }
+
+  @override
+  Future<void> answerQuotaGift({
+    required Profile me,
+    required String offerId,
+    required bool accept,
+  }) async {
+    final offer = _offer(offerId);
+    if (offer.kind != QuotaKind.share ||
+        offer.status != QuotaStatus.pending ||
+        offer.counterpartyId != me.id) {
+      throw const AppException(
+        'Kuota ini bukan untuk Anda atau sudah dijawab.',
+      );
+    }
+    final owner = profileById(offer.ownerId);
+    // The sender's balance may have changed since she sent it.
+    if (accept) _requireAvailable(owner, offer.kwh);
+
+    await db.transaction(() async {
+      await db.update(Tbl.quotaOffers, offerId, {
+        'status': accept ? 'completed' : 'cancelled',
+        'updated_at': ts(now()),
+      });
+      await notify(
+        userId: owner.id,
+        type: 'quota',
+        title: accept
+            ? '${me.fullName} menerima kuota Anda'
+            : '${me.fullName} menolak kuota Anda',
+        body: accept
+            ? '${offer.kwh.toStringAsFixed(1)} kWh sudah tercatat.'
+            : '${offer.kwh.toStringAsFixed(1)} kWh tidak jadi berpindah.',
+        route: Paths.quota,
+      );
+    });
   }
 
   @override
@@ -339,63 +403,28 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
     if (offer.status != QuotaStatus.open) {
       throw const AppException('Penawaran ini sudah ditanggapi anggota lain.');
     }
-    if (offer.kind == QuotaKind.need) _requireAvailable(me, offer.kwh);
+    // The owner's post is her agreement and this response is the other side's,
+    // so the trade completes at once — no second confirmation. The giver's
+    // balance is re-checked now because it may have changed since posting.
+    final owner = profileById(offer.ownerId);
+    final giver = offer.kind == QuotaKind.share ? owner : me;
+    _requireAvailable(giver, offer.kwh);
 
     await db.transaction(() async {
       await db.update(Tbl.quotaOffers, offerId, {
-        'status': 'pending',
+        'status': 'completed',
         'counterparty_id': me.id,
         'updated_at': ts(now()),
       });
       await notify(
-        userId: offer.ownerId,
+        userId: owner.id,
         type: 'quota',
         title: offer.kind == QuotaKind.share
-            ? '${me.fullName} meminta kuota Anda'
-            : '${me.fullName} ingin memberi kuota',
+            ? '${me.fullName} menerima kuota Anda'
+            : '${me.fullName} memberi kuota untuk Anda',
         body:
-            '${offer.kwh.toStringAsFixed(1)} kWh untuk ${offer.slotNote}. '
-            'Terima atau tolak di Perdagangan Energi.',
-        route: Paths.quota,
-      );
-    });
-  }
-
-  @override
-  Future<void> settleQuota({
-    required Profile me,
-    required String offerId,
-    required bool accept,
-  }) async {
-    final offer = _offer(offerId);
-    if (offer.ownerId != me.id) {
-      throw const AppException('Hanya pembuat penawaran yang bisa memutuskan.');
-    }
-    if (offer.status != QuotaStatus.pending || offer.counterpartyId == null) {
-      throw const AppException('Belum ada anggota yang menanggapi.');
-    }
-    final counterparty = profileById(offer.counterpartyId!);
-    if (accept) {
-      final giver = offer.kind == QuotaKind.share ? me : counterparty;
-      _requireAvailable(giver, offer.kwh);
-    }
-
-    await db.transaction(() async {
-      await db.update(Tbl.quotaOffers, offerId, {
-        'status': accept ? 'completed' : 'open',
-        'counterparty_id': accept ? offer.counterpartyId : null,
-        'updated_at': ts(now()),
-      });
-      await notify(
-        userId: counterparty.id,
-        type: 'quota',
-        title: accept
-            ? 'Pertukaran kuota disetujui'
-            : 'Permintaan kuota ditolak',
-        body: accept
-            ? '${offer.kwh.toStringAsFixed(1)} kWh dengan ${me.fullName} '
-                  'sudah tercatat.'
-            : '${me.fullName} belum bisa menukar kuota kali ini.',
+            '${offer.kwh.toStringAsFixed(1)} kWh. '
+            'Sudah tercatat di Arisan Energi.',
         route: Paths.quota,
       );
     });

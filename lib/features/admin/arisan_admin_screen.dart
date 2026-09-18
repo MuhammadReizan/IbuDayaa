@@ -142,7 +142,8 @@ class ArisanAdminScreen extends ConsumerWidget {
                                       () => ref
                                           .read(actionsProvider)
                                           .recordPayout(g.id, recipient.userId),
-                                      success: l10n.arisanAdminPayoutRecordedToast,
+                                      success:
+                                          l10n.arisanAdminPayoutRecordedToast,
                                     );
                                   },
                                 ),
@@ -210,7 +211,7 @@ class ArisanCreateScreen extends ConsumerStatefulWidget {
 
 class _ArisanCreateScreenState extends ConsumerState<ArisanCreateScreen> {
   final _form = GlobalKey<FormState>();
-  final _name = TextEditingController(text: 'Arisan Energi');
+  final _name = TextEditingController(text: 'Arisan Koperasi');
   final _amount = TextEditingController(text: '100.000');
   late DateTime _start = monthOf(ref.read(clockProvider)());
   final List<String> _order = [];
@@ -301,9 +302,11 @@ class _ArisanCreateScreenState extends ConsumerState<ArisanCreateScreen> {
                     ),
                   );
                   if (drawn != null) {
-                    setState(() => _order
-                      ..clear()
-                      ..addAll(drawn));
+                    setState(
+                      () => _order
+                        ..clear()
+                        ..addAll(drawn),
+                    );
                   }
                 },
               ),

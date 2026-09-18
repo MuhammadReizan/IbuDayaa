@@ -78,36 +78,39 @@ class SupabaseArisanRepository extends SupabaseRepo
     required Profile me,
     required QuotaKind kind,
     required double kwh,
-    required String slotNote,
     String? note,
+    String? toMemberId,
   }) => guard(() async {
+    // TODO(supabase-migration): post_quota needs a p_to argument (directed
+    // share, status pending) and answer_quota_gift must exist.
     final row = await client.rpc(
       'post_quota',
       params: {
         'p_kind': kind.db,
         'p_kwh': kwh,
-        'p_slot_note': slotNote.trim(),
+        'p_slot_note': '',
         'p_note': note,
+        'p_to': toMemberId,
       },
     );
     return QuotaOffer.fromRow(row as Map<String, dynamic>);
   });
 
   @override
-  Future<void> respondToQuota({required Profile me, required String offerId}) =>
-      guard(() => client.rpc('respond_quota', params: {'p_offer': offerId}));
-
-  @override
-  Future<void> settleQuota({
+  Future<void> answerQuotaGift({
     required Profile me,
     required String offerId,
     required bool accept,
   }) => guard(
     () => client.rpc(
-      'settle_quota',
+      'answer_quota_gift',
       params: {'p_offer': offerId, 'p_accept': accept},
     ),
   );
+
+  @override
+  Future<void> respondToQuota({required Profile me, required String offerId}) =>
+      guard(() => client.rpc('respond_quota', params: {'p_offer': offerId}));
 
   @override
   Future<void> cancelQuota({required Profile me, required String offerId}) =>
