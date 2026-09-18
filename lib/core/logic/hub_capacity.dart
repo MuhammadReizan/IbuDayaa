@@ -1,4 +1,5 @@
-/// How much of the shared hub is left, per slot and per day.
+/// How much of the shared hub is left, per slot and per day — in energy
+/// (kWh) and in simultaneous load (kW).
 ///
 /// A hub's daily capacity is split across its slots following the sun's arc
 /// between 06.00 and 18.00: a midday slot gets more of the day's energy than
@@ -29,11 +30,26 @@ class SlotAvailability {
     required this.slot,
     required this.capacityKwh,
     required this.bookedKwh,
+    this.loadKw = 0,
+    this.maxLoadKw = 0,
   });
 
   final HubSlot slot;
   final double capacityKwh;
   final double bookedKwh;
+
+  /// Appliance load already booked into this slot (kW), and the hub's limit
+  /// (0 = not set, so not checked).
+  final double loadKw;
+  final double maxLoadKw;
+
+  bool get isOpen => slot.isOpen;
+  bool get hasLoadLimit => maxLoadKw > 0;
+  double get remainingKw =>
+      hasLoadLimit ? math.max(0, maxLoadKw - loadKw) : double.infinity;
+
+  /// Whether [kw] more appliance load still fits the inverter in this slot.
+  bool fitsLoad(double kw) => !hasLoadLimit || loadKw + kw <= maxLoadKw + 1e-9;
 
   double get remainingKwh => math.max(0, capacityKwh - bookedKwh);
   bool get isFull => remainingKwh < 0.05;
@@ -60,17 +76,31 @@ List<SlotAvailability> slotAvailability({
         capacityKwh: total <= 0
             ? hub.dailyCapacityKwh / ordered.length
             : hub.dailyCapacityKwh * weights[i] / total,
-        bookedKwh: bookings
-            .where(
-              (b) =>
-                  b.slotId == ordered[i].id &&
-                  b.countsAgainstCapacity &&
-                  sameDay(b.bookingDate, date),
-            )
-            .fold<double>(0, (s, b) => s + b.estKwh),
+        bookedKwh: _inSlot(
+          bookings,
+          ordered[i],
+          date,
+        ).fold<double>(0, (s, b) => s + b.estKwh),
+        loadKw: _inSlot(
+          bookings,
+          ordered[i],
+          date,
+        ).fold<double>(0, (s, b) => s + b.loadKw),
+        maxLoadKw: hub.maxLoadKw,
       ),
   ];
 }
+
+Iterable<HubBooking> _inSlot(
+  Iterable<HubBooking> bookings,
+  HubSlot slot,
+  DateTime date,
+) => bookings.where(
+  (b) =>
+      b.slotId == slot.id &&
+      b.countsAgainstCapacity &&
+      sameDay(b.bookingDate, date),
+);
 
 @immutable
 class DayCapacity {
@@ -91,14 +121,17 @@ DayCapacity dayCapacity(List<SlotAvailability> slots) => DayCapacity(
   bookedKwh: slots.fold(0, (s, x) => s + x.bookedKwh),
 );
 
-/// The slot with the most room left that can still fit [neededKwh]. Ties go
-/// to the sunnier slot, then the earlier one.
+/// The slot with the most room left that can still fit [neededKwh] (and
+/// [neededKw] of simultaneous load). Closed slots are skipped. Ties go to the
+/// sunnier slot, then the earlier one.
 SlotAvailability? recommendSlot(
   List<SlotAvailability> slots,
-  double neededKwh,
-) {
+  double neededKwh, {
+  double neededKw = 0,
+}) {
   SlotAvailability? best;
   for (final s in slots) {
+    if (!s.isOpen || !s.fitsLoad(neededKw)) continue;
     if (s.remainingKwh + 1e-9 < neededKwh) continue;
     if (best == null ||
         s.remainingKwh > best.remainingKwh + 1e-9 ||

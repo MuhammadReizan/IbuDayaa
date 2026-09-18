@@ -13,12 +13,19 @@ class SolarHub {
     required this.dailyCapacityKwh,
     required this.createdAt,
     this.weatherAdm4Code,
+    this.maxLoadKw = 0,
   });
 
   final String id;
   final String cooperativeId;
   final String name;
   final String location;
+
+  /// What the inverter can carry at the same moment (kW). Set by the admin
+  /// from the installation; zero means not set, so simultaneous load is not
+  /// checked. Energy (kWh) says how much the hub can give in a day; this says
+  /// how many heavy appliances can run together without tripping it.
+  final double maxLoadKw;
 
   /// Set by the admin from the installation's rating. Zero means the admin
   /// has not configured the hub yet — bookings stay closed until they do.
@@ -39,6 +46,7 @@ class SolarHub {
     String? location,
     double? dailyCapacityKwh,
     String? weatherAdm4Code,
+    double? maxLoadKw,
   }) => SolarHub(
     id: id,
     cooperativeId: cooperativeId,
@@ -47,6 +55,7 @@ class SolarHub {
     dailyCapacityKwh: dailyCapacityKwh ?? this.dailyCapacityKwh,
     createdAt: createdAt,
     weatherAdm4Code: weatherAdm4Code ?? this.weatherAdm4Code,
+    maxLoadKw: maxLoadKw ?? this.maxLoadKw,
   );
 
   factory SolarHub.fromRow(Map<String, dynamic> r) => SolarHub(
@@ -57,6 +66,7 @@ class SolarHub {
     dailyCapacityKwh: rDbl(r, 'daily_capacity_kwh'),
     createdAt: rDate(r, 'created_at'),
     weatherAdm4Code: rStrN(r, 'weather_adm4_code'),
+    maxLoadKw: rDbl(r, 'max_load_kw'),
   );
 
   Map<String, dynamic> toRow() => {
@@ -67,6 +77,7 @@ class SolarHub {
     'daily_capacity_kwh': dailyCapacityKwh,
     'created_at': ts(createdAt),
     'weather_adm4_code': weatherAdm4Code,
+    'max_load_kw': maxLoadKw,
   };
 }
 
@@ -78,6 +89,7 @@ class HubSlot {
     required this.startHour,
     required this.endHour,
     required this.sort,
+    this.isOpen = true,
   });
 
   final String id;
@@ -85,6 +97,10 @@ class HubSlot {
   final int startHour;
   final int endHour;
   final int sort;
+
+  /// An admin can close a slot (maintenance, bad weather). A closed slot takes
+  /// no new bookings or QR requests; existing ones are left for the admin.
+  final bool isOpen;
 
   int get hours => endHour - startHour;
 
@@ -98,6 +114,7 @@ class HubSlot {
     startHour: rInt(r, 'start_hour'),
     endHour: rInt(r, 'end_hour'),
     sort: rInt(r, 'sort'),
+    isOpen: r['is_open'] != false,
   );
 
   Map<String, dynamic> toRow() => {
@@ -106,6 +123,7 @@ class HubSlot {
     'start_hour': startHour,
     'end_hour': endHour,
     'sort': sort,
+    'is_open': isOpen,
   };
 }
 
@@ -154,6 +172,8 @@ class HubBooking {
     required this.estKwh,
     required this.status,
     required this.createdAt,
+    this.loadKw = 0,
+    this.requestedAt,
   });
 
   final String id;
@@ -162,6 +182,13 @@ class HubBooking {
   final String userId;
   final String applianceName;
   final DateTime bookingDate;
+
+  /// Appliance watts / 1000 running together in this session — what counts
+  /// against the hub's simultaneous-load limit.
+  final double loadKw;
+
+  /// When the member scanned the hub QR for this session, if she did.
+  final DateTime? requestedAt;
 
   /// Appliance watts × slot hours, reserved against the slot's capacity.
   final double estKwh;
@@ -180,6 +207,8 @@ class HubBooking {
     estKwh: rDbl(r, 'est_kwh'),
     status: BookingStatus.fromDb(rStrN(r, 'status')),
     createdAt: rDate(r, 'created_at'),
+    loadKw: rDbl(r, 'load_kw'),
+    requestedAt: rDateN(r, 'requested_at'),
   );
 
   Map<String, dynamic> toRow() => {
@@ -187,6 +216,8 @@ class HubBooking {
     'hub_id': hubId,
     'slot_id': slotId,
     'user_id': userId,
+    'load_kw': loadKw,
+    'requested_at': requestedAt == null ? null : ts(requestedAt!),
     'appliance_name': applianceName,
     'booking_date': dateOnly(bookingDate),
     'est_kwh': estKwh,

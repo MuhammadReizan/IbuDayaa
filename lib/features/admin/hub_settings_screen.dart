@@ -39,12 +39,23 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
   late final _weatherCode = TextEditingController(
     text: _hub?.weatherAdm4Code ?? '',
   );
+  late final _maxLoad = TextEditingController(
+    text: (_hub?.maxLoadKw ?? 0) > 0 ? decimalText(_hub!.maxLoadKw) : '',
+  );
   final _kwp = TextEditingController();
   bool _busy = false;
 
   @override
   void dispose() {
-    for (final c in [_name, _location, _capacity, _quota, _weatherCode, _kwp]) {
+    for (final c in [
+      _name,
+      _location,
+      _capacity,
+      _quota,
+      _weatherCode,
+      _maxLoad,
+      _kwp,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -62,6 +73,7 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
           name: _name.text,
           location: _location.text,
           dailyCapacityKwh: parseDecimal(_capacity.text) ?? 0,
+          maxLoadKw: parseDecimal(_maxLoad.text) ?? 0,
           weatherAdm4Code: _weatherCode.text.trim(),
         ),
       );
@@ -251,6 +263,17 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
                   ],
                 ],
               ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            AppTextField(
+              label: l10n.hubFieldMaxLoad,
+              controller: _maxLoad,
+              suffixText: 'kW',
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [decimalInput],
+              helper: l10n.hubFieldMaxLoadHelper,
             ),
             const SizedBox(height: AppSpacing.lg),
             AppTextField(

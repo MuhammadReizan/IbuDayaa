@@ -185,4 +185,95 @@ void main() {
     expect(balance.receivedKwh, 4);
     expect(balance.availableKwh, 27);
   });
+
+  group('simultaneous load', () {
+    SolarHub hub({double maxLoadKw = 5}) => SolarHub(
+      id: 'h',
+      cooperativeId: 'c',
+      name: 'Hub',
+      location: '',
+      dailyCapacityKwh: 16,
+      createdAt: DateTime(2026, 9, 1),
+      maxLoadKw: maxLoadKw,
+    );
+
+    HubBooking load(String slotId, double kw, {String id = 'x'}) => HubBooking(
+      id: id,
+      hubId: 'h',
+      slotId: slotId,
+      userId: 'u',
+      applianceName: 'A',
+      bookingDate: DateTime(2026, 9, 12),
+      estKwh: 1,
+      loadKw: kw,
+      status: BookingStatus.booked,
+      createdAt: DateTime(2026, 9, 1),
+    );
+
+    test(
+      'sums the load booked into a slot and checks it against the limit',
+      () {
+        final slots = [_slot('s1', 8, 10, 1), _slot('s2', 10, 12, 2)];
+        final a = slotAvailability(
+          hub: hub(),
+          slots: slots,
+          bookings: [
+            load('s2', 3, id: 'a'),
+            load('s2', 1, id: 'b'),
+          ],
+          date: DateTime(2026, 9, 12),
+        ).firstWhere((x) => x.slot.id == 's2');
+        expect(a.loadKw, 4);
+        expect(a.remainingKw, 1);
+        expect(a.fitsLoad(1), isTrue);
+        expect(a.fitsLoad(1.5), isFalse);
+      },
+    );
+
+    test('no limit set means load is not checked', () {
+      final a = slotAvailability(
+        hub: hub(maxLoadKw: 0),
+        slots: [_slot('s1', 8, 10, 1)],
+        bookings: [load('s1', 50)],
+        date: DateTime(2026, 9, 12),
+      ).single;
+      expect(a.hasLoadLimit, isFalse);
+      expect(a.fitsLoad(100), isTrue);
+    });
+
+    test(
+      'recommendSlot skips closed slots and slots the load does not fit',
+      () {
+        final slots = [
+          SlotAvailability(
+            slot: HubSlot(
+              id: 'closed',
+              hubId: 'h',
+              startHour: 10,
+              endHour: 12,
+              sort: 1,
+              isOpen: false,
+            ),
+            capacityKwh: 10,
+            bookedKwh: 0,
+            maxLoadKw: 5,
+          ),
+          SlotAvailability(
+            slot: _slot('busy', 12, 14, 2),
+            capacityKwh: 10,
+            bookedKwh: 0,
+            loadKw: 4.5,
+            maxLoadKw: 5,
+          ),
+          SlotAvailability(
+            slot: _slot('ok', 14, 16, 3),
+            capacityKwh: 4,
+            bookedKwh: 0,
+            maxLoadKw: 5,
+          ),
+        ];
+        expect(recommendSlot(slots, 2, neededKw: 2)?.slot.id, 'ok');
+      },
+    );
+  });
 }

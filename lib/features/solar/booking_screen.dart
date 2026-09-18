@@ -130,6 +130,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         : selected?.name ?? '';
 
     double need(HubSlot slot) => watts / 1000 * slot.hours;
+    final loadKw = watts / 1000;
     bool passed(HubSlot slot) =>
         sameDay(_day, today) && now.hour >= slot.endHour;
 
@@ -139,6 +140,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           (a) =>
               !passed(a.slot) &&
               watts > 0 &&
+              a.isOpen &&
+              a.fitsLoad(loadKw) &&
               a.remainingKwh + 1e-9 >= need(a.slot),
         )
         .toList();
@@ -184,7 +187,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             : l10n.solarBookingSlot,
         loading: _busy,
         onPressed: chosenUsable && applianceName.isNotEmpty
-            ? () => _book(chosen.slot, applianceName, estKwh)
+            ? () => _book(chosen.slot, applianceName, estKwh, loadKw)
             : null,
       ),
       body: Column(
@@ -279,6 +282,13 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 label: a.slot.label,
                 sublabel: passed(a.slot)
                     ? l10n.solarSlotPassed
+                    : !a.isOpen
+                    ? l10n.solarSlotClosed
+                    : !a.fitsLoad(loadKw)
+                    ? l10n.solarSlotLoadFull(
+                        a.loadKw.toStringAsFixed(1),
+                        a.maxLoadKw.toStringAsFixed(1),
+                      )
                     : '${l10n.solarQuotaRemaining(formatKwh(a.remainingKwh))} · ${formatKwh(need(a.slot))}',
                 selected: _slotId == a.slot.id,
                 disabled: !usable.contains(a),
@@ -287,7 +297,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                     : identical(a, best)
                     ? l10n.solarSlotAvailable
                     : (!passed(a.slot) && !usable.contains(a)
-                          ? l10n.solarSlotFull
+                          ? (!a.isOpen
+                                ? l10n.solarSlotClosed
+                                : l10n.solarSlotFull)
                           : null),
                 badgeColor: identical(a, best)
                     ? AppColors.primary
@@ -335,7 +347,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     );
   }
 
-  Future<void> _book(HubSlot slot, String name, double estKwh) async {
+  Future<void> _book(
+    HubSlot slot,
+    String name,
+    double estKwh,
+    double loadKw,
+  ) async {
     setState(() => _busy = true);
     HubBooking? result;
     await runAction(
@@ -347,6 +364,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             date: _day,
             applianceName: name,
             estKwh: estKwh,
+            loadKw: loadKw,
           ),
     );
     if (!mounted) return;

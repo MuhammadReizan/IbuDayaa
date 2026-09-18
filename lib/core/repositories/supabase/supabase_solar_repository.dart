@@ -68,6 +68,11 @@ class SupabaseSolarRepository extends SupabaseRepo implements SolarRepository {
   });
 
   @override
+  Future<void> setSlotOpen(Profile admin, String slotId, bool open) => guard(
+    () => table('hub_slots').update({'is_open': open}).eq('id', slotId),
+  );
+
+  @override
   Future<void> removeSlot(Profile admin, String slotId) =>
       guard(() => table('hub_slots').delete().eq('id', slotId));
 
@@ -78,7 +83,9 @@ class SupabaseSolarRepository extends SupabaseRepo implements SolarRepository {
     required DateTime date,
     required String applianceName,
     required double estKwh,
+    double loadKw = 0,
   }) => guard(() async {
+    // TODO(supabase-migration): book_slot needs p_load_kw and the kW check.
     final row = await client.rpc(
       'book_slot',
       params: {
@@ -86,6 +93,7 @@ class SupabaseSolarRepository extends SupabaseRepo implements SolarRepository {
         'p_date': dateOnly(date),
         'p_appliance': applianceName,
         'p_est_kwh': estKwh,
+        'p_load_kw': loadKw,
       },
     );
     return HubBooking.fromRow(row as Map<String, dynamic>);
@@ -102,6 +110,7 @@ class SupabaseSolarRepository extends SupabaseRepo implements SolarRepository {
     required String scannedCode,
     required String applianceName,
     required double estKwh,
+    double loadKw = 0,
   }) => guard(() async {
     final row = await client.rpc(
       'request_connection',
@@ -109,6 +118,7 @@ class SupabaseSolarRepository extends SupabaseRepo implements SolarRepository {
         'p_scanned_code': scannedCode,
         'p_appliance': applianceName,
         'p_est_kwh': estKwh,
+        'p_load_kw': loadKw,
       },
     );
     return HubBooking.fromRow(row as Map<String, dynamic>);

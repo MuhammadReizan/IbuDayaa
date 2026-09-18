@@ -40,10 +40,14 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
     if (hub.dailyCapacityKwh < 0 || hub.dailyCapacityKwh > 100000) {
       throw const AppException('Kapasitas harian tidak masuk akal.');
     }
+    if (hub.maxLoadKw < 0 || hub.maxLoadKw > 1000) {
+      throw const AppException('Batas daya inverter tidak masuk akal.');
+    }
     await db.update(Tbl.solarHubs, hub.id, {
       'name': hub.name.trim(),
       'location': hub.location.trim(),
       'daily_capacity_kwh': hub.dailyCapacityKwh,
+      'max_load_kw': hub.maxLoadKw,
       'weather_adm4_code': hub.weatherAdm4Code?.trim().isEmpty ?? true
           ? null
           : hub.weatherAdm4Code!.trim(),
@@ -105,6 +109,14 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
     await db.delete(Tbl.hubSlots, slotId);
   }
 
+  @override
+  Future<void> setSlotOpen(Profile admin, String slotId, bool open) async {
+    final row = db.find(Tbl.hubSlots, slotId);
+    if (row == null) throw const AppException('Slot tidak ditemukan.');
+    requireAdmin(admin, _hub(HubSlot.fromRow(row).hubId).cooperativeId);
+    await db.update(Tbl.hubSlots, slotId, {'is_open': open});
+  }
+
   /// Shared validation + insert for both a scheduled [book] and an
   /// immediate QR [requestConnection] — everything except the date/slot
   /// window checks that only apply to a member picking her own slot ahead
@@ -116,6 +128,8 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
     required String applianceName,
     required double estKwh,
     required BookingStatus status,
+    double loadKw = 0,
+    DateTime? requestedAt,
   }) async {
     final slotRow = db.find(Tbl.hubSlots, slotId);
     if (slotRow == null) throw const AppException('Slot tidak ditemukan.');
@@ -130,6 +144,11 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
       );
     }
     if (estKwh <= 0) throw const AppException('Pilih alat yang akan dipakai.');
+    if (!slot.isOpen) {
+      throw AppException(
+        'Slot ${slot.label} ditutup admin sementara. Pilih slot lain.',
+      );
+    }
 
     final bookings = db
         .select(Tbl.hubBookings, (r) => r['hub_id'] == hub.id)
@@ -151,6 +170,14 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
         '${availability.remainingKwh.toStringAsFixed(1)} kWh. Pilih slot lain.',
       );
     }
+    if (!availability.fitsLoad(loadKw)) {
+      throw AppException(
+        'Beban serentak slot ${slot.label} akan menjadi '
+        '${(availability.loadKw + loadKw).toStringAsFixed(1)} kW, melebihi '
+        'batas inverter hub ${availability.maxLoadKw.toStringAsFixed(1)} kW. '
+        'Pilih slot lain.',
+      );
+    }
 
     final coop = cooperativeById(me.cooperativeId);
     final allocationKwh = me.hubAllocationKwh ?? coop.memberMonthlyQuotaKwh;
@@ -167,7 +194,7 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
       throw AppException(
         'Kuota energi Anda bulan ini tinggal '
         '${balance.availableKwh.toStringAsFixed(1)} kWh. Minta kuota ke '
-        'anggota lain di menu Arisan Energi.',
+        'anggota lain di menu Tukar Kuota.',
       );
     }
 
@@ -181,6 +208,8 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
       estKwh: estKwh,
       status: status,
       createdAt: now(),
+      loadKw: loadKw,
+      requestedAt: requestedAt,
     );
     await db.insert(Tbl.hubBookings, booking.toRow());
     return booking;
@@ -193,6 +222,7 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
     required DateTime date,
     required String applianceName,
     required double estKwh,
+    double loadKw = 0,
   }) async {
     requireMember(me);
     final slotRow = db.find(Tbl.hubSlots, slotId);
@@ -218,6 +248,7 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
       applianceName: applianceName,
       estKwh: estKwh,
       status: BookingStatus.booked,
+      loadKw: loadKw,
     );
   }
 
@@ -227,6 +258,7 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
     required String scannedCode,
     required String applianceName,
     required double estKwh,
+    double loadKw = 0,
   }) async {
     requireMember(me);
     final hub = _hubOfCooperative(me.cooperativeId);
@@ -272,21 +304,52 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
       );
     }
 
+    if (!slot.isOpen) {
+      throw AppException(
+        'Slot ${slot.label} ditutup admin sementara. Hubungi admin koperasi.',
+      );
+    }
+
     final today = dayOf(now());
-    final booking = await _createBooking(
-      me: me,
-      slotId: slot.id,
-      date: today,
-      applianceName: applianceName,
-      estKwh: estKwh,
-      status: BookingStatus.pendingVerification,
+    // She already booked this slot: arriving is the QR scan, so attach to that
+    // booking rather than reserving the same capacity twice.
+    final booked = db.first(
+      Tbl.hubBookings,
+      (r) =>
+          r['user_id'] == me.id &&
+          r['slot_id'] == slot!.id &&
+          r['status'] == 'booked' &&
+          sameDay(rDate(r, 'booking_date'), today),
     );
+    final HubBooking booking;
+    if (booked != null) {
+      await db.update(Tbl.hubBookings, booked['id'] as String, {
+        'status': BookingStatus.pendingVerification.db,
+        'requested_at': ts(now()),
+      });
+      booking = HubBooking.fromRow(
+        db.find(Tbl.hubBookings, booked['id'] as String)!,
+      );
+    } else {
+      booking = await _createBooking(
+        me: me,
+        slotId: slot.id,
+        date: today,
+        applianceName: applianceName,
+        estKwh: estKwh,
+        status: BookingStatus.pendingVerification,
+        loadKw: loadKw,
+        requestedAt: now(),
+      );
+    }
 
     await notifyAdmins(
       cooperativeId: me.cooperativeId,
       type: 'hub_connection_requested',
       title: 'Permintaan verifikasi hub',
-      body: '${me.fullName} minta memakai Solar Hub sekarang.',
+      body: booked != null
+          ? '${me.fullName} tiba untuk slot yang sudah dipesan (${slot.label}).'
+          : '${me.fullName} minta memakai Solar Hub sekarang.',
       route: Paths.adminHubRequests,
     );
 

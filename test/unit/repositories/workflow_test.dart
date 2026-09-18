@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ibudaya/core/hub_qr.dart';
 import 'package:ibudaya/core/db/local_database.dart';
+import 'package:ibudaya/core/db/row.dart';
 import 'package:ibudaya/core/errors.dart';
 import 'package:ibudaya/core/models/models.dart';
 import 'package:ibudaya/core/repositories/local/local_arisan_repository.dart';
@@ -478,5 +479,156 @@ void main() {
       final data = await snapshots.load(admin);
       expect(data.creditReportOf(admin.id, now, engine), isNull);
     });
+  });
+
+  group('hub load and slots', () {
+    test('simultaneous load may not exceed the inverter limit', () async {
+      final solar = LocalSolarRepository(db, clock);
+      final clara = await login(SampleSeeder.memberPhone);
+      final siti = await login('081200000003');
+      final slot = (await snapshots.load(clara)).orderedSlots[1];
+      final tomorrow = DateTime(2026, 9, 12);
+
+      await solar.book(
+        me: clara,
+        slotId: slot.id,
+        date: tomorrow,
+        applianceName: 'Oven',
+        estKwh: 1,
+        loadKw: 3,
+      );
+
+      await expectLater(
+        solar.book(
+          me: siti,
+          slotId: slot.id,
+          date: tomorrow,
+          applianceName: 'Oven',
+          estKwh: 1,
+          loadKw: 3,
+        ),
+        throwsA(
+          isA<AppException>().having(
+            (e) => e.message,
+            'message',
+            contains('Beban serentak'),
+          ),
+        ),
+        reason: '3 kW + 3 kW is over the 5 kW sample inverter',
+      );
+
+      // A lighter load still fits alongside it.
+      await solar.book(
+        me: siti,
+        slotId: slot.id,
+        date: tomorrow,
+        applianceName: 'Blender',
+        estKwh: 1,
+        loadKw: 1.5,
+      );
+      final board = (await snapshots.load(siti)).availabilityOn(tomorrow);
+      final a = board.firstWhere((x) => x.slot.id == slot.id);
+      expect(a.loadKw, closeTo(4.5, 1e-9));
+      expect(a.remainingKw, closeTo(0.5, 1e-9));
+    });
+
+    test(
+      'scanning the QR for a slot she booked attaches to that booking',
+      () async {
+        final solar = LocalSolarRepository(db, clock);
+        final clara = await login(SampleSeeder.memberPhone);
+        final data = await snapshots.load(clara);
+        // The test clock is 10.00, inside the 10.00–12.00 slot.
+        final slot = data.orderedSlots.firstWhere(
+          (x) => x.startHour <= now.hour && now.hour < x.endHour,
+        );
+        final booked = await solar.book(
+          me: clara,
+          slotId: slot.id,
+          date: dayOf(now),
+          applianceName: 'Oven',
+          estKwh: 2,
+          loadKw: 1.5,
+        );
+        final before = (await snapshots.load(clara)).bookings.length;
+
+        final request = await solar.requestConnection(
+          me: clara,
+          scannedCode: kSolarHubQr,
+          applianceName: 'Oven',
+          estKwh: 9,
+          loadKw: 4,
+        );
+
+        expect(request.id, booked.id, reason: 'same booking, not a second one');
+        expect(request.status, BookingStatus.pendingVerification);
+        expect(request.estKwh, 2, reason: 'the booked amount is kept');
+        expect(request.requestedAt, isNotNull);
+        final after = await snapshots.load(clara);
+        expect(after.bookings.length, before);
+        expect(after.latestHubRequestOf(clara.id, now)?.id, booked.id);
+      },
+    );
+
+    test('a plain booking is not shown as a QR request', () async {
+      final solar = LocalSolarRepository(db, clock);
+      final clara = await login(SampleSeeder.memberPhone);
+      final slot = (await snapshots.load(clara)).orderedSlots[3];
+      await solar.book(
+        me: clara,
+        slotId: slot.id,
+        date: dayOf(now),
+        applianceName: 'Oven',
+        estKwh: 1,
+        loadKw: 1,
+      );
+      expect(
+        (await snapshots.load(clara)).latestHubRequestOf(clara.id, now),
+        isNull,
+      );
+    });
+
+    test(
+      'a closed slot takes no bookings; only an admin can close it',
+      () async {
+        final solar = LocalSolarRepository(db, clock);
+        final admin = await login(SampleSeeder.adminPhone);
+        final clara = await login(SampleSeeder.memberPhone);
+        final slot = (await snapshots.load(clara)).orderedSlots[2];
+
+        await expectLater(
+          solar.setSlotOpen(clara, slot.id, false),
+          throwsA(isA<AppException>()),
+          reason: 'members cannot close slots',
+        );
+
+        await solar.setSlotOpen(admin, slot.id, false);
+        await expectLater(
+          solar.book(
+            me: clara,
+            slotId: slot.id,
+            date: DateTime(2026, 9, 12),
+            applianceName: 'Oven',
+            estKwh: 1,
+          ),
+          throwsA(
+            isA<AppException>().having(
+              (e) => e.message,
+              'message',
+              contains('ditutup'),
+            ),
+          ),
+        );
+
+        await solar.setSlotOpen(admin, slot.id, true);
+        await solar.book(
+          me: clara,
+          slotId: slot.id,
+          date: DateTime(2026, 9, 12),
+          applianceName: 'Oven',
+          estKwh: 1,
+        );
+      },
+    );
   });
 }

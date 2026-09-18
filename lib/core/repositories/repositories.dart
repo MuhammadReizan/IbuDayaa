@@ -98,12 +98,19 @@ abstract interface class SolarRepository {
   );
   Future<void> removeSlot(Profile admin, String slotId);
 
+  /// Admin-only: closes or reopens a slot (maintenance, bad weather). A closed
+  /// slot takes no new bookings or QR requests.
+  Future<void> setSlotOpen(Profile admin, String slotId, bool open);
+
+  /// [loadKw] is the appliance load running in the slot (watts / 1000); it
+  /// must fit the hub's simultaneous-load limit alongside what is booked.
   Future<HubBooking> book({
     required Profile me,
     required String slotId,
     required DateTime date,
     required String applianceName,
     required double estKwh,
+    double loadKw = 0,
   });
 
   /// Scanning the hub's QR code: requests to use the hub right now, for
@@ -111,12 +118,15 @@ abstract interface class SolarRepository {
   /// as [BookingStatus.pendingVerification] — an admin must approve it
   /// (→ [BookingStatus.booked]) before it counts as a real session. Throws
   /// if [scannedCode] isn't the hub's QR ([kSolarHubQr]), or if the hub
-  /// has no slot covering the current hour.
+  /// has no slot covering the current hour. If the member already booked this
+  /// slot today, the scan attaches to that booking instead of reserving the
+  /// capacity a second time.
   Future<HubBooking> requestConnection({
     required Profile me,
     required String scannedCode,
     required String applianceName,
     required double estKwh,
+    double loadKw = 0,
   });
 
   /// Admin-only: approves (→ [BookingStatus.booked]) or rejects
