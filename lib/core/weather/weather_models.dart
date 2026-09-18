@@ -47,6 +47,7 @@ class SolarOutlook {
     required this.temperatureC,
     required this.productionScore,
     required this.generatedAt,
+    this.averageScore,
   });
 
   final DateTime windowStart;
@@ -58,6 +59,16 @@ class SolarOutlook {
   /// 0–100 from `productionScoreOf` (cloud cover, rain, panel heat) in
   /// weather_service.dart.
   final int productionScore;
+
+  /// Mean production score over every forecast point in the production window
+  /// (10.00–14.00) that day, null when unknown. This — not the best point — is
+  /// what the day's overall output is judged by.
+  final int? averageScore;
+
+  /// Expected output relative to a clear day, 0–1. An estimate from the same
+  /// fixed rule as [productionScore]; it never changes booking rules.
+  double get capacityFactor =>
+      ((averageScore ?? productionScore) / 100).clamp(0.0, 1.0);
 
   /// When this outlook was computed (not when BMKG produced the forecast).
   final DateTime generatedAt;

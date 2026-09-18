@@ -112,6 +112,10 @@ SolarOutlook? deriveSolarOutlook(List<WeatherPoint> points, DateTime date) {
     condition: best.condition,
     temperatureC: best.temperatureC,
     productionScore: bestScore,
+    averageScore:
+        (productive.map(productionScoreOf).reduce((a, b) => a + b) /
+                productive.length)
+            .round(),
     generatedAt: DateTime.now(),
   );
 }

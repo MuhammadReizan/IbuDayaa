@@ -228,6 +228,7 @@ class SolarHubScreen extends ConsumerWidget {
             _WeatherOutlookCard(
               adm4Code: hub.weatherAdm4Code!.trim(),
               now: now,
+              capacityKwh: hub.dailyCapacityKwh,
             ),
           ],
           if (hub != null && hub.isConfigured && slots.isNotEmpty) ...[
@@ -304,6 +305,11 @@ class _SlotRow extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: passed
                   ? StatusPill(label: l10n.solarSlotPassed)
+                  : !a.isOpen
+                  ? StatusPill(
+                      label: l10n.solarSlotClosed,
+                      tone: PillTone.neutral,
+                    )
                   : a.isFull
                   ? StatusPill(label: l10n.solarSlotFull, tone: PillTone.danger)
                   : Text(formatKwh(a.remainingKwh), style: text.labelMedium),
@@ -316,10 +322,17 @@ class _SlotRow extends StatelessWidget {
 }
 
 class _WeatherOutlookCard extends ConsumerWidget {
-  const _WeatherOutlookCard({required this.adm4Code, required this.now});
+  const _WeatherOutlookCard({
+    required this.adm4Code,
+    required this.now,
+    required this.capacityKwh,
+  });
 
   final String adm4Code;
   final DateTime now;
+
+  /// The hub's rated daily capacity (a clear-day figure).
+  final double capacityKwh;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -396,6 +409,17 @@ class _WeatherOutlookCard extends ConsumerWidget {
               ),
               style: text.bodySmall?.copyWith(color: AppColors.onSolar),
             ),
+            if (capacityKwh > 0) ...[
+              const SizedBox(height: 2),
+              Text(
+                l10n.solarWeatherCapacity(
+                  (highlight.capacityFactor * 100).round(),
+                  formatKwh(capacityKwh * highlight.capacityFactor),
+                  formatKwh(capacityKwh),
+                ),
+                style: text.bodySmall?.copyWith(color: AppColors.onSolar),
+              ),
+            ],
             if (isRainy(highlight.condition)) ...[
               const SizedBox(height: 2),
               Text(
