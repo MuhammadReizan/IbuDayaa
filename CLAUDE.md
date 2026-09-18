@@ -23,10 +23,10 @@ their individual PLN connection for those registered appliances. The app:
    capacity split across time slots, plus a **per-member monthly allocation**
    (set by the admin from that member's limiter rating, falling back to a
    cooperative-wide default) that a member can also **share with other
-   members** (**Arisan Energi**, i.e. virtual quota trading; the money-dues group is **Arisan Koperasi**).
+   members** (**Tukar Kuota**, i.e. virtual quota trading; the money-dues group is **Arisan Digital**).
 3. **Estimates a roof's solar potential** (Radar Atap) from the member's own
    measurements.
-4. Runs **Arisan Energi** (dues submitted by members, confirmed by an admin).
+4. Runs **Arisan Digital** (dues submitted by members, confirmed by an admin).
 5. Gives a transparent **Skor Kredit Energi** and lets a member **apply for a
    loan** that a **cooperative admin reviews, approves/rejects, disburses and
    tracks**.
@@ -77,8 +77,19 @@ The users are financially vulnerable. Breaking one of these causes real harm.
   recorded, and the records screen tells members to contact the admin if
   something looks wrong. There is no in-app way yet for an admin to correct or
   void a completed session — add one before real use.
-- **Quota sharing moves no electricity.** It records an agreement (Arisan
-  Energi). Two ways to share: to anyone (a market post — the first member who
+- **Hub limits are physical, so they are enforced in the repository.** Two
+  limits: energy (kWh per slot, split by the sun's arc) and simultaneous load
+  (`SolarHub.maxLoadKw`, the inverter — set by the admin; 0 = not set, not
+  checked). A booking or QR request carries `loadKw` (appliance watts / 1000)
+  and is refused when the slot's booked load plus it exceeds the limit, with the
+  numbers in the message. An admin can close a slot (`HubSlot.isOpen`); closing
+  stops new bookings and QR requests but never cancels existing ones. A QR scan
+  for a slot the member already booked attaches to that booking rather than
+  reserving capacity twice (`HubBooking.requestedAt` marks scans). The weather
+  card's "kapasitas ±N%" is an estimate from the BMKG rule and does NOT change
+  booking rules (they must not depend on a network call).
+- **Quota sharing moves no electricity.** It records an agreement (Tukar
+  Kuota). Two ways to share: to anyone (a market post — the first member who
   takes it completes the trade at once, the post being the owner's consent) or
   to one chosen member (a directed share that waits in her "Kuota untuk Anda"
   inbox until she accepts or declines). The giver's balance is re-checked when
@@ -188,7 +199,8 @@ Never mark a task complete while `flutter analyze` fails.
   schema. `SupabaseEnergyRepository` and most of `SupabaseSolarRepository` are
   real, working implementations already — but **TODO(supabase-migration)**:
   the fields/status this refactor added
-  (`Profile.hubAllocationKwh`,
+  (`Profile.hubAllocationKwh`, `SolarHub.maxLoadKw`, `HubSlot.isOpen`,
+  `HubBooking.loadKw`, `HubBooking.requestedAt`,
   `EnergyRecord.bookingId`, `BookingStatus.pendingVerification`) have no
   matching Supabase columns yet, and the `request_connection` /
   `respond_to_connection_request` RPC functions `SupabaseSolarRepository`
