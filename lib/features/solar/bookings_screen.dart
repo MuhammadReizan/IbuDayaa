@@ -24,9 +24,22 @@ class BookingsScreen extends ConsumerWidget {
     if (me == null) return const Scaffold();
     final today = dayOf(ref.read(clockProvider)());
     final all = s.data.bookingsOf(me.id);
-    final upcoming = all.where((b) => b.status == BookingStatus.booked).toList()
-      ..sort((a, b) => a.bookingDate.compareTo(b.bookingDate));
-    final history = all.where((b) => b.status != BookingStatus.booked).toList();
+    final upcoming =
+        all
+            .where(
+              (b) =>
+                  b.status == BookingStatus.booked ||
+                  b.status == BookingStatus.pendingVerification,
+            )
+            .toList()
+          ..sort((a, b) => a.bookingDate.compareTo(b.bookingDate));
+    final history = all
+        .where(
+          (b) =>
+              b.status == BookingStatus.completed ||
+              b.status == BookingStatus.cancelled,
+        )
+        .toList();
     final text = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context);
 
@@ -138,7 +151,8 @@ class _BookingCard extends ConsumerWidget {
               ),
             ],
           ),
-          if (b.status == BookingStatus.booked) ...[
+          if (b.status == BookingStatus.booked ||
+              b.status == BookingStatus.pendingVerification) ...[
             const SizedBox(height: AppSpacing.md),
             Row(
               children: [
@@ -164,24 +178,26 @@ class _BookingCard extends ConsumerWidget {
                     },
                   ),
                 ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: PrimaryButton(
-                    label: l10n.labelCompleted,
-                    onPressed: canConfirm
-                        ? () => runAction(
-                            context,
-                            () => ref
-                                .read(actionsProvider)
-                                .setBookingStatus(
-                                  b.id,
-                                  BookingStatus.completed,
-                                ),
-                            success: l10n.bookingRecordedToast,
-                          )
-                        : null,
+                if (b.status == BookingStatus.booked) ...[
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: PrimaryButton(
+                      label: l10n.labelCompleted,
+                      onPressed: canConfirm
+                          ? () => runAction(
+                              context,
+                              () => ref
+                                  .read(actionsProvider)
+                                  .setBookingStatus(
+                                    b.id,
+                                    BookingStatus.completed,
+                                  ),
+                              success: l10n.bookingRecordedToast,
+                            )
+                          : null,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ],

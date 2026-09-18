@@ -8,6 +8,7 @@ import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
 import '../../core/l10n/l10n.dart';
 import '../../core/models/models.dart';
+import '../../core/paths.dart';
 import '../../core/state/actions.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
@@ -306,6 +307,17 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
                   ),
                 ),
               ),
+            if (data.hubRequests.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.xl),
+              TintedRow(
+                filled: true,
+                tone: PillTone.warning,
+                icon: Icons.qr_code_scanner_rounded,
+                title: l10n.adminRequestsCardTitle,
+                subtitle: '${data.hubRequests.length}',
+                onTap: () => context.push(Paths.adminHubRequests),
+              ),
+            ],
             if (toConfirm.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.xl),
               SectionHeader(title: l10n.hubBookingsToConfirmSection),

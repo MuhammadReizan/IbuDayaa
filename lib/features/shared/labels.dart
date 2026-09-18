@@ -63,6 +63,7 @@ PillTone paymentTone(PaymentStatus s) => switch (s) {
 };
 
 PillTone bookingTone(BookingStatus s) => switch (s) {
+  BookingStatus.pendingVerification => PillTone.warning,
   BookingStatus.booked => PillTone.info,
   BookingStatus.completed => PillTone.success,
   BookingStatus.cancelled => PillTone.neutral,

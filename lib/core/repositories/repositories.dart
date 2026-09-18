@@ -55,7 +55,9 @@ abstract interface class CooperativeRepository {
 }
 
 abstract interface class EnergyRepository {
-  /// A second bill for the same month replaces the first; tokens accumulate.
+  /// A second bill for the same month replaces the first; tokens (and hub
+  /// sessions, which reuse the same kind for their accumulate semantics)
+  /// add up instead.
   Future<EnergyRecord> saveRecord({
     required Profile me,
     required EnergyKind kind,
@@ -66,6 +68,7 @@ abstract interface class EnergyRepository {
     String? photoPath,
     required RecordSource source,
     String? replaceId,
+    String? bookingId,
   });
 
   Future<void> deleteRecord(Profile me, String recordId);
@@ -103,11 +106,41 @@ abstract interface class SolarRepository {
     required double estKwh,
   });
 
+  /// Scanning the hub's QR code: requests to use the hub right now, for
+  /// whichever slot covers the current hour. Reserves capacity immediately
+  /// as [BookingStatus.pendingVerification] — an admin must approve it
+  /// (→ [BookingStatus.booked]) before it counts as a real session. Throws
+  /// if [scannedCode] isn't the hub's QR ([kSolarHubQr]), or if the hub
+  /// has no slot covering the current hour.
+  Future<HubBooking> requestConnection({
+    required Profile me,
+    required String scannedCode,
+    required String applianceName,
+    required double estKwh,
+  });
+
+  /// Admin-only: approves (→ [BookingStatus.booked]) or rejects
+  /// (→ [BookingStatus.cancelled]) a [BookingStatus.pendingVerification]
+  /// request.
+  Future<void> respondToConnectionRequest({
+    required Profile admin,
+    required String bookingId,
+    required bool approve,
+  });
+
   Future<void> setBookingStatus(
     Profile actor,
     String bookingId,
     BookingStatus status,
   );
+
+  /// Admin-only: sets or clears (pass null) [memberId]'s own hub capacity
+  /// allocation, overriding the cooperative-wide default for her.
+  Future<Profile> setMemberHubAllocation({
+    required Profile admin,
+    required String memberId,
+    double? allocationKwh,
+  });
 }
 
 abstract interface class ArisanRepository {
@@ -140,23 +173,27 @@ abstract interface class ArisanRepository {
     required DateTime periodMonth,
   });
 
+  /// Posts an offer to the market, or — for a share with [toMemberId] — sends
+  /// it to that member only. A directed share waits for her to accept.
   Future<QuotaOffer> postQuota({
     required Profile me,
     required QuotaKind kind,
     required double kwh,
-    required String slotNote,
     String? note,
+    String? toMemberId,
   });
 
-  /// Another member answers an open post ("Minta" on a share, "Beri" on a need).
-  Future<void> respondToQuota({required Profile me, required String offerId});
-
-  /// The post's owner accepts or declines the response.
-  Future<void> settleQuota({
+  /// The member a share was sent to accepts (the trade completes) or declines.
+  Future<void> answerQuotaGift({
     required Profile me,
     required String offerId,
     required bool accept,
   });
+
+  /// Another member answers an open post ("Minta" on a share, "Beri" on a
+  /// need). The trade completes immediately: the post was the owner's
+  /// agreement, this is the other side's.
+  Future<void> respondToQuota({required Profile me, required String offerId});
 
   Future<void> cancelQuota({required Profile me, required String offerId});
 }

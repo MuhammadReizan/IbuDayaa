@@ -15,7 +15,7 @@ import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
 import '../../core/weather/weather_models.dart';
 import '../../core/weather/weather_providers.dart';
-import '../solar_hub/widgets/solar_qr_card.dart';
+import '../../core/weather/weather_service.dart';
 
 class SolarHubScreen extends ConsumerWidget {
   const SolarHubScreen({super.key});
@@ -35,12 +35,14 @@ class SolarHubScreen extends ConsumerWidget {
     final slots = data.availabilityOn(today);
     final day = dayCapacity(slots);
     final quota = data.quotaOf(me.id, now);
+    final request = data.latestHubRequestOf(me.id, now);
     final upcoming =
         data
             .bookingsOf(me.id)
             .where(
               (b) =>
-                  b.status == BookingStatus.booked &&
+                  (b.status == BookingStatus.booked ||
+                      b.status == BookingStatus.pendingVerification) &&
                   !b.bookingDate.isBefore(today),
             )
             .toList()
@@ -127,6 +129,31 @@ class SolarHubScreen extends ConsumerWidget {
               ],
             ),
           ),
+          if (request != null) ...[
+            const SizedBox(height: AppSpacing.lg),
+            TintedRow(
+              filled: true,
+              tone: switch (request.status) {
+                BookingStatus.pendingVerification => PillTone.warning,
+                BookingStatus.cancelled => PillTone.neutral,
+                _ => PillTone.success,
+              },
+              icon: switch (request.status) {
+                BookingStatus.pendingVerification =>
+                  Icons.hourglass_top_rounded,
+                BookingStatus.cancelled => Icons.close_rounded,
+                _ => Icons.bolt_rounded,
+              },
+              title: switch (request.status) {
+                BookingStatus.pendingVerification => l10n.hubConnectSentTitle,
+                BookingStatus.booked => l10n.hubConnectApprovedTitle,
+                BookingStatus.completed => l10n.hubConnectDoneTitle,
+                BookingStatus.cancelled => l10n.hubConnectRejectedTitle,
+              },
+              subtitle: request.applianceName,
+              onTap: () => context.push(Paths.hubConnect),
+            ),
+          ],
           const SizedBox(height: AppSpacing.lg),
           Row(
             children: [
@@ -136,6 +163,16 @@ class SolarHubScreen extends ConsumerWidget {
                   icon: Icons.event_available_rounded,
                   onPressed: hub?.isConfigured ?? false
                       ? () => context.push(Paths.booking)
+                      : null,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: SecondaryButton(
+                  label: l10n.hubConnectCta,
+                  icon: Icons.qr_code_scanner_rounded,
+                  onPressed: hub?.isConfigured ?? false
+                      ? () => context.push(Paths.hubConnect)
                       : null,
                 ),
               ),
@@ -184,12 +221,14 @@ class SolarHubScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          const SolarQrCard(),
           if (hub != null &&
               hub.isConfigured &&
               (hub.weatherAdm4Code ?? '').trim().isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
-            _WeatherOutlookCard(adm4Code: hub.weatherAdm4Code!.trim(), now: now),
+            _WeatherOutlookCard(
+              adm4Code: hub.weatherAdm4Code!.trim(),
+              now: now,
+            ),
           ],
           if (hub != null && hub.isConfigured && slots.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.xl),
@@ -313,13 +352,19 @@ class _WeatherOutlookCard extends ConsumerWidget {
           Row(
             children: [
               Icon(
-                passed ? Icons.history_rounded : Icons.wb_sunny_rounded,
+                passed && tomorrow == null
+                    ? Icons.history_rounded
+                    : Icons.wb_sunny_rounded,
                 color: AppColors.onSolar,
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
-                  passed ? l10n.solarWeatherPassedTitle : l10n.solarWeatherTitle,
+                  passed
+                      ? (tomorrow != null
+                            ? l10n.solarWeatherTomorrowTitle
+                            : l10n.solarWeatherPassedTitle)
+                      : l10n.solarWeatherTitle,
                   style: text.titleSmall?.copyWith(color: AppColors.onSolar),
                 ),
               ),
@@ -329,18 +374,9 @@ class _WeatherOutlookCard extends ConsumerWidget {
           const SizedBox(height: AppSpacing.xs),
           if (highlight != null)
             Text(
-              passed
-                  ? l10n.solarWeatherTomorrowWindow(windowOf(highlight))
-                  : windowOf(highlight),
+              windowOf(highlight),
               style: AppTypography.numeric(22, color: AppColors.onSolar),
             ),
-          if (passed && today != null) ...[
-            const SizedBox(height: 2),
-            Text(
-              l10n.solarWeatherPassedWindow(windowOf(today)),
-              style: text.bodySmall?.copyWith(color: AppColors.onSolar),
-            ),
-          ],
           if (highlight != null) ...[
             const SizedBox(height: 2),
             Text(
@@ -350,6 +386,23 @@ class _WeatherOutlookCard extends ConsumerWidget {
               ),
               style: text.bodySmall?.copyWith(color: AppColors.onSolar),
             ),
+          ],
+          if (highlight != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              l10n.solarWeatherScore(
+                highlight.productionScore,
+                highlight.temperatureC.round(),
+              ),
+              style: text.bodySmall?.copyWith(color: AppColors.onSolar),
+            ),
+            if (isRainy(highlight.condition)) ...[
+              const SizedBox(height: 2),
+              Text(
+                l10n.solarWeatherRainNote,
+                style: text.bodySmall?.copyWith(color: AppColors.onSolar),
+              ),
+            ],
           ],
           const SizedBox(height: AppSpacing.xs),
           Text(

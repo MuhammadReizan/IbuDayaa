@@ -14,6 +14,8 @@ import '../../core/paths.dart';
 import '../../core/state/actions.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
+import '../../core/weather/weather_models.dart';
+import '../../core/weather/weather_providers.dart';
 import '../shared/labels.dart';
 
 class BookingScreen extends ConsumerStatefulWidget {
@@ -140,9 +142,33 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               a.remainingKwh + 1e-9 >= need(a.slot),
         )
         .toList();
+    // Smart scheduling: for today/tomorrow, hours overlapping BMKG's best
+    // production window are preferred; free capacity balances the load
+    // between equally good slots.
+    final code = (hub.weatherAdm4Code ?? '').trim();
+    final outlooks = code.isEmpty
+        ? null
+        : ref.watch(solarOutlookProvider(code)).value;
+    final SolarOutlook? outlook = outlooks == null
+        ? null
+        : sameDay(_day, today)
+        ? outlooks.today
+        : sameDay(_day, today.add(const Duration(days: 1)))
+        ? outlooks.tomorrow
+        : null;
+    bool inBestWeather(HubSlot slot) =>
+        outlook != null &&
+        slot.startHour < outlook.windowEnd.hour &&
+        slot.endHour > outlook.windowStart.hour;
+
     SlotAvailability? best;
     for (final a in usable) {
-      if (best == null || a.remainingKwh > best.remainingKwh) best = a;
+      final better =
+          best == null ||
+          (inBestWeather(a.slot) && !inBestWeather(best.slot)) ||
+          (inBestWeather(a.slot) == inBestWeather(best.slot) &&
+              a.remainingKwh > best.remainingKwh);
+      if (better) best = a;
     }
     final chosen = slots.where((a) => a.slot.id == _slotId).firstOrNull;
     final chosenUsable = chosen != null && usable.contains(chosen);
@@ -256,7 +282,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                     : '${l10n.solarQuotaRemaining(formatKwh(a.remainingKwh))} · ${formatKwh(need(a.slot))}',
                 selected: _slotId == a.slot.id,
                 disabled: !usable.contains(a),
-                badge: identical(a, best)
+                badge: identical(a, best) && inBestWeather(a.slot)
+                    ? l10n.solarBookingBestWeather
+                    : identical(a, best)
                     ? l10n.solarSlotAvailable
                     : (!passed(a.slot) && !usable.contains(a)
                           ? l10n.solarSlotFull

@@ -91,6 +91,43 @@ class SupabaseSolarRepository extends SupabaseRepo implements SolarRepository {
     return HubBooking.fromRow(row as Map<String, dynamic>);
   });
 
+  /// TODO(supabase-migration): `request_connection` doesn't exist yet in
+  /// `supabase/migrations/` — this refactor only implements the QR
+  /// connection-request flow against [LocalSolarRepository]. Add the SQL
+  /// function (same capacity/quota checks as `book_slot`, but inserting
+  /// `status = 'pendingVerification'`) when the Supabase build is wired up.
+  @override
+  Future<HubBooking> requestConnection({
+    required Profile me,
+    required String scannedCode,
+    required String applianceName,
+    required double estKwh,
+  }) => guard(() async {
+    final row = await client.rpc(
+      'request_connection',
+      params: {
+        'p_scanned_code': scannedCode,
+        'p_appliance': applianceName,
+        'p_est_kwh': estKwh,
+      },
+    );
+    return HubBooking.fromRow(row as Map<String, dynamic>);
+  });
+
+  /// TODO(supabase-migration): `respond_to_connection_request` doesn't
+  /// exist yet — see [requestConnection].
+  @override
+  Future<void> respondToConnectionRequest({
+    required Profile admin,
+    required String bookingId,
+    required bool approve,
+  }) => guard(
+    () => client.rpc(
+      'respond_to_connection_request',
+      params: {'p_booking': bookingId, 'p_approve': approve},
+    ),
+  );
+
   @override
   Future<void> setBookingStatus(
     Profile actor,
@@ -102,4 +139,22 @@ class SupabaseSolarRepository extends SupabaseRepo implements SolarRepository {
       params: {'p_booking': bookingId, 'p_status': status.db},
     ),
   );
+
+  @override
+  Future<Profile> setMemberHubAllocation({
+    required Profile admin,
+    required String memberId,
+    double? allocationKwh,
+  }) => guard(() async {
+    if (allocationKwh != null &&
+        (allocationKwh < 0 || allocationKwh > 100000)) {
+      throw const AppException('Alokasi kapasitas tidak masuk akal.');
+    }
+    final row = await table('profiles')
+        .update({'hub_allocation_kwh': allocationKwh})
+        .eq('id', memberId)
+        .select()
+        .single();
+    return Profile.fromRow(row);
+  });
 }

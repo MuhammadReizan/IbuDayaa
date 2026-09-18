@@ -110,11 +110,16 @@ class HubSlot {
 }
 
 enum BookingStatus {
+  /// Requested by scanning the hub connection QR code; reserves capacity
+  /// but is not usable until an admin approves it (→ [booked]) or rejects
+  /// it (→ [cancelled]).
+  pendingVerification,
   booked,
   completed,
   cancelled;
 
   static BookingStatus fromDb(String? v) => switch (v) {
+    'pendingVerification' => pendingVerification,
     'completed' => completed,
     'cancelled' => cancelled,
     _ => booked,
@@ -123,12 +128,14 @@ enum BookingStatus {
   String get db => name;
 
   String get label => switch (this) {
+    pendingVerification => 'Menunggu verifikasi',
     booked => 'Terjadwal',
     completed => 'Sudah dipakai',
     cancelled => 'Dibatalkan',
   };
 
   String localizedLabel(AppLocalizations l10n) => switch (this) {
+    pendingVerification => l10n.bookingStatusPendingVerification,
     booked => l10n.bookingStatusBooked,
     completed => l10n.bookingStatusCompleted,
     cancelled => l10n.bookingStatusCancelled,

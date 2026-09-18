@@ -9,22 +9,62 @@ import '../../core/l10n/l10n.dart';
 import '../../core/logic/energy_insights.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
+import '../../core/state/actions.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
 import '../credit_score/application/credit_score_provider.dart';
 import '../profile/profile_screen.dart';
+import '../shared/inputs.dart';
 import '../shared/labels.dart';
 import 'admin_home_screen.dart';
 
-class MemberDetailScreen extends ConsumerWidget {
+class MemberDetailScreen extends ConsumerStatefulWidget {
   const MemberDetailScreen({super.key, required this.memberId});
 
   final String memberId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MemberDetailScreen> createState() => _MemberDetailScreenState();
+}
+
+class _MemberDetailScreenState extends ConsumerState<MemberDetailScreen> {
+  late final _allocation = TextEditingController(
+    text: () {
+      final kwh = ref
+          .read(appStateProvider)
+          .data
+          .profile(widget.memberId)
+          ?.hubAllocationKwh;
+      return kwh == null ? '' : decimalText(kwh);
+    }(),
+  );
+  bool _savingAllocation = false;
+
+  @override
+  void dispose() {
+    _allocation.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveAllocation() async {
+    setState(() => _savingAllocation = true);
+    await runAction(
+      context,
+      () => ref
+          .read(actionsProvider)
+          .setMemberHubAllocation(
+            widget.memberId,
+            parseDecimal(_allocation.text),
+          ),
+      success: AppLocalizations.of(context).adminSettingsSave,
+    );
+    if (mounted) setState(() => _savingAllocation = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final data = ref.watch(appStateProvider).data;
-    final m = data.profile(memberId);
+    final m = data.profile(widget.memberId);
     final now = ref.read(clockProvider)();
     final text = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context);
@@ -94,11 +134,48 @@ class MemberDetailScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           SectionCard(
+            title: l10n.adminMemberHubSection,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AppTextField(
+                  label: l10n.adminMemberHubAllocation,
+                  controller: _allocation,
+                  suffixText: 'kWh',
+                  hint: l10n.adminMemberHubAllocationHint,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: [decimalInput],
+                  helper: l10n.adminMemberHubAllocationHelper,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                SecondaryButton(
+                  label: l10n.adminSettingsSave,
+                  onPressed: _savingAllocation ? null : _saveAllocation,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          SectionCard(
             title: score == null
                 ? l10n.adminMemberNoScore
-                : l10n.scoreWithBand(score.score, score.band.localizedLabel(l10n)),
+                : l10n.scoreWithBand(
+                    score.score,
+                    score.band.localizedLabel(l10n),
+                  ),
             child: score == null
-                ? Text(readiness.missing.join('\n'), style: text.bodySmall)
+                ? Text(
+                    [
+                      if (readiness.monthsStillNeeded > 0)
+                        l10n.scoreUseHubMoreMonths(readiness.monthsStillNeeded),
+                      if (!readiness.inArisan) l10n.scoreJoinArisan,
+                      if (readiness.appliancesDeclared == 0)
+                        l10n.scoreRegisterAppliance,
+                    ].join('\n'),
+                    style: text.bodySmall,
+                  )
                 : Column(
                     children: [
                       for (final f in score.factors) ...[
