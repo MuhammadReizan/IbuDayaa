@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:ibudaya/core/hub_qr.dart';
 import 'package:ibudaya/app/app.dart';
 import 'package:ibudaya/app/router.dart';
 import 'package:ibudaya/core/db/local_database.dart';
@@ -11,7 +12,9 @@ import 'package:ibudaya/core/paths.dart';
 import 'package:ibudaya/core/repositories/local/local_auth_repository.dart';
 import 'package:ibudaya/core/repositories/local/local_snapshot_repository.dart';
 import 'package:ibudaya/core/repositories/local/sample_seeder.dart';
+import 'package:ibudaya/core/state/actions.dart';
 import 'package:ibudaya/core/state/app_state.dart';
+import 'package:ibudaya/core/state/selectors.dart';
 import 'package:ibudaya/features/credit_score/data/rule_based_credit_scoring_engine.dart';
 import 'package:ibudaya/features/home/member_home_screen.dart';
 
@@ -56,6 +59,9 @@ Future<void> pumpApp(
 GoRouter routerOf(WidgetTester tester) => ProviderScope.containerOf(
   tester.element(find.byType(IbuDayaApp)),
 ).read(routerProvider);
+
+ProviderContainer containerOf(WidgetTester tester) =>
+    ProviderScope.containerOf(tester.element(find.byType(IbuDayaApp)));
 
 Future<void> tapText(WidgetTester tester, String text) async {
   final f = find.text(text).last;
@@ -106,23 +112,24 @@ void main() {
     expect(find.textContaining('Sisa percobaan'), findsOneWidget);
   });
 
-  testWidgets('scan result is checked, saved, and analysed', (tester) async {
+  testWidgets('records come only from the hub and feed the analysis', (
+    tester,
+  ) async {
     await pumpApp(tester, signedInAs: SampleSeeder.memberPhone);
-    routerOf(tester).push(
-      Paths.energyAdd,
-      extra: const EnergyDraft(
-        kwh: 131,
-        totalIdr: 189000,
-        source: RecordSource.scan,
-        rawText: 'PEMAKAIAN 131 KWH\nTOTAL BAYAR RP 189.000',
-      ),
+    routerOf(tester).go(Paths.memberRecords);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tambah manual'), findsNothing);
+    expect(
+      find.textContaining('Dicatat otomatis oleh Solar Hub'),
+      findsOneWidget,
     );
+    expect(find.textContaining('Token'), findsNothing);
+
+    routerOf(tester).push(Paths.energyAnalysis);
     await tester.pumpAndSettle();
     expect(find.text('Analisis Energi'), findsOneWidget);
-
-    await tapText(tester, 'Simpan');
-    expect(find.text('Analisis Energi'), findsOneWidget);
-    expect(find.text('131'), findsWidgets);
+    expect(find.text('Oven'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 
@@ -191,4 +198,67 @@ void main() {
     expect(find.text('Pengaturan Koperasi'), findsNothing);
     expect(find.text('Halo, Ibu Clara'), findsOneWidget);
   });
+
+  testWidgets(
+    'QR connection request → admin approves → completed session records electricity automatically',
+    (tester) async {
+      await pumpApp(tester, signedInAs: SampleSeeder.adminPhone);
+      final container = containerOf(tester);
+      final actions = container.read(actionsProvider);
+
+      final clara = container
+          .read(appStateProvider)
+          .data
+          .members
+          .firstWhere((m) => m.fullName == 'Ibu Clara');
+
+      await actions.login(SampleSeeder.memberPhone, SampleSeeder.pin);
+      final request = await actions.requestConnection(
+        scannedCode: kSolarHubQr,
+        applianceName: 'Oven',
+        estKwh: 3,
+      );
+      expect(request.status, BookingStatus.pendingVerification);
+
+      final before = container
+          .read(appStateProvider)
+          .data
+          .recordsOf(clara.id)
+          .where((r) => r.source == RecordSource.hub)
+          .length;
+
+      await actions.login(SampleSeeder.adminPhone, SampleSeeder.pin);
+      expect(
+        container.read(appStateProvider).data.hubRequests.map((b) => b.id),
+        contains(request.id),
+      );
+      await actions.respondToConnectionRequest(request.id, approve: true);
+      final approved = container
+          .read(appStateProvider)
+          .data
+          .bookings
+          .firstWhere((b) => b.id == request.id);
+      // Approval starts the supply, so the session is recorded right away.
+      expect(approved.status, BookingStatus.completed);
+      final after = container
+          .read(appStateProvider)
+          .data
+          .recordsOf(clara.id)
+          .where((r) => r.source == RecordSource.hub)
+          .toList();
+      expect(after.length, before + 1);
+      final created = after.firstWhere((r) => r.bookingId == request.id);
+      expect(created.kwh, 3);
+
+      // Back on the member's account the request reads as verified.
+      await actions.login(SampleSeeder.memberPhone, SampleSeeder.pin);
+      final shown = container
+          .read(appStateProvider)
+          .data
+          .latestHubRequestOf(clara.id, container.read(clockProvider)());
+      expect(shown?.id, request.id);
+      expect(shown?.status, BookingStatus.completed);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

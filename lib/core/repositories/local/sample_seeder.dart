@@ -89,29 +89,6 @@ class SampleSeeder {
             .toList()
           ..sort((a, b) => a.sort.compareTo(b.sort));
 
-    Future<void> bills(String userId, List<double> kwhNewestFirst) async {
-      for (int i = 0; i < kwhNewestFirst.length; i++) {
-        final month = monthsAgo(i);
-        await db.insert(
-          Tbl.energyRecords,
-          EnergyRecord(
-            id: newId(),
-            userId: userId,
-            kind: EnergyKind.postpaid,
-            periodMonth: month,
-            kwh: kwhNewestFirst[i],
-            totalIdr: (kwhNewestFirst[i] * 1444.70).round(),
-            source: RecordSource.manual,
-            createdAt: month.add(const Duration(days: 4)),
-          ).toRow(),
-        );
-      }
-    }
-
-    await bills(clara, [128, 112, 118, 109, 115]);
-    await bills(siti, [64, 61, 66, 60]);
-    await bills(lina, [88, 95, 90]);
-
     Future<void> appliance(
       String userId,
       String name,
@@ -137,28 +114,77 @@ class SampleSeeder {
     await appliance(clara, 'Blender', 'blender', 350, 1, 5);
     await appliance(siti, 'Mesin Jahit', 'sewingMachine', 100, 6, 6);
 
-    for (int i = 0; i < 6; i++) {
-      final day = dayOf(t.subtract(Duration(days: 3 + i * 7)));
-      await db.insert(
-        Tbl.hubBookings,
-        HubBooking(
-          id: newId(),
-          hubId: hub.id,
-          slotId: slots[1].id,
-          userId: clara,
-          applianceName: 'Oven',
-          bookingDate: day,
-          estKwh: 3,
-          status: BookingStatus.completed,
-          createdAt: day,
-        ).toRow(),
-      );
+    // Sample usage is hub usage: each completed session is a booking plus
+    // the record the hub creates automatically when the admin confirms it
+    // (same as AppActions.setBookingStatus). Session counts are per 30-day
+    // window, newest first.
+    final slotId = slots[1].id;
+    Future<void> hubSessions(
+      String userId,
+      String applianceName,
+      double kwhPerSession,
+      List<int> sessionsNewestFirst,
+    ) async {
+      for (int i = 0; i < sessionsNewestFirst.length; i++) {
+        // Calendar months, so each month's total is what the app will sum.
+        // The running month only has the days that have already passed.
+        final first = DateTime(t.year, t.month - i);
+        final days = i == 0
+            ? t.day - 1
+            : DateTime(t.year, t.month - i + 1, 0).day;
+        if (days < 1) continue;
+        final n = i == 0
+            ? (sessionsNewestFirst[i] * days / 28).ceil()
+            : sessionsNewestFirst[i];
+        final step = days ~/ n < 1 ? 1 : days ~/ n;
+        for (int j = 0; j < n; j++) {
+          final day = dayOf(
+            first.add(Duration(days: (j * step).clamp(0, days - 1))),
+          );
+          final bookingId = newId();
+          await db.insert(
+            Tbl.hubBookings,
+            HubBooking(
+              id: bookingId,
+              hubId: hub.id,
+              slotId: slotId,
+              userId: userId,
+              applianceName: applianceName,
+              bookingDate: day,
+              estKwh: kwhPerSession,
+              status: BookingStatus.completed,
+              createdAt: day,
+            ).toRow(),
+          );
+          await db.insert(
+            Tbl.energyRecords,
+            EnergyRecord(
+              id: newId(),
+              userId: userId,
+              kind: EnergyKind.token,
+              periodMonth: monthOf(day),
+              kwh: kwhPerSession,
+              totalIdr: (kwhPerSession * 1444.70).round(),
+              source: RecordSource.hub,
+              bookingId: bookingId,
+              createdAt: day.add(const Duration(hours: 14)),
+            ).toRow(),
+          );
+        }
+      }
     }
+
+    // kWh per session = appliance watts × slot hours (the same estimate the
+    // app uses for real sessions).
+    await hubSessions(clara, 'Oven', 3.0, [8, 7, 8, 7, 8]);
+    await hubSessions(clara, 'Blender', 0.7, [9, 8, 9, 8, 9]);
+    await hubSessions(siti, 'Mesin Jahit', 0.6, [10, 10, 11, 9]);
+    await hubSessions(lina, 'Mixer', 1.0, [8, 9, 8]);
 
     final arisan = LocalArisanRepository(db, () => monthsAgo(4));
     final group = await arisan.createGroup(
       admin: admin,
-      name: 'Arisan Energi Melati',
+      name: 'Arisan Koperasi Melati',
       contributionIdr: 150000,
       startMonth: monthsAgo(4),
       memberIdsInTurnOrder: ids,
@@ -213,7 +239,7 @@ class SampleSeeder {
         ownerId: clara,
         kind: QuotaKind.share,
         kwh: 2,
-        slotNote: 'Sabtu, 10.00–12.00',
+        slotNote: '',
         note: 'Sisa kuota minggu ini.',
         status: QuotaStatus.completed,
         counterpartyId: lina,
@@ -231,11 +257,47 @@ class SampleSeeder {
         ownerId: siti,
         kind: QuotaKind.share,
         kwh: 3,
-        slotNote: 'Minggu, 10.00–12.00',
+        slotNote: '',
         note: 'Saya tidak produksi hari Minggu.',
         status: QuotaStatus.open,
         createdAt: t.subtract(const Duration(days: 1)),
         updatedAt: t.subtract(const Duration(days: 1)),
+      ).toRow(),
+    );
+
+    // A member short on quota, so the share/need matching has something to show.
+    await db.insert(
+      Tbl.quotaOffers,
+      QuotaOffer(
+        id: newId(),
+        cooperativeId: coop.id,
+        ownerId: ids[3],
+        kind: QuotaKind.need,
+        kwh: 4,
+        slotNote: '',
+        note: 'Ada pesanan kue besar minggu ini.',
+        status: QuotaStatus.open,
+        createdAt: t.subtract(const Duration(days: 2)),
+        updatedAt: t.subtract(const Duration(days: 2)),
+      ).toRow(),
+    );
+
+    // Sent to Ibu Clara specifically, so the "Kuota untuk Anda" inbox has an
+    // item to accept in the demo.
+    await db.insert(
+      Tbl.quotaOffers,
+      QuotaOffer(
+        id: newId(),
+        cooperativeId: coop.id,
+        ownerId: siti,
+        kind: QuotaKind.share,
+        kwh: 2,
+        slotNote: '',
+        note: 'Untuk kebutuhan katering minggu ini.',
+        status: QuotaStatus.pending,
+        counterpartyId: clara,
+        createdAt: t.subtract(const Duration(hours: 5)),
+        updatedAt: t.subtract(const Duration(hours: 5)),
       ).toRow(),
     );
 

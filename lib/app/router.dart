@@ -12,6 +12,8 @@ import '../features/admin/admin_more_screen.dart';
 import '../features/admin/announce_screen.dart';
 import '../features/admin/arisan_admin_screen.dart';
 import '../features/admin/coop_settings_screen.dart';
+import '../features/admin/coop_summary_screen.dart';
+import '../features/admin/hub_requests_screen.dart';
 import '../features/admin/hub_settings_screen.dart';
 import '../features/admin/member_detail_screen.dart';
 import '../features/admin/payments_review_screen.dart';
@@ -23,14 +25,12 @@ import '../features/auth/register_admin_screen.dart';
 import '../features/auth/register_choice_screen.dart';
 import '../features/auth/register_member_screen.dart';
 import '../features/auth/welcome_screen.dart';
+import '../features/credit_score/presentation/credit_report_screen.dart';
 import '../features/credit_score/presentation/score_screen.dart';
 import '../features/energy/appliance_form_screen.dart';
 import '../features/energy/appliances_screen.dart';
 import '../features/energy/energy_analysis_screen.dart';
-import '../features/energy/energy_form_screen.dart';
 import '../features/energy/energy_records_screen.dart';
-import '../features/energy/demo_barcode_scan_screen.dart';
-import '../features/energy/scan_bill_screen.dart';
 import '../features/home/member_home_screen.dart';
 import '../features/loans/loan_apply_screen.dart';
 import '../features/loans/loan_detail_screen.dart';
@@ -48,9 +48,7 @@ import '../features/solar/booking_screen.dart';
 import '../features/solar/bookings_screen.dart';
 import '../features/solar/roof_scan_screen.dart';
 import '../features/solar/solar_hub_screen.dart';
-import '../features/solar_hub/scan/solar_qr_scan_screen.dart';
-import '../features/solar_hub/analysis/solar_panel_result_screen.dart';
-import '../core/solar_demo/solar_panel_model.dart';
+import '../features/solar_hub/scan/hub_connect_scan_screen.dart';
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
@@ -126,15 +124,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           _branch(Paths.memberSolar, const SolarHubScreen()),
           _branch(Paths.memberMessages, const MessagesScreen()),
           _branch(Paths.memberProfile, const ProfileScreen()),
+          _branch(
+            Paths.memberRecords,
+            const EnergyRecordsScreen(embedded: true),
+          ),
         ],
       ),
-      _page(Paths.scan, (_) => const ScanBillScreen()),
-      _page(Paths.scanDemo, (_) => const DemoBarcodeScanScreen()),
       _page(Paths.energy, (_) => const EnergyRecordsScreen()),
-      _page(
-        Paths.energyAdd,
-        (s) => EnergyFormScreen(draft: s.extra as EnergyDraft?),
-      ),
       _page(Paths.energyAnalysis, (_) => const EnergyAnalysisScreen()),
       _page(Paths.appliances, (_) => const AppliancesScreen()),
       _page(
@@ -142,11 +138,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         (s) => ApplianceFormScreen(existing: s.extra as Appliance?),
       ),
       _page(Paths.roof, (_) => const RoofScanScreen()),
-      _page(Paths.solarQrScan, (_) => const SolarQrScanScreen()),
-      _page(
-        Paths.solarQrResult,
-        (s) => SolarPanelResultScreen(data: s.extra as SolarPanelData),
-      ),
+      _page(Paths.hubConnect, (_) => const HubConnectScanScreen()),
       _page(
         Paths.booking,
         (s) => BookingScreen(applianceName: s.uri.queryParameters['alat']),
@@ -163,6 +155,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       _page(Paths.score, (_) => const ScoreScreen()),
+      _page(Paths.creditReport, (_) => const CreditReportScreen()),
       _page(Paths.loanApply, (_) => const LoanApplyScreen()),
       _page(
         Paths.loans,
@@ -235,6 +228,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       _page(Paths.adminHub, (_) => const HubSettingsScreen()),
+      _page(Paths.adminSummary, (_) => const CoopSummaryScreen()),
+      _page(Paths.adminHubRequests, (_) => const HubRequestsScreen()),
       _page(Paths.adminAnnounce, (_) => const AnnounceScreen()),
       _page(Paths.adminSettings, (_) => const CoopSettingsScreen()),
       _page(Paths.adminMessages, (_) => const MessagesScreen(standalone: true)),

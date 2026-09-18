@@ -9,9 +9,13 @@ import '../../features/credit_score/domain/credit_scoring_engine.dart';
 import '../db/row.dart';
 import '../format/money.dart';
 import '../l10n/l10n.dart';
+import '../logic/coop_kpis.dart';
+import '../logic/credit_report.dart';
 import '../logic/credit_signals.dart';
 import '../logic/energy_insights.dart';
 import '../logic/hub_capacity.dart';
+import '../logic/loan_math.dart';
+import '../logic/quota_insights.dart';
 import '../logic/quota_ledger.dart';
 import '../models/models.dart';
 import 'snapshot.dart';
@@ -67,11 +71,16 @@ extension SnapshotQueries on CoopSnapshot {
 
   // -- Energy ----------------------------------------------------------------
 
+  /// Hub-recorded usage only. Older builds also stored hand-entered PLN bills;
+  /// those are not hub data and are never shown or scored.
   List<EnergyRecord> recordsOf(String userId) =>
-      energyRecords.where((r) => r.userId == userId).toList()..sort((a, b) {
-        final c = b.periodMonth.compareTo(a.periodMonth);
-        return c != 0 ? c : b.createdAt.compareTo(a.createdAt);
-      });
+      energyRecords
+          .where((r) => r.userId == userId && r.source == RecordSource.hub)
+          .toList()
+        ..sort((a, b) {
+          final c = b.periodMonth.compareTo(a.periodMonth);
+          return c != 0 ? c : b.createdAt.compareTo(a.createdAt);
+        });
 
   List<Appliance> appliancesOf(String userId) =>
       appliances.where((a) => a.userId == userId).toList()
@@ -86,7 +95,27 @@ extension SnapshotQueries on CoopSnapshot {
   EnergyInsight? insightOf(String userId) => buildEnergyInsight(
     records: recordsOf(userId),
     appliances: appliancesOf(userId),
+    completedBookings: bookingsOf(userId),
     tariff: profile(userId)?.tariffIdrPerKwh ?? 1444.70,
+  );
+
+  /// Quota someone sent to [userId] specifically, waiting for her to accept.
+  List<QuotaOffer> incomingQuotaGifts(String userId) =>
+      offers
+          .where(
+            (o) =>
+                o.status == QuotaStatus.pending &&
+                o.counterpartyId == userId &&
+                o.kind == QuotaKind.share,
+          )
+          .toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+  /// The cooperative's Arisan Energi month (admin view).
+  QuotaImpact quotaImpactOf(DateTime now) => quotaImpact(
+    offers: offers,
+    balances: [for (final m in memberProfiles) quotaOf(m.id, now)],
+    now: now,
   );
 
   ImpactMetrics impactOf(String userId, DateTime now) => buildImpact(
@@ -138,7 +167,10 @@ extension SnapshotQueries on CoopSnapshot {
   QuotaBalance quotaOf(String userId, DateTime now) => quotaBalance(
     userId: userId,
     month: now,
-    allocationKwh: cooperative?.memberMonthlyQuotaKwh ?? 0,
+    allocationKwh:
+        profile(userId)?.hubAllocationKwh ??
+        cooperative?.memberMonthlyQuotaKwh ??
+        0,
     bookings: bookings,
     offers: offers,
   );
@@ -211,6 +243,31 @@ extension SnapshotQueries on CoopSnapshot {
     );
   }
 
+  /// [userId]'s most recent QR request: one still waiting, or one made in the
+  /// last three hours for today (so its outcome stays visible after the admin
+  /// decides, even if the member signs out and back in).
+  HubBooking? latestHubRequestOf(String userId, DateTime now) {
+    final today = dayOf(now);
+    final list =
+        bookingsOf(userId)
+            .where(
+              (b) =>
+                  b.status == BookingStatus.pendingVerification ||
+                  (dayOf(b.bookingDate) == today &&
+                      now.difference(b.createdAt) < const Duration(hours: 3)),
+            )
+            .toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return list.firstOrNull;
+  }
+
+  /// Hub sessions members asked for by scanning the hub QR, oldest first.
+  List<HubBooking> get hubRequests =>
+      bookings
+          .where((b) => b.status == BookingStatus.pendingVerification)
+          .toList()
+        ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
   List<ArisanPayment> get pendingPayments =>
       payments.where((p) => p.status == PaymentStatus.pending).toList()
         ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
@@ -235,6 +292,42 @@ extension SnapshotQueries on CoopSnapshot {
           .where((i) => loanIds.contains(i.loanId))
           .toList(),
       offers: offers,
+    );
+  }
+
+  /// Members whose score meets the cooperative's loan minimum.
+  bool loanReadyOf(String userId, DateTime now, CreditScoringEngine engine) =>
+      isLoanReady(
+        scoreOf(userId, now, engine),
+        cooperative?.loanMinScore ?? 60,
+      );
+
+  CoopKpis coopKpisOf(DateTime now, CreditScoringEngine engine) => coopKpis(
+    members: memberProfiles,
+    bookings: bookings,
+    offers: offers,
+    installments: installments,
+    loanReady: memberProfiles
+        .where((m) => loanReadyOf(m.id, now, engine))
+        .length,
+    now: now,
+  );
+
+  /// Null until the score can be computed.
+  CreditReport? creditReportOf(
+    String userId,
+    DateTime now,
+    CreditScoringEngine engine,
+  ) {
+    final member = profile(userId);
+    final score = scoreOf(userId, now, engine);
+    if (member == null || score == null) return null;
+    return buildCreditReport(
+      member: member,
+      cooperativeName: cooperative?.name ?? '',
+      context: creditContextOf(userId, now),
+      score: score,
+      minScore: cooperative?.loanMinScore ?? 60,
     );
   }
 

@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/credit_score/application/credit_score_provider.dart';
 import '../errors.dart';
-import '../demo/demo_bill_models.dart';
 import '../models/models.dart';
 import '../repositories/local/sample_seeder.dart';
 import 'app_state.dart';
@@ -114,39 +113,6 @@ class AppActions {
 
   // -- Energy ----------------------------------------------------------------
 
-  Future<EnergyRecord> saveRecord({
-    required EnergyKind kind,
-    required DateTime periodMonth,
-    required double kwh,
-    required int totalIdr,
-    String? customerId,
-    String? photoPath,
-    required RecordSource source,
-    String? replaceId,
-  }) async {
-    final r = await _ref
-        .read(energyRepositoryProvider)
-        .saveRecord(
-          me: _me,
-          kind: kind,
-          periodMonth: periodMonth,
-          kwh: kwh,
-          totalIdr: totalIdr,
-          customerId: customerId,
-          photoPath: photoPath,
-          source: source,
-          replaceId: replaceId,
-        );
-    await _refresh();
-    await _recordScoreSnapshot();
-    return r;
-  }
-
-  Future<void> deleteRecord(String id) async {
-    await _ref.read(energyRepositoryProvider).deleteRecord(_me, id);
-    await _refresh();
-  }
-
   Future<void> saveAppliance({
     String? id,
     required String name,
@@ -182,62 +148,6 @@ class AppActions {
     return saved;
   }
 
-  /// Demo/testing only: seeds bill history, an appliance list, and the
-  /// current month's bill from a scanned demo barcode, so the real spike
-  /// check and per-appliance cost breakdown (`energy_insights.dart`) have
-  /// something to compute from instead of a hand-typed month of data before
-  /// every demo. Every number comes from the barcode's matched entry; this
-  /// computes nothing itself. Unlike a real scan, the barcode is a
-  /// deterministic lookup rather than a probabilistic OCR read, so the
-  /// caller goes straight to the analysis screen instead of the editable
-  /// confirm screen.
-  Future<void> applyDemoBillPayload(DemoBillPayload payload) async {
-    // Step 1: Save all historical bill records (upsert by month, safe to repeat).
-    for (final h in payload.history) {
-      await saveRecord(
-        kind: EnergyKind.postpaid,
-        periodMonth: h.month,
-        kwh: h.kwh,
-        totalIdr: h.totalIdr,
-        source: RecordSource.manual,
-      );
-    }
-
-    // Step 2: Clear ALL existing appliances so each demo barcode produces
-    // a clean, unique appliance set. Without this, a second scan would skip
-    // appliances already inserted from a previous demo (e.g. "Kulkas" from
-    // DEMO-001 blocks DEMO-002's "Kulkas" with different wattage), causing
-    // all demos to show identical analysis results.
-    final existingAppliances = _ref
-        .read(appStateProvider)
-        .data
-        .appliancesOf(_me.id);
-    for (final a in existingAppliances) {
-      await _ref.read(energyRepositoryProvider).deleteAppliance(_me, a.id);
-    }
-    await _refresh();
-
-    // Step 3: Insert the demo payload's appliances fresh.
-    for (final a in payload.appliances) {
-      await saveAppliance(
-        name: a.name,
-        kind: a.kind,
-        watts: a.watts,
-        hoursPerDay: a.hoursPerDay,
-        daysPerWeek: a.daysPerWeek,
-      );
-    }
-
-    // Step 4: Save the current month's bill record.
-    await saveRecord(
-      kind: EnergyKind.postpaid,
-      periodMonth: payload.current.month,
-      kwh: payload.current.kwh,
-      totalIdr: payload.current.totalIdr,
-      source: RecordSource.scan,
-    );
-  }
-
   // -- Solar hub -------------------------------------------------------------
 
   Future<HubBooking> book({
@@ -259,8 +169,73 @@ class AppActions {
     return b;
   }
 
+  /// Scanning the hub connection QR code: requests to use the hub right
+  /// now. Lands as [BookingStatus.pendingVerification] until an admin
+  /// approves it.
+  Future<HubBooking> requestConnection({
+    required String scannedCode,
+    required String applianceName,
+    required double estKwh,
+  }) async {
+    final b = await _ref
+        .read(solarRepositoryProvider)
+        .requestConnection(
+          me: _me,
+          scannedCode: scannedCode,
+          applianceName: applianceName,
+          estKwh: estKwh,
+        );
+    await _refresh();
+    return b;
+  }
+
+  Future<void> respondToConnectionRequest(
+    String bookingId, {
+    required bool approve,
+  }) async {
+    await _ref
+        .read(solarRepositoryProvider)
+        .respondToConnectionRequest(
+          admin: _me,
+          bookingId: bookingId,
+          approve: approve,
+        );
+    await _refresh();
+    // Approval is the moment the hub starts supplying this member, so the
+    // session is recorded right away (usage is still the software estimate).
+    if (approve) await setBookingStatus(bookingId, BookingStatus.completed);
+  }
+
+  /// Transitions a booking's status. When a session is confirmed
+  /// [BookingStatus.completed], its electricity usage is recorded
+  /// automatically for its owner (not necessarily the caller — an admin can
+  /// confirm a member's session), so she never has to enter it by hand.
   Future<void> setBookingStatus(String id, BookingStatus status) async {
+    final data = _ref.read(appStateProvider).data;
+    final booking = data.bookings.where((b) => b.id == id).firstOrNull;
+
     await _ref.read(solarRepositoryProvider).setBookingStatus(_me, id, status);
+
+    if (status == BookingStatus.completed && booking != null) {
+      final owner = data.profile(booking.userId);
+      if (owner != null) {
+        await _ref
+            .read(energyRepositoryProvider)
+            .saveRecord(
+              me: owner,
+              // Reuses the token kind's "always insert, never overwrite a
+              // month" semantics so multiple hub sessions in one month
+              // accumulate — see RecordSource.hub's doc comment.
+              kind: EnergyKind.token,
+              periodMonth: booking.bookingDate,
+              kwh: booking.estKwh,
+              totalIdr: (booking.estKwh * owner.tariffIdrPerKwh).round(),
+              source: RecordSource.hub,
+              bookingId: booking.id,
+            );
+      }
+    }
+
     await _refresh();
     await _recordScoreSnapshot();
   }
@@ -277,6 +252,20 @@ class AppActions {
 
   Future<void> removeSlot(String slotId) async {
     await _ref.read(solarRepositoryProvider).removeSlot(_me, slotId);
+    await _refresh();
+  }
+
+  Future<void> setMemberHubAllocation(
+    String memberId,
+    double? allocationKwh,
+  ) async {
+    await _ref
+        .read(solarRepositoryProvider)
+        .setMemberHubAllocation(
+          admin: _me,
+          memberId: memberId,
+          allocationKwh: allocationKwh,
+        );
     await _refresh();
   }
 
@@ -338,8 +327,8 @@ class AppActions {
   Future<QuotaOffer> postQuota({
     required QuotaKind kind,
     required double kwh,
-    required String slotNote,
     String? note,
+    String? toMemberId,
   }) async {
     final o = await _ref
         .read(arisanRepositoryProvider)
@@ -347,11 +336,19 @@ class AppActions {
           me: _me,
           kind: kind,
           kwh: kwh,
-          slotNote: slotNote,
           note: note,
+          toMemberId: toMemberId,
         );
     await _refresh();
     return o;
+  }
+
+  Future<void> answerQuotaGift(String offerId, {required bool accept}) async {
+    await _ref
+        .read(arisanRepositoryProvider)
+        .answerQuotaGift(me: _me, offerId: offerId, accept: accept);
+    await _refresh();
+    if (accept) await _recordScoreSnapshot();
   }
 
   Future<void> respondToQuota(String offerId) async {
@@ -359,13 +356,7 @@ class AppActions {
         .read(arisanRepositoryProvider)
         .respondToQuota(me: _me, offerId: offerId);
     await _refresh();
-  }
-
-  Future<void> settleQuota(String offerId, {required bool accept}) async {
-    await _ref
-        .read(arisanRepositoryProvider)
-        .settleQuota(me: _me, offerId: offerId, accept: accept);
-    await _refresh();
+    // A completed trade counts toward community participation in the score.
     await _recordScoreSnapshot();
   }
 

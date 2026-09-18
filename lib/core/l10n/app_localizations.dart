@@ -76,6 +76,7 @@ abstract class AppLocalizations {
 
   // ── Bottom Navigation ────────────────────────────────────────────────────
   String get navHome;
+  String get navRecords;
   String get navSolarHub;
   String get navMessages;
   String get navProfile;
@@ -106,7 +107,6 @@ abstract class AppLocalizations {
   String get actionSend;
   String get actionApply;
   String get actionUploadGallery;
-  String get actionScan;
 
   // ── Common labels ────────────────────────────────────────────────────────
   String get labelLoading;
@@ -158,7 +158,6 @@ abstract class AppLocalizations {
   String roofPaybackYears(String years);
   String get threadNotFound;
   String get threadMessageHint;
-  String get energyDeletedToast;
   String get energyKindToken;
   String get energyKindBill;
   String get roofAssumptionsTitle;
@@ -196,7 +195,6 @@ abstract class AppLocalizations {
 
   // ── Welcome / Auth ───────────────────────────────────────────────────────
   String get welcomeHeadline;
-  String get welcomeFeatureScan;
   String get welcomeFeatureSolar;
   String get welcomeFeatureArisan;
   String get welcomeTrySample;
@@ -289,7 +287,6 @@ abstract class AppLocalizations {
   String get scaffoldLoans;
   String get scaffoldLoanDetail;
   String get scaffoldLoanApply;
-  String get scaffoldScan;
   String get scaffoldMessages;
   String get scaffoldThread;
   String get scaffoldProfileEdit;
@@ -372,23 +369,14 @@ abstract class AppLocalizations {
   String get energyTitle;
   String get energyEmpty;
   String get energyEmptyMessage;
-  String get energyScanCta;
-  String get energyAddManual;
+  String get energyAutoNote;
   String get energyMonth;
   String get energyKwh;
   String get energyBill;
   String get energyTariff;
-  String get energyFormTitle;
-  String get energyFormMonth;
-  String get energyFormKwh;
-  String get energyFormBill;
-  String get energyFormSource;
-  String get energyFormSourceManual;
-  String get energyFormSourceScan;
-  String get energyFormNote;
+  String get energySourceHub;
+  String get energySourceManual;
   String get energySaveSuccess;
-  String get energyDeleteConfirmTitle;
-  String get energyDeleteConfirmBody;
   String get energyAnalysisTitle;
   String get energyAnalysisEmpty;
   String get energyAnalysisNoAppliances;
@@ -396,27 +384,6 @@ abstract class AppLocalizations {
   String get energyAnalysisContributors;
 
   // Manual "Catat Listrik" form fields (kind-specific copy)
-  String get energyFormKindBill;
-  String get energyFormKindToken;
-  String get energyFormKindHelpBill;
-  String get energyFormKindHelpToken;
-  String get energyFormMonthToken;
-  String get energyFormReplaceWarning;
-  String get energyFormKwhLabelBill;
-  String get energyFormKwhLabelToken;
-  String get energyFormKwhHint;
-  String get energyFormKwhHelpBill;
-  String get energyFormKwhHelpToken;
-  String get energyFormKwhValidatorEmpty;
-  String get energyFormKwhValidatorTooLarge;
-  String get energyFormBillLabelBill;
-  String get energyFormBillLabelToken;
-  String get energyFormBillHint;
-  String get energyFormBillValidator;
-  String get energyFormCustomerIdLabel;
-  String energyFormPerKwhTitle(String price);
-  String energyFormPerKwhSuspicious(String tariff);
-  String energyFormPerKwhOk(String tariff);
 
   // Scan result / analysis screen (shared by the scan result and Analisis
   // Energi screens so a translation never drifts between the two)
@@ -428,6 +395,7 @@ abstract class AppLocalizations {
   String get scanAnalysisInsightTitle;
   String get scanAnalysisEmptyMessage;
   String get scanAnalysisCtaSolarHub;
+  String get energyAnalysisUseSolarHub;
   String get scanAnalysisLoadingSubtitle;
   String get scanAnalysisLoadingBadge;
   String get scanStep1;
@@ -435,13 +403,6 @@ abstract class AppLocalizations {
   String get scanStep3;
   String get scanStep4;
   String get scanStep5;
-  String get solarScanBadge;
-  String get solarScanTitle;
-  String get solarScanStep1;
-  String get solarScanStep2;
-  String get solarScanStep3;
-  String get solarScanStep4;
-  String get solarScanStep5;
 
   // ── Appliances ────────────────────────────────────────────────────────────
   String get appliancesTitle;
@@ -467,27 +428,8 @@ abstract class AppLocalizations {
   String get applianceMonthlyCostLabel;
   String applianceHoursValue(String hours);
 
-  // ── Scan Bill ─────────────────────────────────────────────────────────────
-  String get scanTitle;
-  String get scanInstruction;
-  String get scanScanning;
-  String get scanResult;
-  String get scanKwh;
-  String get scanBill;
-  String get scanMonth;
-  String get scanConfirm;
-  String get scanRetry;
-  String get scanSaved;
-  String get scanPickGallery;
-  String get scanErrorNoData;
-  String get scanDemoAction;
-  String get scanDemoTitle;
-  String get scanDemoInstruction;
-  String get scanDemoReading;
-  String get scanDemoInvalid;
-  String get scanDemoApplied;
-
-  // Shared camera capture chrome (Scan Tagihan and Radar Atap)
+  // Shared camera capture chrome (used by Radar Atap and the hub-connect
+  // QR scanner)
   String get captureTorchOn;
   String get captureTorchOff;
   String get captureCameraNotFound;
@@ -498,9 +440,6 @@ abstract class AppLocalizations {
   String get captureGalleryLabel;
   String get captureShootSemanticLabel;
   String get captureDefaultBusyLabel;
-  String get scanTipBrightSpot;
-  String get scanTipFullFrame;
-  String get scanTipHoldSteady;
 
   // ── Solar Hub ─────────────────────────────────────────────────────────────
   String get solarTitle;
@@ -640,9 +579,6 @@ abstract class AppLocalizations {
   String arisanQuotaActionConfirmTitle(String action);
   String get arisanQuotaUpdatedToast;
   String get arisanQuotaSentToast;
-  String get solarQrCardTitle;
-  String get solarQrCardSubtitle;
-  String get solarQrCardAction;
   String get bookingCancelledToast;
   String get bookingRecordedToast;
   String solarBookingComeOnTime(String hubName);
@@ -761,6 +697,96 @@ abstract class AppLocalizations {
   String get hubBookingsToConfirmSection;
   String get hubBookingMarkUsed;
   String get hubBookingMarkedUsedToast;
+  String get hubConnectionRequestsSection;
+  String get hubConnectionApprove;
+  String adminSummarySubtitle(int active, int total, int ready, int trades);
+  String get adminSummaryActive;
+  String get adminSummaryLoanReady;
+  String get adminSummaryTrades;
+  String get adminSummaryTradedKwh;
+  String get adminSummaryUtilization;
+  String get adminSummaryUtilizationHint;
+  String get adminSummaryRepayment;
+  String get adminSummaryRepaymentNone;
+  String adminSummaryRepaymentDetail(int ok, int due);
+  String get loanReadyBadge;
+  String get adminKpiTitle;
+  String get adminKpiNote;
+  String get creditReportTitle;
+  String get creditReportOpen;
+  String get creditReportEmpty;
+  String get creditReportIntro;
+  String get creditReportCopy;
+  String get creditReportConsentTitle;
+  String get creditReportConsentBody;
+  String get creditReportCopied;
+  String get creditReportMonths;
+  String get creditReportActivity;
+  String creditReportSessions(int n, String kwh);
+  String get creditReportAppliances;
+  String get creditReportQuota;
+  String creditReportQuotaValue(int given, int received);
+  String get creditReportDues;
+  String get creditReportInstallments;
+  String creditReportInstallmentsValue(int ok, int due);
+  String get creditReportInstallmentsNone;
+  String get quotaShareToAny;
+  String get quotaShareToMember;
+  String get quotaShareToAnyHint;
+  String get quotaShareToMemberHint;
+  String get quotaPickMember;
+  String get quotaPickMemberRequired;
+  String get quotaGiftIncomingTitle;
+  String quotaGiftFrom(String name, String kwh);
+  String get quotaGiftAccept;
+  String get quotaGiftDecline;
+  String get quotaGiftAcceptedToast;
+  String get quotaGiftDeclinedToast;
+  String quotaGiftWaiting(String name);
+  String quotaGiftSentMessage(String name);
+  String get quotaMatchTitle;
+  String get quotaMatchRule;
+  String quotaMatchShareCovers(String kwh);
+  String quotaMatchShareShort(String kwh, String missing);
+  String quotaMatchNeedFits(String kwh);
+  String get quotaTradedToast;
+  String quotaTradeConfirm(String kwh, String name);
+  String get quotaLedgerTitle;
+  String quotaLedgerGave(String name);
+  String quotaLedgerGot(String name);
+  String get quotaLedgerEmpty;
+  String get quotaLedgerNote;
+  String get hubConnectSending;
+  String get hubConnectScanAgain;
+  String get hubConnectApprovedTitle;
+  String get hubConnectApprovedMessage;
+  String get hubConnectRejectedTitle;
+  String get hubConnectRejectedMessage;
+  String get hubConnectDoneTitle;
+  String get hubConnectDoneMessage;
+  String get hubConnectBrowse;
+  String get adminRequestsTitle;
+  String get adminRequestsEmpty;
+  String get adminRequestsIntro;
+  String get adminRequestsCardTitle;
+  String get hubConnectionReject;
+  String get hubConnectionApprovedToast;
+  String get hubConnectionRejectedToast;
+
+  // ── Hub connect (QR verification request) ──────────────────────────────
+  String get hubConnectCta;
+  String get hubConnectTitle;
+  String get hubConnectInstruction;
+  String get hubConnectWrongCode;
+  String get hubConnectOffHours;
+  String get hubConnectSentTitle;
+  String get hubConnectSentMessage;
+
+  // ── Admin: member hub capacity/connection ───────────────────────────────
+  String get adminMemberHubSection;
+  String get adminMemberHubAllocation;
+  String get adminMemberHubAllocationHint;
+  String get adminMemberHubAllocationHelper;
 
   String get adminAnnounceTitle;
   String get adminAnnounceMessage;
@@ -816,45 +842,14 @@ abstract class AppLocalizations {
   String get solarWeatherTitle;
   String solarWeatherReason(int cloudPct, String condition);
   String get solarWeatherSource;
+  String solarWeatherScore(int score, int tempC);
+  String get solarWeatherRainNote;
+  String get solarBookingBestWeather;
   String get solarWeatherPassedTitle;
-  String solarWeatherPassedWindow(String window);
   String get solarWeatherPassedHint;
-  String solarWeatherTomorrowWindow(String window);
+  String get solarWeatherTomorrowTitle;
 
   // ── Solar panel QR scan (demo) ───────────────────────────────────────────
-  String get solarQrScanTitle;
-  String get solarQrUnrecognized;
-  String get solarQrReading;
-  String get solarQrInstruction;
-  String get solarScanResultTitle;
-  String get solarScanContinueToBooking;
-  String get solarScanNotRecommended;
-  String get solarScanSunSection;
-  String get solarScanExposureQuality;
-  String get solarScanSensorAccuracy;
-  String get solarScanRoofSection;
-  String get solarScanRoofArea;
-  String get solarScanRoofSlope;
-  String get solarScanSavingsSection;
-  String get solarScanSavingsPerMonth;
-  String solarScanPerMonth(String amount);
-  String get solarScanSavingsPerYear;
-  String get solarScanTipsTitle;
-  String get solarScanSunExcellent;
-  String get solarScanSunGood;
-  String get solarScanSunLow;
-  String get solarScanAccuracyOptimal;
-  String get solarScanAccuracyVeryGood;
-  String get solarScanAccuracyGood;
-  String get solarScanStatusHealthy;
-  String get solarScanStatusWarning;
-  String get solarScanStatusPoor;
-  String get solarScanTipHealthy;
-  String get solarScanTipWarning;
-  String get solarScanTipPoor;
-  String get solarScanPillVeryFeasible;
-  String get solarScanPillNeedsOptimization;
-  String get solarScanPillLessFeasible;
 
   String get creditBandPerluPeningkatan;
   String get creditBandCukup;
@@ -885,8 +880,8 @@ abstract class AppLocalizations {
   String obsTopApplianceBody(String cost);
   String get obsConfirmBookingTitle;
   String obsConfirmBookingBody(int count);
-  String get obsScanBillTitle;
-  String get obsScanBillBody;
+  String get obsUseHubTitle;
+  String get obsUseHubBody;
   String get obsNoApplianceTitle;
   String get obsNoApplianceBody;
 
@@ -936,6 +931,7 @@ abstract class AppLocalizations {
   String get paymentStatusRejected;
   String get paymentTypeContribution;
   String get paymentTypePayout;
+  String get bookingStatusPendingVerification;
   String get bookingStatusBooked;
   String get bookingStatusCompleted;
   String get bookingStatusCancelled;
@@ -975,8 +971,8 @@ abstract class AppLocalizations {
   String scoreNotCalculatedMsg(int min);
   String scoreRecordsCount(int current, int min);
   String get scoreRecordsEnough;
-  String scoreScanMoreMonths(int n);
-  String get scoreScanMoreMonthsSubtitle;
+  String scoreUseHubMoreMonths(int n);
+  String get scoreUseHubMoreMonthsSubtitle;
   String get scoreInArisan;
   String get scoreJoinArisan;
   String scoreAppliancesDeclaredCount(int count);
@@ -1021,6 +1017,8 @@ class _IdStrings extends AppLocalizations {
   // Nav
   @override
   String get navHome => 'Beranda';
+  @override
+  String get navRecords => 'Catatan';
   @override
   String get navSolarHub => 'Solar Hub';
   @override
@@ -1079,8 +1077,6 @@ class _IdStrings extends AppLocalizations {
   String get actionApply => 'Ajukan';
   @override
   String get actionUploadGallery => 'Unggah dari Galeri';
-  @override
-  String get actionScan => 'Scan';
 
   // Labels
   @override
@@ -1185,8 +1181,6 @@ class _IdStrings extends AppLocalizations {
   @override
   String get threadMessageHint => 'Tulis pesan…';
   @override
-  String get energyDeletedToast => 'Catatan dihapus.';
-  @override
   String get energyKindToken => 'Token Listrik';
   @override
   String get energyKindBill => 'Tagihan Bulanan';
@@ -1258,9 +1252,6 @@ class _IdStrings extends AppLocalizations {
   // Welcome
   @override
   String get welcomeHeadline => 'Kelola listrik usaha bersama koperasi';
-  @override
-  String get welcomeFeatureScan =>
-      'Scan tagihan PLN, lihat alat yang paling boros';
   @override
   String get welcomeFeatureSolar => 'Pesan jadwal pakai Solar Hub koperasi';
   @override
@@ -1458,7 +1449,7 @@ class _IdStrings extends AppLocalizations {
   @override
   String get scaffoldBookings => 'Jadwal Solar Hub';
   @override
-  String get scaffoldArisan => 'Arisan Energi';
+  String get scaffoldArisan => 'Arisan Koperasi';
   @override
   String get scaffoldQuota => 'Pasar Kuota';
   @override
@@ -1471,8 +1462,6 @@ class _IdStrings extends AppLocalizations {
   String get scaffoldLoanDetail => 'Detail Pembiayaan';
   @override
   String get scaffoldLoanApply => 'Ajukan Pembiayaan';
-  @override
-  String get scaffoldScan => 'Scan Tagihan';
   @override
   String get scaffoldMessages => 'Pesan';
   @override
@@ -1528,9 +1517,9 @@ class _IdStrings extends AppLocalizations {
   @override
   String get homeBookingHub => 'Booking Hub';
   @override
-  String get homeArisanEnergi => 'Arisan Energi';
+  String get homeArisanEnergi => 'Arisan Koperasi';
   @override
-  String get homeTukarKuota => 'Tukar Kuota';
+  String get homeTukarKuota => 'Arisan Energi';
   @override
   String get homeSkorKredit => 'Skor Kredit';
   @override
@@ -1636,11 +1625,10 @@ class _IdStrings extends AppLocalizations {
   String get energyEmpty => 'Belum ada catatan';
   @override
   String get energyEmptyMessage =>
-      'Rekam tagihan PLN pertama Anda untuk mulai melacak pemakaian.';
+      'Catatan muncul otomatis setelah sesi Solar Hub Anda selesai dikonfirmasi admin.';
   @override
-  String get energyScanCta => 'Scan Tagihan';
-  @override
-  String get energyAddManual => 'Tambah manual';
+  String get energyAutoNote =>
+      'Dicatat otomatis oleh Solar Hub. Jika ada yang tidak sesuai, hubungi admin koperasi.';
   @override
   String get energyMonth => 'Bulan';
   @override
@@ -1650,28 +1638,11 @@ class _IdStrings extends AppLocalizations {
   @override
   String get energyTariff => 'Tarif';
   @override
-  String get energyFormTitle => 'Catatan Listrik';
+  String get energySourceHub => 'Otomatis (Hub)';
   @override
-  String get energyFormMonth => 'Bulan tagihan';
-  @override
-  String get energyFormKwh => 'Pemakaian (kWh)';
-  @override
-  String get energyFormBill => 'Total tagihan (Rp)';
-  @override
-  String get energyFormSource => 'Sumber data';
-  @override
-  String get energyFormSourceManual => 'Input manual';
-  @override
-  String get energyFormSourceScan => 'Dari scan';
-  @override
-  String get energyFormNote => 'Catatan tambahan';
+  String get energySourceManual => 'Manual';
   @override
   String get energySaveSuccess => 'Catatan listrik disimpan.';
-  @override
-  String get energyDeleteConfirmTitle => 'Hapus catatan?';
-  @override
-  String get energyDeleteConfirmBody =>
-      'Catatan bulan ini akan dihapus permanen.';
   @override
   String get energyAnalysisTitle => 'Analisis Energi';
   @override
@@ -1682,55 +1653,6 @@ class _IdStrings extends AppLocalizations {
   String get energyAnalysisTrend => 'Tren Pemakaian';
   @override
   String get energyAnalysisContributors => 'Kontributor Daya';
-
-  @override
-  String get energyFormKindBill => 'Tagihan';
-  @override
-  String get energyFormKindToken => 'Token';
-  @override
-  String get energyFormKindHelpBill => 'Pascabayar: tagihan bulanan PLN.';
-  @override
-  String get energyFormKindHelpToken =>
-      'Prabayar: struk pembelian token. Beberapa token dalam sebulan dijumlahkan.';
-  @override
-  String get energyFormMonthToken => 'Bulan pembelian';
-  @override
-  String get energyFormReplaceWarning =>
-      'Tagihan bulan ini sudah tercatat. Menyimpan akan menggantinya.';
-  @override
-  String get energyFormKwhLabelBill => 'Pemakaian listrik';
-  @override
-  String get energyFormKwhLabelToken => 'Jumlah kWh token';
-  @override
-  String get energyFormKwhHint => 'Contoh: 128';
-  @override
-  String get energyFormKwhHelpBill =>
-      'Lihat "Pemakaian" atau selisih Stand Meter.';
-  @override
-  String get energyFormKwhHelpToken => 'Lihat "Jml kWh" di struk.';
-  @override
-  String get energyFormKwhValidatorEmpty => 'Isi jumlah kWh.';
-  @override
-  String get energyFormKwhValidatorTooLarge =>
-      'Angka terlalu besar. Periksa lagi.';
-  @override
-  String get energyFormBillLabelBill => 'Total tagihan';
-  @override
-  String get energyFormBillLabelToken => 'Total bayar';
-  @override
-  String get energyFormBillHint => 'Contoh: 185.000';
-  @override
-  String get energyFormBillValidator => 'Isi total rupiah.';
-  @override
-  String get energyFormCustomerIdLabel => 'ID pelanggan (boleh kosong)';
-  @override
-  String energyFormPerKwhTitle(String price) => 'Harga per kWh: $price';
-  @override
-  String energyFormPerKwhSuspicious(String tariff) =>
-      'Jauh dari tarif Anda ($tariff/kWh). Periksa lagi kWh dan totalnya.';
-  @override
-  String energyFormPerKwhOk(String tariff) =>
-      'Sesuai dengan tarif Anda ($tariff/kWh).';
 
   @override
   String get scanAnalysisSubtitle =>
@@ -1747,9 +1669,11 @@ class _IdStrings extends AppLocalizations {
   String get scanAnalysisInsightTitle => 'Insight Utama';
   @override
   String get scanAnalysisEmptyMessage =>
-      'Scan tagihan listrik pertama Anda untuk melihat analisisnya.';
+      'Pakai Solar Hub agar catatan listrik Anda mulai tercatat, lalu lihat analisisnya di sini.';
   @override
   String get scanAnalysisCtaSolarHub => 'Lihat Jadwal Solar Hub';
+  @override
+  String get energyAnalysisUseSolarHub => 'Pakai Solar Hub';
   @override
   String get scanAnalysisLoadingSubtitle =>
       'Mohon tunggu sebentar, sistem sedang memproses data tagihan...';
@@ -1765,20 +1689,6 @@ class _IdStrings extends AppLocalizations {
   String get scanStep4 => 'Menyusun rekomendasi penghematan...';
   @override
   String get scanStep5 => 'Analisis selesai';
-  @override
-  String get solarScanBadge => 'Solar Scanner';
-  @override
-  String get solarScanTitle => 'Menganalisis Solar Panel...';
-  @override
-  String get solarScanStep1 => 'QR terbaca';
-  @override
-  String get solarScanStep2 => 'Memeriksa kondisi panel';
-  @override
-  String get solarScanStep3 => 'Menghitung paparan matahari';
-  @override
-  String get solarScanStep4 => 'Mengestimasi penghematan';
-  @override
-  String get solarScanStep5 => 'Menyiapkan rekomendasi';
 
   // Appliances
   @override
@@ -1830,46 +1740,6 @@ class _IdStrings extends AppLocalizations {
   @override
   String applianceHoursValue(String hours) => '$hours jam';
 
-  // Scan Bill
-  @override
-  String get scanTitle => 'Scan Tagihan';
-  @override
-  String get scanInstruction =>
-      'Arahkan kamera ke tagihan PLN atau struk token.';
-  @override
-  String get scanScanning => 'Membaca tagihan…';
-  @override
-  String get scanResult => 'Hasil Scan';
-  @override
-  String get scanKwh => 'kWh';
-  @override
-  String get scanBill => 'Total tagihan';
-  @override
-  String get scanMonth => 'Bulan';
-  @override
-  String get scanConfirm => 'Simpan & lanjut';
-  @override
-  String get scanRetry => 'Coba lagi';
-  @override
-  String get scanSaved => 'Catatan berhasil disimpan.';
-  @override
-  String get scanPickGallery => 'Unggah dari Galeri';
-  @override
-  String get scanErrorNoData => 'Tidak ada data yang terbaca dari gambar ini.';
-  @override
-  String get scanDemoAction => 'Kode Demo';
-  @override
-  String get scanDemoTitle => 'Pindai Barcode Demo';
-  @override
-  String get scanDemoInstruction =>
-      'Arahkan kamera ke barcode meteran atau kode demo.';
-  @override
-  String get scanDemoReading => 'Membaca barcode…';
-  @override
-  String get scanDemoInvalid => 'Ini bukan barcode demo IbuDaya.';
-  @override
-  String get scanDemoApplied => 'Data demo diterapkan.';
-
   @override
   String get captureTorchOn => 'Nyalakan lampu';
   @override
@@ -1892,12 +1762,6 @@ class _IdStrings extends AppLocalizations {
   String get captureShootSemanticLabel => 'Ambil foto';
   @override
   String get captureDefaultBusyLabel => 'Memproses…';
-  @override
-  String get scanTipBrightSpot => 'Tempat terang, tanpa bayangan';
-  @override
-  String get scanTipFullFrame => 'Seluruh struk masuk bingkai';
-  @override
-  String get scanTipHoldSteady => 'Tahan HP sampai tulisan jelas';
 
   // Solar
   @override
@@ -1950,7 +1814,7 @@ class _IdStrings extends AppLocalizations {
 
   // Arisan
   @override
-  String get arisanTitle => 'Arisan Energi';
+  String get arisanTitle => 'Arisan Koperasi';
   @override
   String get arisanNoGroup => 'Belum bergabung grup arisan';
   @override
@@ -2188,12 +2052,6 @@ class _IdStrings extends AppLocalizations {
   @override
   String get arisanQuotaSentToast => 'Terkirim.';
   @override
-  String get solarQrCardTitle => 'Scan QR Solar Panel';
-  @override
-  String get solarQrCardSubtitle => 'Lihat status panel secara langsung melalui QR Code';
-  @override
-  String get solarQrCardAction => 'Scan Sekarang';
-  @override
   String get bookingCancelledToast => 'Booking dibatalkan.';
   @override
   String get bookingRecordedToast => 'Tercatat.';
@@ -2405,10 +2263,10 @@ class _IdStrings extends AppLocalizations {
       'berbasis cuaca nyata di layar Solar Hub anggota. Kosongkan jika '
       'belum tahu kodenya; panel itu tidak muncul sampai diisi.';
   @override
-  String get hubFieldQuota => 'Kuota tiap anggota per bulan';
+  String get hubFieldQuota => 'Kuota default tiap anggota per bulan';
   @override
   String get hubFieldQuotaHelper =>
-      'Batas energi hub yang boleh dibooking satu anggota dalam sebulan.';
+      'Dipakai kalau anggota belum punya alokasi kapasitas sendiri. Atur alokasi per anggota di halaman detail anggota.';
   @override
   String get hubFieldQuotaRequired => 'Isi kuota.';
   @override
@@ -2439,6 +2297,208 @@ class _IdStrings extends AppLocalizations {
   String get hubBookingMarkUsed => 'Dipakai';
   @override
   String get hubBookingMarkedUsedToast => 'Ditandai sudah dipakai.';
+  @override
+  String get hubConnectionRequestsSection =>
+      'Permintaan koneksi menunggu verifikasi';
+  @override
+  String get hubConnectionApprove => 'Setujui';
+  @override
+  String adminSummarySubtitle(int active, int total, int ready, int trades) =>
+      '$active/$total aktif · $ready siap pinjam · $trades pertukaran kuota';
+  @override
+  String get adminSummaryActive => 'Anggota aktif';
+  @override
+  String get adminSummaryLoanReady => 'Siap pinjam';
+  @override
+  String get adminSummaryTrades => 'Pertukaran kuota';
+  @override
+  String get adminSummaryTradedKwh => 'Kuota berpindah';
+  @override
+  String get adminSummaryUtilization => 'Utilisasi hub';
+  @override
+  String get adminSummaryUtilizationHint =>
+      'Bagian kuota bulanan anggota yang sudah dipakai bulan ini.';
+  @override
+  String get adminSummaryRepayment => 'Cicilan tepat waktu';
+  @override
+  String get adminSummaryRepaymentNone => 'Belum ada cicilan yang jatuh tempo.';
+  @override
+  String adminSummaryRepaymentDetail(int ok, int due) =>
+      '$ok dari $due cicilan yang jatuh tempo';
+  @override
+  String get loanReadyBadge => 'Siap Pinjam';
+  @override
+  String get adminKpiTitle => 'Ringkasan koperasi';
+  @override
+  String get adminKpiNote =>
+      'Target proposal (95% cicilan tepat waktu, biaya energi turun 37,5%) adalah proyeksi. Hanya angka di atas yang terukur di aplikasi.';
+  @override
+  String get creditReportTitle => 'Laporan Kredit Energi';
+  @override
+  String get creditReportOpen => 'Lihat Laporan Kredit Energi';
+  @override
+  String get creditReportEmpty =>
+      'Laporan tersedia setelah skor bisa dihitung (3 bulan tercatat).';
+  @override
+  String get creditReportIntro =>
+      'Ringkasan dari data Solar Hub Anda. Skornya dihitung dengan aturan tetap yang bisa diperiksa, bukan model AI, dan bukan keputusan pinjaman.';
+  @override
+  String get creditReportCopy => 'Salin laporan';
+  @override
+  String get creditReportConsentTitle => 'Bagikan laporan ini?';
+  @override
+  String get creditReportConsentBody =>
+      'Laporan berisi skor dan ringkasan pemakaian energi Anda. Salin hanya jika Anda setuju membagikannya kepada lembaga keuangan pilihan Anda.';
+  @override
+  String get creditReportCopied =>
+      'Laporan disalin. Tempel ke pesan untuk lembaga pilihan Anda.';
+  @override
+  String get creditReportMonths => 'Pemakaian Solar Hub per bulan';
+  @override
+  String get creditReportActivity => 'Aktivitas 8 minggu terakhir';
+  @override
+  String creditReportSessions(int n, String kwh) => '$n sesi · $kwh';
+  @override
+  String get creditReportAppliances => 'Alat usaha terdaftar';
+  @override
+  String get creditReportQuota => 'Berbagi kuota';
+  @override
+  String creditReportQuotaValue(int given, int received) =>
+      'dibagikan $given · diterima $received';
+  @override
+  String get creditReportDues => 'Iuran arisan terkonfirmasi';
+  @override
+  String get creditReportInstallments => 'Cicilan tepat waktu';
+  @override
+  String creditReportInstallmentsValue(int ok, int due) =>
+      '$ok dari $due jatuh tempo';
+  @override
+  String get creditReportInstallmentsNone => 'belum ada yang jatuh tempo';
+  @override
+  String get quotaShareToAny => 'Ke siapa saja';
+  @override
+  String get quotaShareToMember => 'Ke anggota tertentu';
+  @override
+  String get quotaShareToAnyHint =>
+      'Tampil di pasar kuota. Anggota pertama yang mengambil langsung menerimanya.';
+  @override
+  String get quotaShareToMemberHint =>
+      'Dikirim hanya ke anggota yang Anda pilih. Ia bisa menerima atau menolak.';
+  @override
+  String get quotaPickMember => 'Pilih anggota penerima';
+  @override
+  String get quotaPickMemberRequired => 'Pilih anggota penerima dulu.';
+  @override
+  String get quotaGiftIncomingTitle => 'Kuota untuk Anda';
+  @override
+  String quotaGiftFrom(String name, String kwh) =>
+      '$name ingin membagikan $kwh kepada Anda';
+  @override
+  String get quotaGiftAccept => 'Terima';
+  @override
+  String get quotaGiftDecline => 'Tolak';
+  @override
+  String get quotaGiftAcceptedToast => 'Kuota diterima dan tercatat.';
+  @override
+  String get quotaGiftDeclinedToast => 'Kuota ditolak.';
+  @override
+  String quotaGiftWaiting(String name) => 'Untuk $name · menunggu jawaban';
+  @override
+  String quotaGiftSentMessage(String name) =>
+      'Terkirim ke $name. Kuota berpindah setelah ia menerimanya.';
+  @override
+  String get quotaMatchTitle => 'Cocok untuk Anda';
+  @override
+  String get quotaMatchRule =>
+      'Urutan: jumlah yang paling pas, lalu yang paling lama menunggu.';
+  @override
+  String quotaMatchShareCovers(String kwh) =>
+      'Menawarkan $kwh — cukup untuk kebutuhan Anda';
+  @override
+  String quotaMatchShareShort(String kwh, String missing) =>
+      'Menawarkan $kwh — kurang $missing dari kebutuhan Anda';
+  @override
+  String quotaMatchNeedFits(String kwh) => 'Butuh $kwh — bisa Anda penuhi';
+  @override
+  String get quotaTradedToast => 'Pertukaran tercatat.';
+  @override
+  String quotaTradeConfirm(String kwh, String name) =>
+      '$kwh dengan $name. Kuota langsung berpindah dan tercatat.';
+  @override
+  String get quotaLedgerTitle => 'Buku Kuota';
+  @override
+  String quotaLedgerGave(String name) => 'Dibagi ke $name';
+  @override
+  String quotaLedgerGot(String name) => 'Diterima dari $name';
+  @override
+  String get quotaLedgerEmpty => 'Belum ada pertukaran kuota.';
+  @override
+  String get quotaLedgerNote =>
+      'Pertukaran hanya mencatat kesepakatan antaranggota. Listrik tetap mengalir lewat limiter masing-masing.';
+  @override
+  String get hubConnectSending => 'Mengirim permintaan…';
+  @override
+  String get hubConnectScanAgain => 'Scan QR lagi';
+  @override
+  String get hubConnectApprovedTitle => 'Disetujui admin';
+  @override
+  String get hubConnectApprovedMessage =>
+      'Admin sudah menyetujui. Listrik hub mengalir sesuai kapasitas Anda.';
+  @override
+  String get hubConnectRejectedTitle => 'Ditolak admin';
+  @override
+  String get hubConnectRejectedMessage =>
+      'Permintaan Anda tidak disetujui. Hubungi admin koperasi jika ada pertanyaan.';
+  @override
+  String get hubConnectDoneTitle => 'Terverifikasi';
+  @override
+  String get hubConnectDoneMessage =>
+      'Listrik hub mengalir sesuai kapasitas Anda. Pemakaian tercatat otomatis di Catatan Listrik.';
+  @override
+  String get hubConnectBrowse => 'Lihat halaman lain';
+  @override
+  String get adminRequestsTitle => 'Verifikasi Penggunaan Hub';
+  @override
+  String get adminRequestsEmpty => 'Tidak ada permintaan yang menunggu.';
+  @override
+  String get adminRequestsIntro =>
+      'Anggota yang memindai QR hub muncul di sini. Setujui hanya jika benar-benar sedang memakai hub.';
+  @override
+  String get adminRequestsCardTitle => 'Verifikasi penggunaan hub';
+  @override
+  String get hubConnectionReject => 'Tolak';
+  @override
+  String get hubConnectionApprovedToast => 'Permintaan disetujui.';
+  @override
+  String get hubConnectionRejectedToast => 'Permintaan ditolak.';
+
+  @override
+  String get hubConnectCta => 'Scan QR Sekarang';
+  @override
+  String get hubConnectTitle => 'Sambungkan ke Solar Hub';
+  @override
+  String get hubConnectInstruction =>
+      'Arahkan kamera ke kode QR di sambungan hub Anda.';
+  @override
+  String get hubConnectWrongCode => 'QR ini bukan QR Solar Hub koperasi Anda.';
+  @override
+  String get hubConnectOffHours => 'Solar Hub sedang di luar jam operasional.';
+  @override
+  String get hubConnectSentTitle => 'Menunggu verifikasi admin';
+  @override
+  String get hubConnectSentMessage =>
+      'Permintaan Anda sudah dikirim. Admin akan memeriksa dan menyetujuinya.';
+
+  @override
+  String get adminMemberHubSection => 'Sambungan Solar Hub';
+  @override
+  String get adminMemberHubAllocation => 'Alokasi kapasitas hub';
+  @override
+  String get adminMemberHubAllocationHint => 'Kosongkan untuk pakai default';
+  @override
+  String get adminMemberHubAllocationHelper =>
+      'Kapasitas bulanan khusus anggota ini, dari rating limiter yang '
+      'terpasang. Kosongkan untuk memakai kuota default koperasi.';
 
   @override
   String get adminAnnounceTitle => 'Kirim Pengumuman';
@@ -2591,84 +2651,21 @@ class _IdStrings extends AppLocalizations {
   @override
   String get solarWeatherSource => 'Sumber: BMKG (data.bmkg.go.id)';
   @override
-  String get solarWeatherPassedTitle => 'Jam terbaik hari ini sudah lewat';
+  String solarWeatherScore(int score, int tempC) =>
+      'Skor produksi $score/100 · $tempC°C';
   @override
-  String solarWeatherPassedWindow(String window) => 'Tadi jam $window.';
+  String get solarWeatherRainNote =>
+      'BMKG memperkirakan hujan — skor dikurangi.';
+  @override
+  String get solarBookingBestWeather => 'Jam terbaik cuaca';
+  @override
+  String get solarWeatherPassedTitle => 'Jam terbaik hari ini sudah lewat';
   @override
   String get solarWeatherPassedHint => 'Coba lagi besok pagi.';
   @override
-  String solarWeatherTomorrowWindow(String window) => 'Besok $window';
+  String get solarWeatherTomorrowTitle => 'Jam terbaik untuk produksi besok';
 
   // Solar panel QR scan (demo)
-  @override
-  String get solarQrScanTitle => 'Scan QR Solar Panel';
-  @override
-  String get solarQrUnrecognized => 'QR Solar Panel tidak dikenali.';
-  @override
-  String get solarQrReading => 'Membaca QR...';
-  @override
-  String get solarQrInstruction => 'Arahkan kamera ke QR Code pada solar panel';
-  @override
-  String get solarScanResultTitle => 'Hasil Scan Solar Panel';
-  @override
-  String get solarScanContinueToBooking => 'Lanjut ke Booking Solar Hub';
-  @override
-  String get solarScanNotRecommended => 'Solar Hub Belum Direkomendasikan';
-  @override
-  String get solarScanSunSection => 'Paparan Matahari';
-  @override
-  String get solarScanExposureQuality => 'Kualitas paparan';
-  @override
-  String get solarScanSensorAccuracy => 'Akurasi sensor';
-  @override
-  String get solarScanRoofSection => 'Data Atap';
-  @override
-  String get solarScanRoofArea => 'Luas atap';
-  @override
-  String get solarScanRoofSlope => 'Kemiringan atap';
-  @override
-  String get solarScanSavingsSection => 'Estimasi Penghematan';
-  @override
-  String get solarScanSavingsPerMonth => 'Hemat per bulan';
-  @override
-  String solarScanPerMonth(String amount) => '$amount / bulan';
-  @override
-  String get solarScanSavingsPerYear => 'Hemat per tahun';
-  @override
-  String get solarScanTipsTitle => 'Tips IbuDaya';
-  @override
-  String get solarScanSunExcellent => 'Sangat Baik';
-  @override
-  String get solarScanSunGood => 'Baik';
-  @override
-  String get solarScanSunLow => 'Rendah';
-  @override
-  String get solarScanAccuracyOptimal => 'Optimal';
-  @override
-  String get solarScanAccuracyVeryGood => 'Sangat Baik';
-  @override
-  String get solarScanAccuracyGood => 'Baik';
-  @override
-  String get solarScanStatusHealthy => 'Cocok untuk Solar Hub';
-  @override
-  String get solarScanStatusWarning => 'Perlu Optimasi';
-  @override
-  String get solarScanStatusPoor => 'Belum Direkomendasikan';
-  @override
-  String get solarScanTipHealthy =>
-      'Lokasi sangat cocok untuk Solar Hub.\nPotensi penghematan tinggi.';
-  @override
-  String get solarScanTipWarning =>
-      'Masih layak digunakan,\nnamun efisiensi belum optimal.';
-  @override
-  String get solarScanTipPoor =>
-      'Paparan matahari rendah.\nDisarankan evaluasi lokasi pemasangan.';
-  @override
-  String get solarScanPillVeryFeasible => 'Sangat Layak';
-  @override
-  String get solarScanPillNeedsOptimization => 'Perlu Optimasi';
-  @override
-  String get solarScanPillLessFeasible => 'Kurang Layak';
 
   @override
   String get creditBandPerluPeningkatan => 'Perlu Peningkatan';
@@ -2731,9 +2728,10 @@ class _IdStrings extends AppLocalizations {
   String obsConfirmBookingBody(int count) =>
       '$count jadwal sudah lewat. Tandai sudah dipakai agar penghematan tercatat.';
   @override
-  String get obsScanBillTitle => 'Scan tagihan bulan ini';
+  String get obsUseHubTitle => 'Pakai Solar Hub bulan ini';
   @override
-  String get obsScanBillBody => 'Belum ada catatan listrik bulan ini.';
+  String get obsUseHubBody =>
+      'Belum ada catatan listrik bulan ini — pakai hub agar tercatat otomatis.';
   @override
   String get obsNoApplianceTitle => 'Daftarkan alat usaha';
   @override
@@ -2838,6 +2836,8 @@ class _IdStrings extends AppLocalizations {
   @override
   String get paymentTypePayout => 'Pencairan giliran';
   @override
+  String get bookingStatusPendingVerification => 'Menunggu verifikasi';
+  @override
   String get bookingStatusBooked => 'Terjadwal';
   @override
   String get bookingStatusCompleted => 'Sudah dipakai';
@@ -2886,7 +2886,7 @@ class _IdStrings extends AppLocalizations {
   String arisanPayoutInfo(String name, String amount) =>
       'Arisan bulan ini sudah dicairkan ke $name ($amount).';
   @override
-  String get arisanEnergyTrading => 'Perdagangan Energi';
+  String get arisanEnergyTrading => 'Arisan Energi';
   @override
   String get arisanEnergyTradingSub =>
       'Bagikan sisa kuota Solar Hub ke sesama anggota, atau minta saat butuh.';
@@ -2924,10 +2924,10 @@ class _IdStrings extends AppLocalizations {
   @override
   String get scoreRecordsEnough => 'Catatan listrik cukup';
   @override
-  String scoreScanMoreMonths(int n) => 'Scan tagihan $n bulan lagi';
+  String scoreUseHubMoreMonths(int n) => 'Pakai Solar Hub $n bulan lagi';
   @override
-  String get scoreScanMoreMonthsSubtitle =>
-      'Bisa juga dari tagihan bulan-bulan sebelumnya.';
+  String get scoreUseHubMoreMonthsSubtitle =>
+      'Catatan listrik terisi otomatis setiap sesi Solar Hub selesai.';
   @override
   String get scoreInArisan => 'Sudah ikut arisan';
   @override
@@ -2973,7 +2973,7 @@ class _IdStrings extends AppLocalizations {
   String get eligibilityNone => 'Anda bisa mengajukan hingga plafon ini.';
   @override
   String get eligibilityNotEnoughHistory =>
-      'Catat tagihan atau token minimal 3 bulan agar skor bisa dihitung.';
+      'Pakai Solar Hub minimal 3 bulan agar skor bisa dihitung.';
   @override
   String get eligibilityScoreTooLow =>
       'Skor Anda belum mencapai batas minimum yang ditetapkan koperasi.';
@@ -2998,6 +2998,8 @@ class _EnStrings extends AppLocalizations {
   // Nav
   @override
   String get navHome => 'Home';
+  @override
+  String get navRecords => 'Records';
   @override
   String get navSolarHub => 'Solar Hub';
   @override
@@ -3056,8 +3058,6 @@ class _EnStrings extends AppLocalizations {
   String get actionApply => 'Apply';
   @override
   String get actionUploadGallery => 'Upload from Gallery';
-  @override
-  String get actionScan => 'Scan';
 
   // Labels
   @override
@@ -3162,8 +3162,6 @@ class _EnStrings extends AppLocalizations {
   @override
   String get threadMessageHint => 'Write a message…';
   @override
-  String get energyDeletedToast => 'Record deleted.';
-  @override
   String get energyKindToken => 'Electricity Token';
   @override
   String get energyKindBill => 'Monthly Bill';
@@ -3236,9 +3234,6 @@ class _EnStrings extends AppLocalizations {
   @override
   String get welcomeHeadline =>
       'Manage your business energy with your cooperative';
-  @override
-  String get welcomeFeatureScan =>
-      'Scan your electricity bill, find your highest-consuming appliances';
   @override
   String get welcomeFeatureSolar =>
       'Book Solar Hub time slots at your cooperative';
@@ -3433,7 +3428,7 @@ class _EnStrings extends AppLocalizations {
   @override
   String get scaffoldBookings => 'Solar Hub Schedule';
   @override
-  String get scaffoldArisan => 'Energy Arisan';
+  String get scaffoldArisan => 'Cooperative Arisan';
   @override
   String get scaffoldQuota => 'Quota Market';
   @override
@@ -3446,8 +3441,6 @@ class _EnStrings extends AppLocalizations {
   String get scaffoldLoanDetail => 'Financing Details';
   @override
   String get scaffoldLoanApply => 'Apply for Financing';
-  @override
-  String get scaffoldScan => 'Scan Bill';
   @override
   String get scaffoldMessages => 'Messages';
   @override
@@ -3503,9 +3496,9 @@ class _EnStrings extends AppLocalizations {
   @override
   String get homeBookingHub => 'Book Hub';
   @override
-  String get homeArisanEnergi => 'Energy Arisan';
+  String get homeArisanEnergi => 'Cooperative Arisan';
   @override
-  String get homeTukarKuota => 'Swap Quota';
+  String get homeTukarKuota => 'Arisan Energi';
   @override
   String get homeSkorKredit => 'Credit Score';
   @override
@@ -3612,11 +3605,10 @@ class _EnStrings extends AppLocalizations {
   String get energyEmpty => 'No records yet';
   @override
   String get energyEmptyMessage =>
-      'Record your first PLN bill to start tracking usage.';
+      'Records appear automatically after your Solar Hub session is confirmed by the admin.';
   @override
-  String get energyScanCta => 'Scan Bill';
-  @override
-  String get energyAddManual => 'Add manually';
+  String get energyAutoNote =>
+      'Recorded automatically by the Solar Hub. If something looks wrong, contact your cooperative admin.';
   @override
   String get energyMonth => 'Month';
   @override
@@ -3626,28 +3618,11 @@ class _EnStrings extends AppLocalizations {
   @override
   String get energyTariff => 'Tariff';
   @override
-  String get energyFormTitle => 'Electricity Record';
+  String get energySourceHub => 'Automatic (Hub)';
   @override
-  String get energyFormMonth => 'Billing month';
-  @override
-  String get energyFormKwh => 'Usage (kWh)';
-  @override
-  String get energyFormBill => 'Total bill (Rp)';
-  @override
-  String get energyFormSource => 'Data source';
-  @override
-  String get energyFormSourceManual => 'Manual entry';
-  @override
-  String get energyFormSourceScan => 'From scan';
-  @override
-  String get energyFormNote => 'Additional notes';
+  String get energySourceManual => 'Manual';
   @override
   String get energySaveSuccess => 'Electricity record saved.';
-  @override
-  String get energyDeleteConfirmTitle => 'Delete record?';
-  @override
-  String get energyDeleteConfirmBody =>
-      'This month\'s record will be permanently deleted.';
   @override
   String get energyAnalysisTitle => 'Energy Analysis';
   @override
@@ -3659,55 +3634,6 @@ class _EnStrings extends AppLocalizations {
   String get energyAnalysisTrend => 'Usage Trend';
   @override
   String get energyAnalysisContributors => 'Power Contributors';
-
-  @override
-  String get energyFormKindBill => 'Bill';
-  @override
-  String get energyFormKindToken => 'Token';
-  @override
-  String get energyFormKindHelpBill => 'Postpaid: PLN\'s monthly bill.';
-  @override
-  String get energyFormKindHelpToken =>
-      'Prepaid: token purchase receipt. Multiple tokens in a month are added together.';
-  @override
-  String get energyFormMonthToken => 'Purchase month';
-  @override
-  String get energyFormReplaceWarning =>
-      'This month\'s bill is already recorded. Saving will replace it.';
-  @override
-  String get energyFormKwhLabelBill => 'Electricity usage';
-  @override
-  String get energyFormKwhLabelToken => 'Token kWh amount';
-  @override
-  String get energyFormKwhHint => 'e.g. 128';
-  @override
-  String get energyFormKwhHelpBill =>
-      'See "Usage" or the meter-reading difference.';
-  @override
-  String get energyFormKwhHelpToken => 'See "kWh Amount" on the receipt.';
-  @override
-  String get energyFormKwhValidatorEmpty => 'Enter the kWh amount.';
-  @override
-  String get energyFormKwhValidatorTooLarge =>
-      'Number is too large. Check again.';
-  @override
-  String get energyFormBillLabelBill => 'Total bill';
-  @override
-  String get energyFormBillLabelToken => 'Total paid';
-  @override
-  String get energyFormBillHint => 'e.g. 185,000';
-  @override
-  String get energyFormBillValidator => 'Enter the total amount.';
-  @override
-  String get energyFormCustomerIdLabel => 'Customer ID (optional)';
-  @override
-  String energyFormPerKwhTitle(String price) => 'Price per kWh: $price';
-  @override
-  String energyFormPerKwhSuspicious(String tariff) =>
-      'Far from your tariff ($tariff/kWh). Check the kWh and total again.';
-  @override
-  String energyFormPerKwhOk(String tariff) =>
-      'Matches your tariff ($tariff/kWh).';
 
   @override
   String get scanAnalysisSubtitle =>
@@ -3725,9 +3651,11 @@ class _EnStrings extends AppLocalizations {
   String get scanAnalysisInsightTitle => 'Key Insight';
   @override
   String get scanAnalysisEmptyMessage =>
-      'Scan your first electricity bill to see its analysis.';
+      'Use the Solar Hub to start recording your electricity usage, then see its analysis here.';
   @override
   String get scanAnalysisCtaSolarHub => 'View Solar Hub Schedule';
+  @override
+  String get energyAnalysisUseSolarHub => 'Use Solar Hub';
   @override
   String get scanAnalysisLoadingSubtitle =>
       'Please wait, the system is processing your bill data...';
@@ -3743,20 +3671,6 @@ class _EnStrings extends AppLocalizations {
   String get scanStep4 => 'Building savings recommendations...';
   @override
   String get scanStep5 => 'Analysis complete';
-  @override
-  String get solarScanBadge => 'Solar Scanner';
-  @override
-  String get solarScanTitle => 'Analysing solar panel...';
-  @override
-  String get solarScanStep1 => 'QR code read';
-  @override
-  String get solarScanStep2 => 'Checking panel condition';
-  @override
-  String get solarScanStep3 => 'Calculating sun exposure';
-  @override
-  String get solarScanStep4 => 'Estimating savings';
-  @override
-  String get solarScanStep5 => 'Preparing recommendation';
 
   // Appliances
   @override
@@ -3796,7 +3710,8 @@ class _EnStrings extends AppLocalizations {
   @override
   String get applianceFormWattRequired => 'Enter the power in watts.';
   @override
-  String get applianceFormWattTooLarge => 'Too large for a household appliance.';
+  String get applianceFormWattTooLarge =>
+      'Too large for a household appliance.';
   @override
   String get applianceFormWattHelper =>
       'Check the sticker on the appliance. The first number is the typical rating.';
@@ -3806,46 +3721,6 @@ class _EnStrings extends AppLocalizations {
   String get applianceMonthlyCostLabel => 'Cost';
   @override
   String applianceHoursValue(String hours) => '$hours hours';
-
-  // Scan Bill
-  @override
-  String get scanTitle => 'Scan Bill';
-  @override
-  String get scanInstruction =>
-      'Point your camera at the PLN bill or token receipt.';
-  @override
-  String get scanScanning => 'Reading bill…';
-  @override
-  String get scanResult => 'Scan Result';
-  @override
-  String get scanKwh => 'kWh';
-  @override
-  String get scanBill => 'Total bill';
-  @override
-  String get scanMonth => 'Month';
-  @override
-  String get scanConfirm => 'Save & continue';
-  @override
-  String get scanRetry => 'Try again';
-  @override
-  String get scanSaved => 'Record saved successfully.';
-  @override
-  String get scanPickGallery => 'Upload from Gallery';
-  @override
-  String get scanErrorNoData => 'No data could be read from this image.';
-  @override
-  String get scanDemoAction => 'Demo Code';
-  @override
-  String get scanDemoTitle => 'Scan Demo Barcode';
-  @override
-  String get scanDemoInstruction =>
-      'Point the camera at the meter barcode or a demo code.';
-  @override
-  String get scanDemoReading => 'Reading barcode…';
-  @override
-  String get scanDemoInvalid => 'This is not an IbuDaya demo barcode.';
-  @override
-  String get scanDemoApplied => 'Demo data applied.';
 
   @override
   String get captureTorchOn => 'Turn on flash';
@@ -3869,12 +3744,6 @@ class _EnStrings extends AppLocalizations {
   String get captureShootSemanticLabel => 'Take photo';
   @override
   String get captureDefaultBusyLabel => 'Processing…';
-  @override
-  String get scanTipBrightSpot => 'Bright spot, no shadows';
-  @override
-  String get scanTipFullFrame => 'The whole receipt fits the frame';
-  @override
-  String get scanTipHoldSteady => 'Hold steady until the text is clear';
 
   // Solar
   @override
@@ -3927,7 +3796,7 @@ class _EnStrings extends AppLocalizations {
 
   // Arisan
   @override
-  String get arisanTitle => 'Energy Arisan';
+  String get arisanTitle => 'Cooperative Arisan';
   @override
   String get arisanNoGroup => 'Not yet in an arisan group';
   @override
@@ -4168,12 +4037,6 @@ class _EnStrings extends AppLocalizations {
   @override
   String get arisanQuotaSentToast => 'Sent.';
   @override
-  String get solarQrCardTitle => 'Scan Solar Panel QR';
-  @override
-  String get solarQrCardSubtitle => 'See the panel status live via QR code';
-  @override
-  String get solarQrCardAction => 'Scan Now';
-  @override
   String get bookingCancelledToast => 'Booking cancelled.';
   @override
   String get bookingRecordedToast => 'Recorded.';
@@ -4384,10 +4247,11 @@ class _EnStrings extends AppLocalizations {
       'real weather on the member Solar Hub screen. Leave it blank if you '
       "don't know the code yet; the panel stays hidden until it's filled in.";
   @override
-  String get hubFieldQuota => 'Monthly quota per member';
+  String get hubFieldQuota => 'Default monthly quota per member';
   @override
   String get hubFieldQuotaHelper =>
-      'The hub energy limit one member may book in a month.';
+      "Used when a member doesn't have her own capacity allocation. Set a "
+      'per-member allocation on her member detail page.';
   @override
   String get hubFieldQuotaRequired => 'Enter the quota.';
   @override
@@ -4417,6 +4281,210 @@ class _EnStrings extends AppLocalizations {
   String get hubBookingMarkUsed => 'Used';
   @override
   String get hubBookingMarkedUsedToast => 'Marked as used.';
+  @override
+  String get hubConnectionRequestsSection =>
+      'Connection requests awaiting verification';
+  @override
+  String get hubConnectionApprove => 'Approve';
+  @override
+  String adminSummarySubtitle(int active, int total, int ready, int trades) =>
+      '$active/$total active · $ready loan-ready · $trades quota trades';
+  @override
+  String get adminSummaryActive => 'Active members';
+  @override
+  String get adminSummaryLoanReady => 'Loan-ready';
+  @override
+  String get adminSummaryTrades => 'Quota trades';
+  @override
+  String get adminSummaryTradedKwh => 'Quota moved';
+  @override
+  String get adminSummaryUtilization => 'Hub utilisation';
+  @override
+  String get adminSummaryUtilizationHint =>
+      'Share of members\' monthly quota used this month.';
+  @override
+  String get adminSummaryRepayment => 'Installments on time';
+  @override
+  String get adminSummaryRepaymentNone =>
+      'No installments have fallen due yet.';
+  @override
+  String adminSummaryRepaymentDetail(int ok, int due) =>
+      '$ok of $due installments that fell due';
+  @override
+  String get loanReadyBadge => 'Loan-ready';
+  @override
+  String get adminKpiTitle => 'Cooperative summary';
+  @override
+  String get adminKpiNote =>
+      'The proposal\'s targets (95% on-time repayment, 37.5% lower energy cost) are projections. Only the figures above are measured in the app.';
+  @override
+  String get creditReportTitle => 'Energy Credit Report';
+  @override
+  String get creditReportOpen => 'View Energy Credit Report';
+  @override
+  String get creditReportEmpty =>
+      'The report is available once your score can be calculated (3 recorded months).';
+  @override
+  String get creditReportIntro =>
+      'A summary of your Solar Hub data. The score uses fixed, inspectable rules, not an AI model, and is not a loan decision.';
+  @override
+  String get creditReportCopy => 'Copy report';
+  @override
+  String get creditReportConsentTitle => 'Share this report?';
+  @override
+  String get creditReportConsentBody =>
+      'The report contains your score and energy usage summary. Copy it only if you agree to share it with a financial institution of your choice.';
+  @override
+  String get creditReportCopied =>
+      'Report copied. Paste it into a message to the institution of your choice.';
+  @override
+  String get creditReportMonths => 'Solar Hub usage per month';
+  @override
+  String get creditReportActivity => 'Last 8 weeks';
+  @override
+  String creditReportSessions(int n, String kwh) => '$n sessions · $kwh';
+  @override
+  String get creditReportAppliances => 'Registered appliances';
+  @override
+  String get creditReportQuota => 'Quota sharing';
+  @override
+  String creditReportQuotaValue(int given, int received) =>
+      'shared $given · received $received';
+  @override
+  String get creditReportDues => 'Confirmed arisan dues';
+  @override
+  String get creditReportInstallments => 'Installments on time';
+  @override
+  String creditReportInstallmentsValue(int ok, int due) => '$ok of $due due';
+  @override
+  String get creditReportInstallmentsNone => 'none due yet';
+  @override
+  String get quotaShareToAny => 'To anyone';
+  @override
+  String get quotaShareToMember => 'To a specific member';
+  @override
+  String get quotaShareToAnyHint =>
+      'Shown in the quota market. The first member to take it receives it right away.';
+  @override
+  String get quotaShareToMemberHint =>
+      'Sent only to the member you pick. She can accept or decline.';
+  @override
+  String get quotaPickMember => 'Choose the receiving member';
+  @override
+  String get quotaPickMemberRequired => 'Choose a receiving member first.';
+  @override
+  String get quotaGiftIncomingTitle => 'Quota for you';
+  @override
+  String quotaGiftFrom(String name, String kwh) =>
+      '$name wants to share $kwh with you';
+  @override
+  String get quotaGiftAccept => 'Accept';
+  @override
+  String get quotaGiftDecline => 'Decline';
+  @override
+  String get quotaGiftAcceptedToast => 'Quota accepted and recorded.';
+  @override
+  String get quotaGiftDeclinedToast => 'Quota declined.';
+  @override
+  String quotaGiftWaiting(String name) => 'For $name · waiting for an answer';
+  @override
+  String quotaGiftSentMessage(String name) =>
+      'Sent to $name. The quota moves once she accepts.';
+  @override
+  String get quotaMatchTitle => 'A good match for you';
+  @override
+  String get quotaMatchRule =>
+      'Order: best-fitting amount first, then whoever has waited longest.';
+  @override
+  String quotaMatchShareCovers(String kwh) =>
+      'Offers $kwh — covers what you need';
+  @override
+  String quotaMatchShareShort(String kwh, String missing) =>
+      'Offers $kwh — $missing short of what you need';
+  @override
+  String quotaMatchNeedFits(String kwh) => 'Needs $kwh — you can cover it';
+  @override
+  String get quotaTradedToast => 'Trade recorded.';
+  @override
+  String quotaTradeConfirm(String kwh, String name) =>
+      '$kwh with $name. The quota moves right away and is recorded.';
+  @override
+  String get quotaLedgerTitle => 'Quota ledger';
+  @override
+  String quotaLedgerGave(String name) => 'Shared with $name';
+  @override
+  String quotaLedgerGot(String name) => 'Received from $name';
+  @override
+  String get quotaLedgerEmpty => 'No quota trades yet.';
+  @override
+  String get quotaLedgerNote =>
+      'A trade only records an agreement between members. Power still flows through each member\'s limiter.';
+  @override
+  String get hubConnectSending => 'Sending request…';
+  @override
+  String get hubConnectScanAgain => 'Scan again';
+  @override
+  String get hubConnectApprovedTitle => 'Approved by admin';
+  @override
+  String get hubConnectApprovedMessage =>
+      'The admin approved. The hub is supplying power within your capacity.';
+  @override
+  String get hubConnectRejectedTitle => 'Rejected by admin';
+  @override
+  String get hubConnectRejectedMessage =>
+      'Your request wasn\'t approved. Contact your cooperative admin if you have questions.';
+  @override
+  String get hubConnectDoneTitle => 'Verified';
+  @override
+  String get hubConnectDoneMessage =>
+      'The hub is supplying power within your capacity. Usage was recorded automatically in Electricity Records.';
+  @override
+  String get hubConnectBrowse => 'Browse the app';
+  @override
+  String get adminRequestsTitle => 'Hub Usage Verification';
+  @override
+  String get adminRequestsEmpty => 'No requests waiting.';
+  @override
+  String get adminRequestsIntro =>
+      'Members who scan the hub QR appear here. Approve only if they are really using the hub.';
+  @override
+  String get adminRequestsCardTitle => 'Hub usage verification';
+  @override
+  String get hubConnectionReject => 'Reject';
+  @override
+  String get hubConnectionApprovedToast => 'Request approved.';
+  @override
+  String get hubConnectionRejectedToast => 'Request rejected.';
+
+  @override
+  String get hubConnectCta => 'Scan QR Now';
+  @override
+  String get hubConnectTitle => 'Connect to Solar Hub';
+  @override
+  String get hubConnectInstruction =>
+      'Point your camera at the QR code on your hub connection.';
+  @override
+  String get hubConnectWrongCode =>
+      'This isn\'t your cooperative\'s Solar Hub QR.';
+  @override
+  String get hubConnectOffHours =>
+      'The Solar Hub is currently outside its operating hours.';
+  @override
+  String get hubConnectSentTitle => 'Waiting for admin verification';
+  @override
+  String get hubConnectSentMessage =>
+      'Your request has been sent. The admin will review and approve it.';
+
+  @override
+  String get adminMemberHubSection => 'Solar Hub Connection';
+  @override
+  String get adminMemberHubAllocation => 'Hub capacity allocation';
+  @override
+  String get adminMemberHubAllocationHint => 'Leave blank to use the default';
+  @override
+  String get adminMemberHubAllocationHelper =>
+      "This member's own monthly capacity, from her installed limiter's "
+      "rating. Leave blank to use the cooperative's default quota.";
 
   @override
   String get adminAnnounceTitle => 'Send Announcement';
@@ -4569,84 +4637,20 @@ class _EnStrings extends AppLocalizations {
   @override
   String get solarWeatherSource => 'Source: BMKG (data.bmkg.go.id)';
   @override
-  String get solarWeatherPassedTitle => 'Today\'s best hours have passed';
+  String solarWeatherScore(int score, int tempC) =>
+      'Production score $score/100 · $tempC°C';
   @override
-  String solarWeatherPassedWindow(String window) => 'It was $window.';
+  String get solarWeatherRainNote => 'BMKG forecasts rain — score reduced.';
+  @override
+  String get solarBookingBestWeather => 'Best weather hours';
+  @override
+  String get solarWeatherPassedTitle => 'Today\'s best hours have passed';
   @override
   String get solarWeatherPassedHint => 'Check again tomorrow morning.';
   @override
-  String solarWeatherTomorrowWindow(String window) => 'Tomorrow $window';
+  String get solarWeatherTomorrowTitle => 'Best production window tomorrow';
 
   // Solar panel QR scan (demo)
-  @override
-  String get solarQrScanTitle => 'Scan Solar Panel QR';
-  @override
-  String get solarQrUnrecognized => 'Solar panel QR code not recognized.';
-  @override
-  String get solarQrReading => 'Reading QR...';
-  @override
-  String get solarQrInstruction => 'Point the camera at the solar panel QR code';
-  @override
-  String get solarScanResultTitle => 'Solar Panel Scan Result';
-  @override
-  String get solarScanContinueToBooking => 'Continue to Solar Hub Booking';
-  @override
-  String get solarScanNotRecommended => 'Solar Hub Not Yet Recommended';
-  @override
-  String get solarScanSunSection => 'Sun Exposure';
-  @override
-  String get solarScanExposureQuality => 'Exposure quality';
-  @override
-  String get solarScanSensorAccuracy => 'Sensor accuracy';
-  @override
-  String get solarScanRoofSection => 'Roof Data';
-  @override
-  String get solarScanRoofArea => 'Roof area';
-  @override
-  String get solarScanRoofSlope => 'Roof slope';
-  @override
-  String get solarScanSavingsSection => 'Estimated Savings';
-  @override
-  String get solarScanSavingsPerMonth => 'Savings per month';
-  @override
-  String solarScanPerMonth(String amount) => '$amount / month';
-  @override
-  String get solarScanSavingsPerYear => 'Savings per year';
-  @override
-  String get solarScanTipsTitle => 'IbuDaya Tips';
-  @override
-  String get solarScanSunExcellent => 'Excellent';
-  @override
-  String get solarScanSunGood => 'Good';
-  @override
-  String get solarScanSunLow => 'Low';
-  @override
-  String get solarScanAccuracyOptimal => 'Optimal';
-  @override
-  String get solarScanAccuracyVeryGood => 'Very good';
-  @override
-  String get solarScanAccuracyGood => 'Good';
-  @override
-  String get solarScanStatusHealthy => 'Suitable for Solar Hub';
-  @override
-  String get solarScanStatusWarning => 'Needs Optimization';
-  @override
-  String get solarScanStatusPoor => 'Not Yet Recommended';
-  @override
-  String get solarScanTipHealthy =>
-      'This location is a great fit for a Solar Hub.\nHigh savings potential.';
-  @override
-  String get solarScanTipWarning =>
-      'Still usable,\nbut efficiency is not yet optimal.';
-  @override
-  String get solarScanTipPoor =>
-      'Low sun exposure.\nConsider re-evaluating the installation site.';
-  @override
-  String get solarScanPillVeryFeasible => 'Very Feasible';
-  @override
-  String get solarScanPillNeedsOptimization => 'Needs Optimization';
-  @override
-  String get solarScanPillLessFeasible => 'Less Feasible';
 
   @override
   String get creditBandPerluPeningkatan => 'Needs Improvement';
@@ -4709,9 +4713,10 @@ class _EnStrings extends AppLocalizations {
   String obsConfirmBookingBody(int count) =>
       '$count schedule(s) passed. Mark as used to log savings.';
   @override
-  String get obsScanBillTitle => 'Scan this month\'s bill';
+  String get obsUseHubTitle => 'Use the Solar Hub this month';
   @override
-  String get obsScanBillBody => 'No electricity records for this month yet.';
+  String get obsUseHubBody =>
+      'No electricity records for this month yet — use the hub so they log automatically.';
   @override
   String get obsNoApplianceTitle => 'Register business appliances';
   @override
@@ -4817,6 +4822,8 @@ class _EnStrings extends AppLocalizations {
   @override
   String get paymentTypePayout => 'Turn payout';
   @override
+  String get bookingStatusPendingVerification => 'Pending verification';
+  @override
   String get bookingStatusBooked => 'Scheduled';
   @override
   String get bookingStatusCompleted => 'Completed';
@@ -4865,7 +4872,7 @@ class _EnStrings extends AppLocalizations {
   String arisanPayoutInfo(String name, String amount) =>
       'This month\'s arisan payout has been disbursed to $name ($amount).';
   @override
-  String get arisanEnergyTrading => 'Energy Trading';
+  String get arisanEnergyTrading => 'Energy Arisan';
   @override
   String get arisanEnergyTradingSub =>
       'Share remaining Solar Hub quota with fellow members, or request when needed.';
@@ -4902,11 +4909,11 @@ class _EnStrings extends AppLocalizations {
   @override
   String get scoreRecordsEnough => 'Sufficient electricity records';
   @override
-  String scoreScanMoreMonths(int n) =>
-      'Scan bills for $n more month${n == 1 ? '' : 's'}';
+  String scoreUseHubMoreMonths(int n) =>
+      'Use the Solar Hub for $n more month${n == 1 ? '' : 's'}';
   @override
-  String get scoreScanMoreMonthsSubtitle =>
-      'Can also be from previous months\' bills.';
+  String get scoreUseHubMoreMonthsSubtitle =>
+      'Your electricity record fills in automatically after each Solar Hub session.';
   @override
   String get scoreInArisan => 'Already in arisan';
   @override
@@ -4953,7 +4960,7 @@ class _EnStrings extends AppLocalizations {
   String get eligibilityNone => 'You can apply up to this ceiling.';
   @override
   String get eligibilityNotEnoughHistory =>
-      'Record bills or tokens for at least 3 months to calculate your score.';
+      'Use the Solar Hub for at least 3 months to calculate your score.';
   @override
   String get eligibilityScoreTooLow =>
       'Your score has not met the minimum threshold set by the cooperative.';

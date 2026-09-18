@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ibudaya/core/hub_qr.dart';
 import 'package:ibudaya/core/db/local_database.dart';
 import 'package:ibudaya/core/errors.dart';
 import 'package:ibudaya/core/models/models.dart';
@@ -145,6 +146,101 @@ void main() {
     );
   });
 
+  test(
+    'a pendingVerification request reserves capacity like a real booking',
+    () async {
+      final solar = LocalSolarRepository(db, clock);
+      final clara = await login(SampleSeeder.memberPhone);
+
+      final request = await solar.requestConnection(
+        me: clara,
+        scannedCode: kSolarHubQr,
+        applianceName: 'Oven',
+        estKwh: 3,
+      );
+      expect(request.status, BookingStatus.pendingVerification);
+
+      final data = await snapshots.load(clara);
+      final availability = data
+          .availabilityOn(request.bookingDate)
+          .firstWhere((a) => a.slot.id == request.slotId);
+      expect(availability.bookedKwh, greaterThanOrEqualTo(3));
+
+      await expectLater(
+        solar.book(
+          me: clara,
+          slotId: request.slotId,
+          date: request.bookingDate,
+          applianceName: 'Setrika',
+          estKwh: availability.remainingKwh + 10,
+        ),
+        throwsA(isA<AppException>()),
+        reason: 'the pending request already reserved part of this slot',
+      );
+    },
+  );
+
+  test("requestConnection rejects a QR that is not the hub's", () async {
+    final solar = LocalSolarRepository(db, clock);
+    final clara = await login(SampleSeeder.memberPhone);
+
+    await expectLater(
+      solar.requestConnection(
+        me: clara,
+        scannedCode: 'NOT-THE-HUB-QR',
+        applianceName: 'Oven',
+        estKwh: 3,
+      ),
+      throwsA(isA<AppException>()),
+    );
+  });
+
+  test(
+    "a member's own hub allocation overrides the cooperative default",
+    () async {
+      final solar = LocalSolarRepository(db, clock);
+      final admin = await login(SampleSeeder.adminPhone);
+      var clara = await login(SampleSeeder.memberPhone);
+      final existingBooked = (await snapshots.load(
+        clara,
+      )).quotaOf(clara.id, now).bookedKwh;
+      final tomorrow = DateTime(2026, 9, 12);
+      final data = await snapshots.load(clara);
+      final slot = data.orderedSlots[1];
+
+      clara = await solar.setMemberHubAllocation(
+        admin: admin,
+        memberId: clara.id,
+        allocationKwh: existingBooked + 1,
+      );
+      await expectLater(
+        solar.book(
+          me: clara,
+          slotId: slot.id,
+          date: tomorrow,
+          applianceName: 'Oven',
+          estKwh: 3,
+        ),
+        throwsA(isA<AppException>()),
+        reason: 'her own low allocation overrides the higher coop default',
+      );
+
+      clara = await solar.setMemberHubAllocation(
+        admin: admin,
+        memberId: clara.id,
+        allocationKwh: existingBooked + 10,
+      );
+      final booking = await solar.book(
+        me: clara,
+        slotId: slot.id,
+        date: tomorrow,
+        applianceName: 'Oven',
+        estKwh: 3,
+      );
+      expect(booking.status, BookingStatus.booked);
+    },
+  );
+
   test('arisan dues wait for the admin to confirm', () async {
     final arisan = LocalArisanRepository(db, clock);
     final lina = await login('081200000004');
@@ -198,5 +294,189 @@ void main() {
         ),
       ),
     );
+  });
+
+  test('answering a quota post completes the trade at once', () async {
+    final arisan = LocalArisanRepository(db, clock);
+    final clara = await login(SampleSeeder.memberPhone);
+    final data = await snapshots.load(clara);
+    final open = data.offers.firstWhere(
+      (o) =>
+          o.kind == QuotaKind.share &&
+          o.status == QuotaStatus.open &&
+          o.ownerId != clara.id,
+    );
+    final before = data.quotaOf(clara.id, now);
+
+    await arisan.respondToQuota(me: clara, offerId: open.id);
+
+    final after = await snapshots.load(clara);
+    final done = after.offers.firstWhere((o) => o.id == open.id);
+    expect(done.status, QuotaStatus.completed);
+    expect(done.counterpartyId, clara.id);
+    expect(
+      after.quotaOf(clara.id, now).receivedKwh,
+      closeTo(before.receivedKwh + open.kwh, 1e-9),
+    );
+
+    await expectLater(
+      arisan.respondToQuota(me: clara, offerId: open.id),
+      throwsA(isA<AppException>()),
+      reason: 'a post can only be answered once',
+    );
+  });
+
+  test('a need is answered only by a member who can afford to give', () async {
+    final arisan = LocalArisanRepository(db, clock);
+    final clara = await login(SampleSeeder.memberPhone);
+    final need = (await snapshots.load(clara)).offers.firstWhere(
+      (o) => o.kind == QuotaKind.need && o.status == QuotaStatus.open,
+    );
+    final before = (await snapshots.load(clara)).quotaOf(clara.id, now);
+
+    await arisan.respondToQuota(me: clara, offerId: need.id);
+
+    final after = (await snapshots.load(clara)).quotaOf(clara.id, now);
+    expect(after.givenKwh, closeTo(before.givenKwh + need.kwh, 1e-9));
+  });
+
+  group('sending quota to a specific member', () {
+    test('waits for her, then moves quota when she accepts', () async {
+      final arisan = LocalArisanRepository(db, clock);
+      final siti = await login('081200000003');
+      final clara = await login(SampleSeeder.memberPhone);
+      final beforeSiti = (await snapshots.load(siti)).quotaOf(siti.id, now);
+      final beforeClara = (await snapshots.load(clara)).quotaOf(clara.id, now);
+
+      final gift = await arisan.postQuota(
+        me: siti,
+        kind: QuotaKind.share,
+        kwh: 4,
+        toMemberId: clara.id,
+      );
+      expect(gift.status, QuotaStatus.pending);
+      expect(gift.counterpartyId, clara.id);
+
+      // Nothing has moved yet.
+      expect(
+        (await snapshots.load(siti)).quotaOf(siti.id, now).givenKwh,
+        beforeSiti.givenKwh,
+      );
+
+      await expectLater(
+        arisan.answerQuotaGift(me: siti, offerId: gift.id, accept: true),
+        throwsA(isA<AppException>()),
+        reason: 'only the receiver can answer',
+      );
+
+      await arisan.answerQuotaGift(me: clara, offerId: gift.id, accept: true);
+      expect(
+        (await snapshots.load(siti)).quotaOf(siti.id, now).givenKwh,
+        closeTo(beforeSiti.givenKwh + 4, 1e-9),
+      );
+      expect(
+        (await snapshots.load(clara)).quotaOf(clara.id, now).receivedKwh,
+        closeTo(beforeClara.receivedKwh + 4, 1e-9),
+      );
+    });
+
+    test('a declined gift moves nothing', () async {
+      final arisan = LocalArisanRepository(db, clock);
+      final siti = await login('081200000003');
+      final clara = await login(SampleSeeder.memberPhone);
+      final before = (await snapshots.load(clara)).quotaOf(clara.id, now);
+      final gift = await arisan.postQuota(
+        me: siti,
+        kind: QuotaKind.share,
+        kwh: 1,
+        toMemberId: clara.id,
+      );
+
+      await arisan.answerQuotaGift(me: clara, offerId: gift.id, accept: false);
+
+      final after = await snapshots.load(clara);
+      expect(
+        after.offers.firstWhere((o) => o.id == gift.id).status,
+        QuotaStatus.cancelled,
+      );
+      expect(after.quotaOf(clara.id, now).receivedKwh, before.receivedKwh);
+    });
+
+    test('only a share can be sent, and only to another member', () async {
+      final arisan = LocalArisanRepository(db, clock);
+      final siti = await login('081200000003');
+      final admin = await login(SampleSeeder.adminPhone);
+      final clara = await login(SampleSeeder.memberPhone);
+
+      await expectLater(
+        arisan.postQuota(
+          me: siti,
+          kind: QuotaKind.need,
+          kwh: 1,
+          toMemberId: clara.id,
+        ),
+        throwsA(isA<AppException>()),
+      );
+      await expectLater(
+        arisan.postQuota(
+          me: siti,
+          kind: QuotaKind.share,
+          kwh: 1,
+          toMemberId: siti.id,
+        ),
+        throwsA(isA<AppException>()),
+        reason: 'not to herself',
+      );
+      await expectLater(
+        arisan.postQuota(
+          me: siti,
+          kind: QuotaKind.share,
+          kwh: 1,
+          toMemberId: admin.id,
+        ),
+        throwsA(isA<AppException>()),
+        reason: 'not to the admin',
+      );
+    });
+  });
+
+  group('cooperative KPIs and the credit report', () {
+    test('KPIs count what the sample cooperative actually did', () async {
+      final admin = await login(SampleSeeder.adminPhone);
+      final data = await snapshots.load(admin);
+      final kpis = data.coopKpisOf(now, engine);
+
+      expect(kpis.members, 4);
+      expect(kpis.activeMembers, greaterThan(0));
+      expect(kpis.activeMembers, lessThanOrEqualTo(kpis.members));
+      expect(kpis.loanReady, lessThanOrEqualTo(kpis.members));
+      expect(kpis.installmentsOnTime, lessThanOrEqualTo(kpis.installmentsDue));
+      // Nothing is due before a loan is disbursed, and no rate is invented.
+      expect(kpis.installmentsDue, 0);
+      expect(kpis.onTimePct, isNull);
+    });
+
+    test('a member with a score gets a report that matches it', () async {
+      final clara = await login(SampleSeeder.memberPhone);
+      final data = await snapshots.load(clara);
+      final score = data.scoreOf(clara.id, now, engine)!;
+      final report = data.creditReportOf(clara.id, now, engine)!;
+
+      expect(report.score.score, score.score);
+      expect(report.loanReady, data.loanReadyOf(clara.id, now, engine));
+      final text = report.toPlainText();
+      expect(text, contains('Skor: ${score.score}/100'));
+      expect(text, contains('bukan model AI'));
+      expect(text, contains('bukan keputusan pinjaman'));
+      for (final f in score.factors) {
+        expect(text, contains(f.label));
+      }
+    });
+
+    test('no report without a score', () async {
+      final admin = await login(SampleSeeder.adminPhone);
+      final data = await snapshots.load(admin);
+      expect(data.creditReportOf(admin.id, now, engine), isNull);
+    });
   });
 }

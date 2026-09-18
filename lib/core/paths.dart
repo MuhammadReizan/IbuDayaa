@@ -13,24 +13,22 @@ abstract final class Paths {
   static const memberSolar = '/m/solar';
   static const memberMessages = '/m/messages';
   static const memberProfile = '/m/profile';
+  static const memberRecords = '/m/records';
 
   // Member flows.
-  static const scan = '/scan';
-  static const scanDemo = '/scan/demo';
   static const energy = '/energy';
-  static const energyAdd = '/energy/add';
   static const energyAnalysis = '/energy/analysis';
   static const appliances = '/appliances';
   static const applianceEdit = '/appliances/edit';
   static const roof = '/roof';
-  static const solarQrScan = '/solar/qr-scan';
-  static const solarQrResult = '/solar/qr-result';
+  static const hubConnect = '/solar/hub-connect';
   static const booking = '/booking';
   static const bookings = '/bookings';
   static const arisan = '/arisan';
   static const quota = '/quota';
   static const quotaNew = '/quota/new';
   static const score = '/score';
+  static const creditReport = '/score/report';
   static const loanApply = '/loan/apply';
   static const loans = '/loans';
   static String loan(String id) => '/loans/$id';
@@ -56,6 +54,8 @@ abstract final class Paths {
   static const adminArisan = '/a/arisan';
   static const adminArisanNew = '/a/arisan/new';
   static const adminHub = '/a/hub';
+  static const adminSummary = '/a/summary';
+  static const adminHubRequests = '/a/hub/requests';
   static const adminAnnounce = '/a/announce';
   static const adminSettings = '/a/settings';
   static const adminMessages = '/a/messages';
