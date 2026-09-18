@@ -1,8 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
-import '../../core/logic/bill_parser.dart';
-
 final NumberFormat _thousands = NumberFormat.decimalPattern('id_ID');
 
 /// Digits only, shown as `177.500`.
@@ -34,6 +32,20 @@ final TextInputFormatter decimalInput = FilteringTextInputFormatter.allow(
 );
 
 double? parseDecimal(String s) => parseIndonesianNumber(s);
+
+/// `136,4` → 136.4 · `1.234` → 1234 · `1.234,5` → 1234.5 · `136.4` → 136.4.
+double? parseIndonesianNumber(String input) {
+  var s = input.trim().replaceAll(RegExp(r'[.,]+$'), '');
+  if (s.isEmpty) return null;
+  if (s.contains(',') && s.contains('.')) {
+    s = s.replaceAll('.', '').replaceAll(',', '.');
+  } else if (s.contains(',')) {
+    s = s.replaceAll(',', '.');
+  } else if (RegExp(r'^\d{1,3}(\.\d{3})+$').hasMatch(s)) {
+    s = s.replaceAll('.', '');
+  }
+  return double.tryParse(s);
+}
 
 /// `136.4` → `136,4`; `120.0` → `120`.
 String decimalText(double v) {

@@ -5,6 +5,7 @@ library;
 export '../../brand/brand_art.dart' show BrandArtMotif;
 export 'app_buttons.dart';
 export 'app_scaffold.dart';
+export 'capture_view.dart';
 export 'disclaimers.dart';
 export 'feature_badge.dart';
 export 'info_banner.dart';

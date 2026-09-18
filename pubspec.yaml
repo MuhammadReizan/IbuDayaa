@@ -47,20 +47,17 @@ dependencies:
   # across restarts and app updates. Required for offline-first storage; there
   # is no server and no other way to get a writable, backed-up path.
   path_provider: ^2.1.5
-  # Live viewfinder with the scan frame for PLN bills and roofs. image_picker
-  # alone only launches the system camera, which cannot draw the guide frame.
+  # Live viewfinder with the guide frame for the roof photo (Radar Atap).
+  # image_picker alone only launches the system camera, which cannot draw
+  # the guide frame.
   camera: ^0.11.2+1
-  # "Unggah dari Galeri" — pick an existing photo of a bill or roof.
+  # "Unggah dari Galeri" — pick an existing photo of the roof.
   image_picker: ^1.2.1
-  # On-device OCR that reads kWh and rupiah off the bill photo. Runs offline;
-  # no image leaves the phone.
-  google_mlkit_text_recognition: ^0.16.0
   # SHA-256 for hashing PINs in local mode. Supabase Auth replaces this later.
   crypto: ^3.0.7
-  # Decodes a printed QR/barcode for the demo-data scan path (see
-  # lib/features/energy/demo_qr_scan_screen.dart). camera + ML Kit text
-  # recognition read prose off a bill; this reads structured demo data
-  # reliably at a booth without depending on OCR accuracy on stage.
+  # Decodes the QR code at a member's Solar Hub connection point (scan to
+  # request a usage verification) and the demo panel-scan flow
+  # (lib/features/solar_hub/scan/solar_qr_scan_screen.dart).
   mobile_scanner: ^6.0.10
   # HTTP client for BmkgWeatherService (lib/core/weather/) — the one real
   # network call in the app, used only for the opt-in Solar Hub weather

@@ -36,7 +36,7 @@ void main() {
     expect(guard(member, Paths.adminLoan('x')), Paths.memberHome);
     expect(guard(member, Paths.adminSettings), Paths.memberHome);
     expect(guard(admin, Paths.loanApply), Paths.adminHome);
-    expect(guard(admin, Paths.scan), Paths.adminHome);
+    expect(guard(admin, Paths.energy), Paths.adminHome);
     expect(guard(member, Paths.loanApply), isNull);
     expect(guard(admin, Paths.adminLoan('x')), isNull);
   });

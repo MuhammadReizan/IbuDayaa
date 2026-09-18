@@ -17,7 +17,6 @@ import '../../core/state/actions.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
 import '../../core/storage/device_services.dart';
-import '../energy/scan_bill_screen.dart';
 import '../shared/inputs.dart';
 
 /// Radar Atap: photo of the roof for the record, then the member's own
@@ -141,10 +140,7 @@ class _RoofScanScreenState extends ConsumerState<RoofScanScreen> {
               ),
               const SizedBox(height: AppSpacing.lg),
             ],
-            InfoBanner(
-              tone: InfoTone.info,
-              message: l10n.roofMeasureHint,
-            ),
+            InfoBanner(tone: InfoTone.info, message: l10n.roofMeasureHint),
             const SizedBox(height: AppSpacing.lg),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,9 +149,7 @@ class _RoofScanScreenState extends ConsumerState<RoofScanScreen> {
                   child: _meterField(l10n, l10n.roofLengthLabel, _length),
                 ),
                 const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: _meterField(l10n, l10n.roofWidthLabel, _width),
-                ),
+                Expanded(child: _meterField(l10n, l10n.roofWidthLabel, _width)),
               ],
             ),
             if (length > 0 && width > 0) ...[
@@ -204,21 +198,24 @@ class _RoofScanScreenState extends ConsumerState<RoofScanScreen> {
     );
   }
 
-  Widget _meterField(AppLocalizations l10n, String label, TextEditingController c) =>
-      AppTextField(
-        label: label,
-        controller: c,
-        suffixText: 'm',
-        hint: '0',
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [decimalInput],
-        validator: (v) {
-          final x = parseDecimal(v ?? '');
-          if (x == null || x <= 0) return l10n.roofFieldRequired(label);
-          if (x > 100) return l10n.roofFieldTooLarge;
-          return null;
-        },
-      );
+  Widget _meterField(
+    AppLocalizations l10n,
+    String label,
+    TextEditingController c,
+  ) => AppTextField(
+    label: label,
+    controller: c,
+    suffixText: 'm',
+    hint: '0',
+    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+    inputFormatters: [decimalInput],
+    validator: (v) {
+      final x = parseDecimal(v ?? '');
+      if (x == null || x <= 0) return l10n.roofFieldRequired(label);
+      if (x > 100) return l10n.roofFieldTooLarge;
+      return null;
+    },
+  );
 
   Widget _result(RoofEstimate e, Profile me, double? usage, TextTheme text) {
     final l10n = AppLocalizations.of(context);
@@ -359,7 +356,11 @@ class _RoofScanScreenState extends ConsumerState<RoofScanScreen> {
                 (kPerformanceRatio * 100).round().toString(),
                 (e.siteFactor * 100).round().toString(),
                 formatRupiah(
-                  ref.read(appStateProvider).data.cooperative?.solarCostPerKwpIdr ??
+                  ref
+                          .read(appStateProvider)
+                          .data
+                          .cooperative
+                          ?.solarCostPerKwpIdr ??
                       15000000,
                 ),
                 formatRupiah(me.tariffIdrPerKwh),

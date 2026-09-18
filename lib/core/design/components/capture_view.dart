@@ -1,218 +1,17 @@
-import 'dart:async';
-
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 
-import '../../core/demo/demo_analysis_repository.dart';
-import '../../core/demo/demo_bill_models.dart';
-import '../../core/demo/demo_bill_repository.dart';
-import '../../core/design/components/components.dart';
-import '../../core/design/tokens.dart';
-import '../../core/l10n/l10n.dart';
-import '../../core/logic/bill_parser.dart';
-import '../../core/models/models.dart';
-import '../../core/paths.dart';
-import '../../core/state/actions.dart';
-import '../../core/storage/device_services.dart';
-import 'ai_analysis_loading_screen.dart';
-import 'energy_analysis_copy.dart';
-
-/// Photographs a PLN bill or token receipt, reads it on the device, and hands
-/// the numbers to the form for the member to check.
-class ScanBillScreen extends ConsumerStatefulWidget {
-  const ScanBillScreen({super.key});
-
-  @override
-  ConsumerState<ScanBillScreen> createState() => _ScanBillScreenState();
-}
-
-class _ScanBillScreenState extends ConsumerState<ScanBillScreen> {
-  bool _reading = false;
-  bool _analyzing = false;
-  String? _analyzingScenario;
-  // Completer that completes when applyDemoBillPayload finishes.
-  // onComplete awaits this so navigation never races ahead of DB writes.
-  Completer<void>? _payloadCompleter;
-  // Set for a real (non-demo) scan: onComplete pushes to the editable
-  // confirm form with this draft instead of straight to the analysis.
-  EnergyDraft? _pendingDraft;
-
-  Future<void> _process(String path) async {
-    setState(() => _reading = true);
-
-    // Every new capture discards whatever demo analysis was left over from
-    // an earlier scan first (e.g. the member scanned a demo barcode, left
-    // without using the explicit back button, then photographed a real
-    // bill) — otherwise this real scan's result could show stale data from
-    // that previous demo instead of a fresh reading.
-    DemoAnalysisRepository.clear();
-
-    // Opportunistic shortcut: if the photo itself contains a barcode that
-    // matches the bundled demo dataset (e.g. the PLN meter sticker used for
-    // presentations), skip OCR entirely and go straight to a ready analysis.
-    // A real bill's own barcode (postpaid bills often print a payment one)
-    // simply won't match anything here, so this never affects a real scan.
-    final demo = await _matchDemoBarcode(path);
-    if (!mounted) return;
-    if (demo != null) {
-      final scenario = DemoBillRepository.scenarioNameOf(demo);
-      debugPrint('[PAYLOAD] Scenario = $scenario');
-      DemoAnalysisRepository.current = demo.analysis;
-
-      // Shown to the member; the localised status title, not the internal
-      // English scenario name above (debug/log use only).
-      final l10n = AppLocalizations.of(context);
-      final displayScenario = demo.analysis != null
-          ? demoStatusTitle(demo.analysis!.status, l10n)
-          : null;
-
-      // Prepare completer BEFORE showing loading screen.
-      final completer = Completer<void>();
-      _payloadCompleter = completer;
-
-      setState(() {
-        _reading = false;
-        _analyzing = true;
-        _analyzingScenario = displayScenario;
-      });
-
-      // Apply payload; signal completer when done so navigation waits.
-      await ref.read(actionsProvider).applyDemoBillPayload(demo);
-      completer.complete();
-      return;
-    }
-
-    String? raw;
-    try {
-      raw = await ref.read(receiptTextReaderProvider).read(path);
-    } catch (e) {
-      debugPrint('OCR failed: $e');
-    }
-    String? kept;
-    try {
-      kept = await ref.read(photoStoreProvider).keep(path, folder: 'bills');
-    } catch (e) {
-      debugPrint('Photo copy failed: $e');
-    }
-    if (!mounted) return;
-
-    final parsed = raw == null ? null : parsePlnReceipt(raw);
-    final draft = EnergyDraft(
-      kind: parsed?.kind ?? EnergyKind.postpaid,
-      periodMonth: parsed?.periodMonth,
-      kwh: parsed?.kwh,
-      totalIdr: parsed?.totalIdr,
-      customerId: parsed?.customerId,
-      photoPath: kept,
-      source: RecordSource.scan,
-      rawText: raw,
-      readFailed: raw == null,
-    );
-
-    if (raw == null) {
-      // Nothing was read: skip the analysis animation and go straight to
-      // the editable form so the member can fill it in by hand.
-      context.pushReplacement(Paths.energyAdd, extra: draft);
-      return;
-    }
-
-    _pendingDraft = draft;
-    setState(() {
-      _reading = false;
-      _analyzing = true;
-      _analyzingScenario = null;
-    });
-  }
-
-  /// Decodes any barcode in the photo and checks it against
-  /// [DemoBillRepository]. Never throws — an unsupported platform, a blurry
-  /// photo, or no barcode at all just means "no demo match", so the caller
-  /// falls back to OCR exactly as if this check never ran.
-  Future<DemoBillPayload?> _matchDemoBarcode(String path) async {
-    final controller = MobileScannerController();
-    try {
-      final capture = await controller.analyzeImage(path);
-      final raw = capture?.barcodes.firstOrNull?.rawValue;
-      if (raw != null) {
-        debugPrint('Scanned Barcode: $raw');
-        debugPrint('[SCAN] Barcode = $raw');
-        return DemoBillRepository.findByBarcode(raw);
-      }
-      return null;
-    } catch (e) {
-      debugPrint('Demo barcode check skipped: $e');
-      return null;
-    } finally {
-      controller.dispose();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_analyzing) {
-      return AnalysisLoadingScreen(
-        scenarioName: _analyzingScenario,
-        onComplete: () async {
-          final draft = _pendingDraft;
-          if (draft != null) {
-            // Real (non-demo) scan: land on the editable confirm form.
-            if (mounted) {
-              // ignore: use_build_context_synchronously
-              context.pushReplacement(Paths.energyAdd, extra: draft);
-            }
-            return;
-          }
-          // Demo barcode scan: wait for DB writes before navigating so the
-          // analysis screen sees fresh data instead of a previous scan's.
-          await _payloadCompleter?.future;
-          if (mounted) {
-            // ignore: use_build_context_synchronously
-            context.pushReplacement(Paths.energyAnalysis);
-          }
-        },
-      );
-    }
-
-    final l10n = AppLocalizations.of(context);
-    return CaptureView(
-      title: l10n.scanTitle,
-      hint: l10n.scanInstruction,
-      frameAspect: 0.72,
-      busy: _reading,
-      busyLabel: l10n.scanScanning,
-      onCaptured: _process,
-      tips: [
-        l10n.scanTipBrightSpot,
-        l10n.scanTipFullFrame,
-        l10n.scanTipHoldSteady,
-      ],
-      extraActions: [
-        IconButton(
-          tooltip: l10n.scanDemoAction,
-          onPressed: () => context.push(Paths.scanDemo),
-          icon: const Icon(Icons.qr_code_scanner_rounded),
-        ),
-      ],
-      secondaryAction: TextButton(
-        onPressed: () => context.pushReplacement(Paths.energyAdd),
-        child: Text(
-          l10n.energyAddManual,
-          style: const TextStyle(color: Colors.white),
-        ),
-      ),
-    );
-  }
-}
+import '../../l10n/l10n.dart';
+import '../tokens.dart';
+import 'ui_kit.dart';
 
 const Duration _cameraTimeout = Duration(seconds: 8);
 
 /// Live viewfinder with a guide frame, shutter, gallery and flash. Falls back
 /// to the gallery when there is no camera or permission was refused. Shared by
-/// the bill scan and the roof check.
+/// every photo-capture flow (roof check, appliance photos, etc.).
 class CaptureView extends StatefulWidget {
   const CaptureView({
     super.key,
@@ -240,8 +39,7 @@ class CaptureView extends StatefulWidget {
   final List<String> tips;
   final Widget? secondaryAction;
 
-  /// App-bar actions in front of the flash toggle (e.g. the demo QR entry
-  /// point on the bill scanner). Empty for screens like the roof check.
+  /// App-bar actions in front of the flash toggle. Empty by default.
   final List<Widget> extraActions;
 
   @override
