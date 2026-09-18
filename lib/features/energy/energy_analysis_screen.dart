@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/demo/demo_analysis_repository.dart';
 import '../../core/design/components/components.dart';
 import '../../core/format/format.dart';
 import '../../core/l10n/l10n.dart';
@@ -93,15 +92,9 @@ class EnergyAnalysisScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final tariff = me.tariffIdrPerKwh;
 
-    // Read demo FIRST — a freshly-scanned demo barcode must always render
-    // the full analysis screen even if the DB hasn't been populated yet
-    // (applyDemoBillPayload runs concurrently with the loading animation).
-    final demo = DemoAnalysisRepository.current;
-
     final insight = s.data.insightOf(me.id);
 
-    // Only show empty state when there is neither demo data nor real data.
-    if (insight == null && demo == null) {
+    if (insight == null) {
       return AppScaffold(
         title: l10n.energyAnalysisTitle,
         onBack: () => context.pop(),
@@ -111,16 +104,16 @@ class EnergyAnalysisScreen extends ConsumerWidget {
           title: l10n.energyAnalysisEmpty,
           message: l10n.scanAnalysisEmptyMessage,
           action: PrimaryButton(
-            label: l10n.scanConfirm,
+            label: l10n.energyAnalysisUseSolarHub,
             expand: false,
-            onPressed: () => context.pushReplacement(Paths.scan),
+            onPressed: () => context.pushReplacement(Paths.memberSolar),
           ),
         ),
       );
     }
 
-    final extra = insight?.extraCostIdr(tariff) ?? 0;
-    final top = insight?.contributors.firstOrNull;
+    final extra = insight.extraCostIdr(tariff);
+    final top = insight.contributors.firstOrNull;
 
     final String statusTitle;
     final String statusSubtitle;
@@ -132,97 +125,46 @@ class EnergyAnalysisScreen extends ConsumerWidget {
     final List<_ApplianceDisplayItem> displayAppliances;
     final bool isSpike;
 
-    if (demo != null) {
-      statusTitle = demoStatusTitle(demo.status, l10n);
-      statusSubtitle = demoStatusDescription(demo.status, l10n);
-      statusLabel = demoStatusLabel(demo.status, l10n);
-      additionalCost = demo.extraCost;
-      causeTitle = demoCauseTitle(demo.status, l10n);
-      causeText = demoCauseText(demo.status, l10n);
-      insightText = demoInsightText(demo.status, l10n);
-      isSpike = demo.status == 'energy_spike';
+    isSpike = extra > 0;
+    final heuristic = isSpike ? UsageHeuristic.spike : UsageHeuristic.normal;
+    statusTitle = heuristicTitle(heuristic, l10n);
+    statusSubtitle = heuristicSubtitle(heuristic, l10n);
+    statusLabel = heuristicLabel(heuristic, l10n);
+    additionalCost = isSpike ? extra : insight.latest.totalIdr;
+    causeTitle = heuristicCauseTitle(heuristic, l10n);
+    final applianceNames = insight.contributors.isNotEmpty
+        ? insight.contributors
+              .take(3)
+              .map((c) => c.name.toLowerCase())
+              .join(', ')
+        : '';
+    final capitalizedNames = applianceNames.isEmpty
+        ? ''
+        : '${applianceNames[0].toUpperCase()}${applianceNames.substring(1)}';
+    causeText = heuristicCauseText(
+      heuristic,
+      l10n,
+      applianceNames: capitalizedNames,
+    );
+    insightText = heuristicInsightText(heuristic, l10n);
+
+    if (insight.contributors.isNotEmpty) {
+      final maxCost = insight.contributors
+          .map((c) => c.monthlyCostIdr)
+          .fold<int>(0, math.max);
       displayAppliances = [
-        for (final c in demo.contributors)
+        for (final c in insight.contributors)
           _ApplianceDisplayItem(
-            name: applianceKindLabel(c.kind, l10n),
+            name: c.name,
             kind: c.kind,
-            costIdr: c.monthlyCost,
-            progress: (c.percentage / 100.0).clamp(0.05, 1.0),
+            costIdr: c.monthlyCostIdr,
+            progress: maxCost > 0
+                ? (c.monthlyCostIdr / maxCost).clamp(0.1, 1.0)
+                : (c.share).clamp(0.1, 1.0),
           ),
       ];
     } else {
-      isSpike = (insight?.spikeDetected ?? false) || extra > 0;
-      final heuristic = isSpike ? UsageHeuristic.spike : UsageHeuristic.normal;
-      statusTitle = heuristicTitle(heuristic, l10n);
-      statusSubtitle = heuristicSubtitle(heuristic, l10n);
-      statusLabel = heuristicLabel(heuristic, l10n);
-      additionalCost = extra > 0
-          ? extra
-          : ((insight?.latest.totalIdr ?? 0) > 0
-                ? ((insight!.latest.totalIdr) * 0.215).round()
-                : 45200);
-      causeTitle = heuristicCauseTitle(heuristic, l10n);
-      final applianceNames = (insight?.contributors.isNotEmpty ?? false)
-          ? insight!.contributors
-                .take(3)
-                .map(
-                  (c) => c.appliance.name.isNotEmpty
-                      ? c.appliance.name.toLowerCase()
-                      : applianceKindLabel(
-                          c.appliance.kind,
-                          l10n,
-                        ).toLowerCase(),
-                )
-                .join(', ')
-          : defaultSpikeApplianceNames(l10n);
-      final capitalizedNames =
-          '${applianceNames[0].toUpperCase()}${applianceNames.substring(1)}';
-      causeText = heuristicCauseText(
-        heuristic,
-        l10n,
-        applianceNames: capitalizedNames,
-      );
-      insightText = heuristicInsightText(heuristic, l10n);
-
-      if (insight?.contributors.isNotEmpty ?? false) {
-        final maxCost = insight!.contributors
-            .map((c) => c.monthlyCostIdr)
-            .fold<int>(0, math.max);
-        displayAppliances = [
-          for (final c in insight.contributors)
-            _ApplianceDisplayItem(
-              name: c.appliance.name.isNotEmpty
-                  ? c.appliance.name
-                  : applianceKindLabel(c.appliance.kind, l10n),
-              kind: c.appliance.kind,
-              costIdr: c.monthlyCostIdr,
-              progress: maxCost > 0
-                  ? (c.monthlyCostIdr / maxCost).clamp(0.1, 1.0)
-                  : (c.share).clamp(0.1, 1.0),
-            ),
-        ];
-      } else {
-        displayAppliances = [
-          _ApplianceDisplayItem(
-            name: applianceKindLabel('oven', l10n),
-            kind: 'oven',
-            costIdr: 20000,
-            progress: 0.85,
-          ),
-          _ApplianceDisplayItem(
-            name: applianceKindLabel('refrigerator', l10n),
-            kind: 'refrigerator',
-            costIdr: 15200,
-            progress: 0.72,
-          ),
-          _ApplianceDisplayItem(
-            name: applianceKindLabel('blender', l10n),
-            kind: 'blender',
-            costIdr: 10000,
-            progress: 0.48,
-          ),
-        ];
-      }
+      displayAppliances = const [];
     }
 
     return Scaffold(
@@ -235,10 +177,7 @@ class EnergyAnalysisScreen extends ConsumerWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: _brandGreen),
           tooltip: l10n.actionBack,
-          onPressed: () {
-            DemoAnalysisRepository.clear();
-            context.pop();
-          },
+          onPressed: () => context.pop(),
         ),
         title: Text(
           l10n.energyAnalysisTitle,
@@ -284,7 +223,7 @@ class EnergyAnalysisScreen extends ConsumerWidget {
                 subtitle: statusSubtitle,
                 label: statusLabel,
                 additionalCost: additionalCost,
-                kwh: insight?.latest.kwh ?? 0.0,
+                kwh: insight.latest.kwh,
                 isSpike: isSpike,
                 perMonthSuffix: l10n.scanAnalysisPerMonthSuffix,
               ),
@@ -295,25 +234,22 @@ class EnergyAnalysisScreen extends ConsumerWidget {
               const SizedBox(height: 14),
 
               // C. SECTION ALAT PENYUMBANG BIAYA
-              _buildAppliancesSection(
-                displayAppliances,
-                l10n.scanAnalysisAppliancesSectionTitle,
-                l10n.scanAnalysisPerMonthSuffix,
-              ),
-              const SizedBox(height: 14),
+              if (displayAppliances.isNotEmpty) ...[
+                _buildAppliancesSection(
+                  displayAppliances,
+                  l10n.scanAnalysisAppliancesSectionTitle,
+                  l10n.scanAnalysisPerMonthSuffix,
+                ),
+                const SizedBox(height: 14),
+              ],
 
               // D. INSIGHT UTAMA
               _buildInsightCard(insightText, l10n.scanAnalysisInsightTitle),
               const SizedBox(height: 16),
 
-              // E. CTA BUTTON — hidden for a scan result (`demo != null`):
-              // Scan Tagihan is only about the analysis, not a Solar Hub
-              // pitch. The manual/real-usage analysis keeps the CTA.
-              if (demo == null) ...[
-                _buildCtaButton(context, top, l10n.scanAnalysisCtaSolarHub),
-                const SizedBox(height: 24),
-              ] else
-                const SizedBox(height: 8),
+              // E. CTA BUTTON
+              _buildCtaButton(context, top, l10n.scanAnalysisCtaSolarHub),
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -715,7 +651,7 @@ class EnergyAnalysisScreen extends ConsumerWidget {
     ApplianceCost? top,
     String ctaLabel,
   ) {
-    final applianceParam = top?.appliance.name;
+    final applianceParam = top?.name;
     return Material(
       color: _brandGreen,
       borderRadius: BorderRadius.circular(14),

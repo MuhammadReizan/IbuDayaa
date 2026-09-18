@@ -14,7 +14,6 @@ import '../../core/models/models.dart';
 import '../../core/paths.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
-import '../../core/state/snapshot.dart';
 import '../credit_score/application/credit_score_provider.dart';
 import '../shared/labels.dart';
 
@@ -86,7 +85,9 @@ class MemberHomeScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.lg),
               _BillHero(insight: insight, tariff: me.tariffIdrPerKwh),
               const SizedBox(height: AppSpacing.xl),
-              _QuickActions(pendingQuota: _pendingQuotaFor(data, me.id)),
+              _QuickActions(
+                pendingQuota: data.incomingQuotaGifts(me.id).length,
+              ),
               const SizedBox(height: AppSpacing.xl),
               if (observations.isNotEmpty) ...[
                 SectionHeader(title: l10n.homeStatusHeader),
@@ -127,20 +128,16 @@ class MemberHomeScreen extends ConsumerWidget {
     );
   }
 
-  static int _pendingQuotaFor(CoopSnapshot data, String userId) => data.offers
-      .where((o) => o.ownerId == userId && o.status == QuotaStatus.pending)
-      .length;
-
   static String _routeFor(PowerObservation o, EnergyInsight? insight) =>
       switch (o.action) {
-        ObservationAction.scanBill => Paths.scan,
+        ObservationAction.useHub => Paths.memberSolar,
         ObservationAction.appliances => Paths.appliances,
         ObservationAction.analysis => Paths.energyAnalysis,
         ObservationAction.booking => Uri(
           path: Paths.booking,
           queryParameters: {
             if (insight != null && insight.contributors.isNotEmpty)
-              'alat': insight.contributors.first.appliance.name,
+              'alat': insight.contributors.first.name,
           },
         ).toString(),
         ObservationAction.confirmBooking => Paths.bookings,
@@ -255,9 +252,9 @@ class _BillHero extends StatelessWidget {
                     _HeroButton(
                       icon: Icons.insights_rounded,
                       label: l10n.homeAnalysis,
-                      onTap: () => context.push(
-                        i == null ? Paths.energy : Paths.energyAnalysis,
-                      ),
+                      onTap: () => i == null
+                          ? context.go(Paths.memberRecords)
+                          : context.push(Paths.energyAnalysis),
                     ),
                   ],
                 ),
@@ -382,14 +379,6 @@ class _QuickActions extends StatelessWidget {
             Paths.loans,
             AppColors.secondaryDark,
             AppColors.secondaryContainer,
-            0,
-          ),
-          (
-            Icons.receipt_long_rounded,
-            l10n.homeCatatanListrik,
-            Paths.energy,
-            AppColors.primary,
-            AppColors.primaryContainer,
             0,
           ),
           (

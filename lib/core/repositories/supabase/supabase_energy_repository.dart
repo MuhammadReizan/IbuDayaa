@@ -23,6 +23,7 @@ class SupabaseEnergyRepository extends SupabaseRepo
     String? photoPath,
     required RecordSource source,
     String? replaceId,
+    String? bookingId,
   }) => guard(() async {
     if (kwh <= 0) throw const AppException('Jumlah kWh harus lebih dari 0.');
     if (totalIdr <= 0) {
@@ -56,6 +57,7 @@ class SupabaseEnergyRepository extends SupabaseRepo
       'customer_id': customerId,
       'photo_path': photoPath,
       'source': source.db,
+      'booking_id': bookingId,
     };
 
     final row = targetId == null

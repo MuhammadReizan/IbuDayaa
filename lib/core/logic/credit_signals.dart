@@ -58,13 +58,6 @@ class CreditReadiness {
 
   bool get isReady => monthsRecorded >= kMinMonthsForScore;
   int get monthsStillNeeded => math.max(0, kMinMonthsForScore - monthsRecorded);
-
-  List<String> get missing => [
-    if (monthsStillNeeded > 0)
-      'Scan tagihan atau token $monthsStillNeeded bulan lagi.',
-    if (!inArisan) 'Ikut grup arisan di koperasi Anda.',
-    if (appliancesDeclared == 0) 'Daftarkan alat usaha Anda.',
-  ];
 }
 
 CreditReadiness creditReadiness(CreditContext c) => CreditReadiness(
@@ -85,9 +78,15 @@ CreditScore? computeCreditScore(CreditContext c, CreditScoringEngine engine) =>
     creditReadiness(c).isReady ? engine.compute(creditSignals(c)) : null;
 
 /// Steadier month-to-month usage scores higher, judged on spread relative to
-/// the average so a small and a large business are compared fairly.
+/// the average so a small and a large business are compared fairly. The month
+/// still in progress is left out while at least two complete months exist —
+/// a half-finished month would otherwise look like a sudden drop.
 double _consistency(CreditContext c) {
-  final kwh = monthlyUsage(c.records).map((m) => m.kwh).where((k) => k > 0);
+  final months = monthlyUsage(c.records);
+  final complete = months.where((m) => !sameMonth(m.month, c.now)).toList();
+  final kwh = (complete.length >= 2 ? complete : months)
+      .map((m) => m.kwh)
+      .where((k) => k > 0);
   if (kwh.length < 2) return 0;
   final mean = kwh.reduce((a, b) => a + b) / kwh.length;
   final variance =
@@ -135,19 +134,32 @@ double _payments(CreditContext c) {
   return (good / owed).clamp(0.0, 1.0);
 }
 
-/// Equipment shows capacity; recent hub sessions show it is actually used.
+/// Productive use of the hub over the last 8 weeks (the "productivity
+/// metrics" the credit identity is built on). Four fixed parts, each shown
+/// on screen through the factor's reason text:
+///  - equipment: registered business appliances (4 = full)          20 %
+///  - frequency: completed hub sessions (8 = full)                   30 %
+///  - volume: kWh actually used in those sessions (40 kWh = full)    20 %
+///  - regularity: weeks out of 8 with at least one session           30 %
 double _business(CreditContext c) {
-  final cutoff = c.now.subtract(const Duration(days: 60));
-  final recent = c.bookings
+  final cutoff = c.now.subtract(const Duration(days: 56));
+  final sessions = c.bookings
       .where(
         (b) =>
             b.userId == c.userId &&
             b.status == BookingStatus.completed &&
             b.bookingDate.isAfter(cutoff),
       )
+      .toList();
+  final kwh = sessions.fold<double>(0, (s, b) => s + b.estKwh);
+  final activeWeeks = sessions
+      .map((b) => c.now.difference(b.bookingDate).inDays ~/ 7)
+      .toSet()
       .length;
-  return ((c.appliances.length / 4).clamp(0.0, 1.0) * 0.4 +
-          (recent / 8).clamp(0.0, 1.0) * 0.6)
+  return ((c.appliances.length / 4).clamp(0.0, 1.0) * 0.2 +
+          (sessions.length / 8).clamp(0.0, 1.0) * 0.3 +
+          (kwh / 40).clamp(0.0, 1.0) * 0.2 +
+          (activeWeeks / 8).clamp(0.0, 1.0) * 0.3)
       .clamp(0.0, 1.0);
 }
 

@@ -2,8 +2,6 @@
 /// member's own bills, tokens, appliances and completed hub sessions.
 library;
 
-import 'dart:math' as math;
-
 import 'package:flutter/foundation.dart';
 
 import '../db/row.dart';
@@ -75,17 +73,21 @@ List<MonthlyUsage> monthlyUsage(Iterable<EnergyRecord> records) {
 @immutable
 class ApplianceCost {
   const ApplianceCost({
-    required this.appliance,
+    required this.name,
+    required this.kind,
     required this.monthlyKwh,
     required this.monthlyCostIdr,
     required this.share,
   });
 
-  final Appliance appliance;
+  final String name;
+
+  /// Appliance kind key (see `kApplianceKinds`), 'other' when unknown.
+  final String kind;
   final double monthlyKwh;
   final int monthlyCostIdr;
 
-  /// Share of the declared total, 0–1.
+  /// Share of the latest month's hub usage, 0–1.
   final double share;
 }
 
@@ -95,28 +97,22 @@ class EnergyInsight {
     required this.latest,
     required this.previous,
     required this.contributors,
-    required this.declaredKwh,
-    required this.unaccountedKwh,
     required this.changePct,
     required this.spikeDetected,
-    required this.declaredExceedsUsage,
   });
 
   final MonthlyUsage latest;
   final MonthlyUsage? previous;
+
+  /// Which appliances used the hub in the latest month, from completed hub
+  /// sessions only (kWh × the member's tariff) — never from declared hours.
   final List<ApplianceCost> contributors;
-  final double declaredKwh;
-  final double unaccountedKwh;
 
   /// kWh change vs the previous month, percent.
   final double? changePct;
 
   /// Latest month is well above the average of up to three earlier months.
   final bool spikeDetected;
-
-  /// Declared appliances add up to more than was used — hours or wattage need
-  /// correcting before the breakdown means anything.
-  final bool declaredExceedsUsage;
 
   int extraCostIdr(double tariff) {
     final prev = previous;
@@ -129,6 +125,7 @@ class EnergyInsight {
 EnergyInsight? buildEnergyInsight({
   required Iterable<EnergyRecord> records,
   required Iterable<Appliance> appliances,
+  required Iterable<HubBooking> completedBookings,
   required double tariff,
 }) {
   final months = monthlyUsage(records);
@@ -136,14 +133,47 @@ EnergyInsight? buildEnergyInsight({
   final latest = months.first;
   final previous = months.length > 1 ? months[1] : null;
 
-  final declared = appliances.fold<double>(0, (s, a) => s + a.monthlyKwh);
+  final byName = {for (final a in appliances) a.name.trim().toLowerCase(): a};
+  final kindByName = {for (final e in byName.entries) e.key: e.value.kind};
+  final kwhByName = <String, double>{};
+  final displayName = <String, String>{};
+  for (final b in completedBookings) {
+    if (b.status != BookingStatus.completed ||
+        !sameMonth(b.bookingDate, latest.month)) {
+      continue;
+    }
+    void add(String name, double kwh) {
+      final key = name.trim().toLowerCase();
+      displayName.putIfAbsent(key, () => name.trim());
+      kwhByName[key] = (kwhByName[key] ?? 0) + kwh;
+    }
+
+    // A hub session covers all of a member's registered appliances ("Oven,
+    // Kulkas"); its kWh is shared out by each appliance's watts.
+    final names = b.applianceName
+        .split(',')
+        .map((n) => n.trim())
+        .where((n) => n.isNotEmpty)
+        .toList();
+    final parts = [for (final n in names) byName[n.toLowerCase()]];
+    final totalWatts = parts.fold<double>(0, (sum, a) => sum + (a?.watts ?? 0));
+    if (names.length > 1 && !parts.contains(null) && totalWatts > 0) {
+      for (int i = 0; i < names.length; i++) {
+        add(names[i], b.estKwh * parts[i]!.watts / totalWatts);
+      }
+    } else {
+      add(b.applianceName, b.estKwh);
+    }
+  }
+  final usedKwh = kwhByName.values.fold<double>(0, (s, v) => s + v);
   final contributors = [
-    for (final a in appliances)
+    for (final e in kwhByName.entries)
       ApplianceCost(
-        appliance: a,
-        monthlyKwh: a.monthlyKwh,
-        monthlyCostIdr: a.monthlyCostIdr(tariff),
-        share: declared <= 0 ? 0 : a.monthlyKwh / declared,
+        name: displayName[e.key]!,
+        kind: kindByName[e.key] ?? 'other',
+        monthlyKwh: e.value,
+        monthlyCostIdr: (e.value * tariff).round(),
+        share: usedKwh <= 0 ? 0 : e.value / usedKwh,
       ),
   ]..sort((a, b) => b.monthlyKwh.compareTo(a.monthlyKwh));
 
@@ -160,12 +190,8 @@ EnergyInsight? buildEnergyInsight({
     latest: latest,
     previous: previous,
     contributors: contributors,
-    declaredKwh: declared,
-    unaccountedKwh: math.max(0, latest.kwh - declared),
     changePct: change,
     spikeDetected: avg > 0 && latest.kwh > avg * 1.15,
-    declaredExceedsUsage:
-        contributors.isNotEmpty && declared > latest.kwh * 1.05,
   );
 }
 
@@ -219,13 +245,7 @@ ImpactMetrics buildImpact({
 
 // ---------------------------------------------------------------------------
 
-enum ObservationAction {
-  scanBill,
-  appliances,
-  analysis,
-  booking,
-  confirmBooking,
-}
+enum ObservationAction { useHub, appliances, analysis, booking, confirmBooking }
 
 enum ObservationTone { danger, warning, success, info }
 
@@ -296,19 +316,7 @@ List<PowerObservation> buildObservations({
       );
     }
 
-    if (insight.declaredExceedsUsage) {
-      out.add(
-        PowerObservation(
-          id: 'mismatch',
-          tone: ObservationTone.warning,
-          title: l10n?.obsMismatchTitle ?? 'Data alat perlu dicek',
-          body:
-              l10n?.obsMismatchBody ??
-              'Total pemakaian alat melebihi catatan listrik Anda.',
-          action: ObservationAction.appliances,
-        ),
-      );
-    } else if (insight.contributors.isNotEmpty &&
+    if (insight.contributors.isNotEmpty &&
         insight.contributors.first.share >= 0.35) {
       final top = insight.contributors.first;
       out.add(
@@ -316,8 +324,8 @@ List<PowerObservation> buildObservations({
           id: 'top-appliance',
           tone: ObservationTone.warning,
           title: l10n != null
-              ? l10n.obsTopApplianceTitle(top.appliance.name)
-              : '${top.appliance.name} paling boros',
+              ? l10n.obsTopApplianceTitle(top.name)
+              : '${top.name} paling boros',
           body: l10n != null
               ? l10n.obsTopApplianceBody(rupiah(top.monthlyCostIdr))
               : '±${rupiah(top.monthlyCostIdr)}/bulan. Pindahkan ke jam Solar Hub.',
@@ -350,9 +358,11 @@ List<PowerObservation> buildObservations({
       PowerObservation(
         id: 'no-record',
         tone: ObservationTone.info,
-        title: l10n?.obsScanBillTitle ?? 'Scan tagihan bulan ini',
-        body: l10n?.obsScanBillBody ?? 'Belum ada catatan listrik bulan ini.',
-        action: ObservationAction.scanBill,
+        title: l10n?.obsUseHubTitle ?? 'Pakai Solar Hub bulan ini',
+        body:
+            l10n?.obsUseHubBody ??
+            'Belum ada catatan listrik bulan ini — pakai hub agar tercatat otomatis.',
+        action: ObservationAction.useHub,
       ),
     );
   }

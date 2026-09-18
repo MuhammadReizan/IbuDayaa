@@ -137,6 +137,7 @@ abstract class LocalRepo {
       records: db
           .select(Tbl.energyRecords, (r) => r['user_id'] == userId)
           .map(EnergyRecord.fromRow)
+          .where((r) => r.source == RecordSource.hub)
           .toList(),
       appliances: db
           .select(Tbl.appliances, (r) => r['user_id'] == userId)

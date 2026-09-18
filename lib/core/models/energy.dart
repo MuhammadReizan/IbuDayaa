@@ -15,38 +15,12 @@ enum EnergyKind {
 }
 
 enum RecordSource {
-  scan,
+  /// Recorded automatically when a Solar Hub session completes.
+  hub,
   manual;
 
-  static RecordSource fromDb(String? v) => v == 'scan' ? scan : manual;
+  static RecordSource fromDb(String? v) => v == 'hub' ? hub : manual;
   String get db => name;
-}
-
-/// Values to prefill the energy-entry form with — from OCR, a demo
-/// QR/barcode, or nothing.
-@immutable
-class EnergyDraft {
-  const EnergyDraft({
-    this.kind = EnergyKind.postpaid,
-    this.periodMonth,
-    this.kwh,
-    this.totalIdr,
-    this.customerId,
-    this.photoPath,
-    this.source = RecordSource.manual,
-    this.rawText,
-    this.readFailed = false,
-  });
-
-  final EnergyKind kind;
-  final DateTime? periodMonth;
-  final double? kwh;
-  final int? totalIdr;
-  final String? customerId;
-  final String? photoPath;
-  final RecordSource source;
-  final String? rawText;
-  final bool readFailed;
 }
 
 @immutable
@@ -62,6 +36,7 @@ class EnergyRecord {
     this.photoPath,
     required this.source,
     required this.createdAt,
+    this.bookingId,
   });
 
   final String id;
@@ -73,11 +48,16 @@ class EnergyRecord {
   final double kwh;
   final int totalIdr;
 
-  /// PLN ID pelanggan when the scan found one.
+  /// PLN customer ID, for a manually entered bill that has one.
   final String? customerId;
   final String? photoPath;
   final RecordSource source;
   final DateTime createdAt;
+
+  /// The [HubBooking] this record was generated from, when
+  /// `source == RecordSource.hub` — lets an admin trace an automatic
+  /// record back to the session that produced it.
+  final String? bookingId;
 
   double get idrPerKwh => kwh <= 0 ? 0 : totalIdr / kwh;
 
@@ -92,6 +72,7 @@ class EnergyRecord {
     photoPath: rStrN(r, 'photo_path'),
     source: RecordSource.fromDb(rStrN(r, 'source')),
     createdAt: rDate(r, 'created_at'),
+    bookingId: rStrN(r, 'booking_id'),
   );
 
   Map<String, dynamic> toRow() => {
@@ -105,6 +86,7 @@ class EnergyRecord {
     'photo_path': photoPath,
     'source': source.db,
     'created_at': ts(createdAt),
+    'booking_id': bookingId,
   };
 }
 

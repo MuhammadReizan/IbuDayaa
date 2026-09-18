@@ -1,90 +1,12 @@
 import '../../core/l10n/l10n.dart';
 
-/// Localised display copy for the scan-demo dummy analysis statuses and for
-/// the live spike/savings heuristic computed from a member's own history.
+/// Localised display copy for the live spike/savings heuristic computed from
+/// a member's own record history, shown on the Analisis Energi screen.
 ///
-/// Centralised here (instead of inline in each screen) so the scan result,
-/// the confirm-form "result" view, and the Analisis Energi screen never
-/// drift out of sync or leak a hardcoded-language string past a locale
-/// switch. `demoPayloads` (lib/core/demo/demo_payloads.dart) only carries a
-/// semantic `status` key plus numbers — every word shown to the member for
-/// that status comes from here so it always matches the active locale.
+/// Centralised here (instead of inline in the screen) so its wording never
+/// leaks a hardcoded-language string past a locale switch.
 
-String demoStatusTitle(String status, AppLocalizations l10n) =>
-    switch (status) {
-      'solar_recommendation' =>
-        l10n.isEn
-            ? 'Savings Opportunity Found'
-            : 'Potensi Penghematan Ditemukan',
-      'normal' => l10n.isEn ? 'Stable Usage' : 'Pemakaian Stabil',
-      _ => l10n.isEn ? 'Energy Spike Detected' : 'Lonjakan Energi Terdeteksi',
-    };
-
-String demoStatusDescription(String status, AppLocalizations l10n) =>
-    switch (status) {
-      'solar_recommendation' =>
-        l10n.isEn
-            ? 'Solar Hub usage is recommended'
-            : 'Disarankan menggunakan Solar Hub',
-      'normal' =>
-        l10n.isEn
-            ? 'No usage spike detected'
-            : 'Tidak ditemukan lonjakan pemakaian',
-      _ =>
-        l10n.isEn
-            ? 'High usage between 6–9 PM'
-            : 'Pemakaian tinggi jam 18.00–21.00',
-    };
-
-String demoStatusLabel(String status, AppLocalizations l10n) =>
-    switch (status) {
-      'solar_recommendation' =>
-        l10n.isEn ? 'Estimated savings' : 'Estimasi penghematan',
-      'normal' => l10n.isEn ? 'Estimated bill' : 'Estimasi tagihan',
-      _ => l10n.isEn ? 'Extra cost' : 'Biaya tambahan',
-    };
-
-String demoCauseTitle(String status, AppLocalizations l10n) => switch (status) {
-  'solar_recommendation' =>
-    l10n.isEn ? 'Savings Opportunity' : 'Peluang Penghematan',
-  'normal' => l10n.isEn ? 'Usage Pattern' : 'Pola Pemakaian',
-  _ => l10n.isEn ? 'Cause of the Spike' : 'Penyebab Lonjakan',
-};
-
-String demoCauseText(String status, AppLocalizations l10n) => switch (status) {
-  'solar_recommendation' =>
-    l10n.isEn
-        ? 'High oven and freezer use around midday.'
-        : 'Pemakaian oven & freezer tinggi di siang hari.',
-  'normal' =>
-    l10n.isEn
-        ? 'Business appliance use is stable and evenly scheduled.'
-        : 'Penggunaan alat usaha stabil dan terjadwal secara merata.',
-  _ =>
-    l10n.isEn
-        ? 'The fridge, oven, and blender are often used together in the evening.'
-        : 'Kulkas, oven, dan blender sering dipakai bersamaan sore hari.',
-};
-
-String demoInsightText(
-  String status,
-  AppLocalizations l10n,
-) => switch (status) {
-  'solar_recommendation' =>
-    l10n.isEn
-        ? 'Shift appliance use to 10 AM–2 PM to save more.'
-        : 'Pindahkan pemakaian alat ke jam 10.00–14.00 agar lebih hemat.',
-  'normal' =>
-    l10n.isEn
-        ? 'Keep up this energy-saving pattern.'
-        : 'Pertahankan pola pemakaian hemat energi ini.',
-  _ =>
-    l10n.isEn
-        ? 'Shift heavy appliance use to 10 AM–2 PM to save more.'
-        : 'Pindahkan pemakaian alat berat ke jam 10.00–14.00 agar lebih hemat.',
-};
-
-/// Live (non-demo) heuristic computed from the member's own record history.
+/// Heuristic computed from the member's own record history.
 enum UsageHeuristic { spike, savings, normal }
 
 String heuristicTitle(UsageHeuristic h, AppLocalizations l10n) => switch (h) {
@@ -99,8 +21,8 @@ String heuristicSubtitle(UsageHeuristic h, AppLocalizations l10n) =>
     switch (h) {
       UsageHeuristic.spike =>
         l10n.isEn
-            ? 'High usage between 6–9 PM'
-            : 'Pemakaian tinggi jam 18.00–21.00',
+            ? 'Usage is above your earlier months'
+            : 'Pemakaian di atas bulan-bulan sebelumnya',
       UsageHeuristic.savings =>
         l10n.isEn
             ? 'More efficient usage than last month'
@@ -112,9 +34,11 @@ String heuristicSubtitle(UsageHeuristic h, AppLocalizations l10n) =>
     };
 
 String heuristicLabel(UsageHeuristic h, AppLocalizations l10n) => switch (h) {
-  UsageHeuristic.spike => l10n.isEn ? 'Extra cost' : 'Biaya tambahan',
+  UsageHeuristic.spike =>
+    l10n.isEn ? 'Extra energy value' : 'Tambahan nilai energi',
   UsageHeuristic.savings => l10n.isEn ? 'Estimated savings' : 'Estimasi hemat',
-  UsageHeuristic.normal => l10n.isEn ? 'Estimated bill' : 'Estimasi tagihan',
+  UsageHeuristic.normal =>
+    l10n.isEn ? 'Energy value this month' : 'Nilai energi bulan ini',
 };
 
 String heuristicCauseTitle(UsageHeuristic h, AppLocalizations l10n) =>
@@ -134,9 +58,13 @@ String heuristicCauseText(
   String applianceNames = '',
 }) => switch (h) {
   UsageHeuristic.spike =>
-    l10n.isEn
-        ? '$applianceNames are often used together in the evening.'
-        : '$applianceNames sering dipakai bersamaan sore hari.',
+    applianceNames.isEmpty
+        ? (l10n.isEn
+              ? 'Hub usage recorded this month is higher than before.'
+              : 'Pemakaian Solar Hub yang tercatat bulan ini lebih tinggi dari sebelumnya.')
+        : (l10n.isEn
+              ? '$applianceNames draw the most energy from the hub.'
+              : '$applianceNames paling banyak menyerap energi hub.'),
   UsageHeuristic.savings =>
     l10n.isEn
         ? 'Energy use is better controlled than your 3-month average.'
@@ -164,7 +92,3 @@ String heuristicInsightText(
         ? 'Use Solar Hub during the day to cut costs further.'
         : 'Gunakan Solar Hub saat siang hari untuk menekan biaya lebih lanjut.',
 };
-
-/// Fallback appliance names shown only when the member has none recorded yet.
-String defaultSpikeApplianceNames(AppLocalizations l10n) =>
-    l10n.isEn ? 'oven, freezer, and blender' : 'oven, freezer, dan blender';

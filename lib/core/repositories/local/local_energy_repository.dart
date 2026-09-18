@@ -22,6 +22,7 @@ class LocalEnergyRepository extends LocalRepo
     String? photoPath,
     required RecordSource source,
     String? replaceId,
+    String? bookingId,
   }) async {
     if (kwh <= 0) throw const AppException('Jumlah kWh harus lebih dari 0.');
     if (totalIdr <= 0) {
@@ -63,6 +64,7 @@ class LocalEnergyRepository extends LocalRepo
       photoPath: photoPath,
       source: source,
       createdAt: now(),
+      bookingId: bookingId,
     );
 
     if (targetId == null) {

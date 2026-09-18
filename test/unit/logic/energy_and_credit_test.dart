@@ -87,6 +87,7 @@ void main() {
         _rec(id: 'c', month: DateTime(2026, 7), kwh: 100),
       ],
       appliances: const [],
+      completedBookings: const [],
       tariff: 1000,
     )!;
     expect(insight.spikeDetected, isTrue);
