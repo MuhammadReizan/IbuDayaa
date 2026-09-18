@@ -169,6 +169,14 @@ class AdminHomeScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.md),
               TintedRow(
+                icon: Icons.solar_power_rounded,
+                tone: PillTone.solar,
+                title: l10n.adminBoardTitle,
+                subtitle: l10n.adminBoardSubtitle,
+                onTap: () => context.push(Paths.adminHubBoard),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TintedRow(
                 icon: Icons.insights_rounded,
                 tone: PillTone.info,
                 title: l10n.adminKpiTitle,
