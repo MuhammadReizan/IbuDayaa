@@ -24,10 +24,10 @@ final weatherServiceProvider = Provider<WeatherService>(
 /// (docs/ASSUMPTIONS_AND_RISKS.md RT-05 — the offline experience must not
 /// depend on a network call).
 final solarOutlookProvider =
-    FutureProvider.family<({SolarOutlook? today, SolarOutlook? tomorrow}), String>((
-      ref,
-      adm4Code,
-    ) async {
+    FutureProvider.family<
+      ({SolarOutlook? today, SolarOutlook? tomorrow}),
+      String
+    >((ref, adm4Code) async {
       final code = adm4Code.trim();
       if (code.isEmpty) return (today: null, tomorrow: null);
       final service = ref.watch(weatherServiceProvider);
@@ -36,7 +36,10 @@ final solarOutlookProvider =
         final points = await service.fetchForecast(code);
         return (
           today: deriveSolarOutlook(points, now),
-          tomorrow: deriveSolarOutlook(points, now.add(const Duration(days: 1))),
+          tomorrow: deriveSolarOutlook(
+            points,
+            now.add(const Duration(days: 1)),
+          ),
         );
       } catch (_) {
         return (today: null, tomorrow: null);

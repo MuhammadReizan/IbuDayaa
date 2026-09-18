@@ -33,8 +33,10 @@ class WeatherPoint {
 /// (`deriveSolarOutlook` in weather_service.dart).
 ///
 /// This is NOT a machine-learning or AI prediction — see CLAUDE.md
-/// "No AI claims". It is arithmetic (lowest cloud cover in daylight hours)
-/// over a real BMKG forecast. The UI must always show [source] next to it.
+/// "No AI claims". It is arithmetic (lowest cloud cover within the
+/// 10.00–14.00 production window — see `kProductionWindowStartHour`/
+/// `kProductionWindowEndHour` in weather_service.dart) over a real BMKG
+/// forecast. The UI must always show [source] next to it.
 @immutable
 class SolarOutlook {
   const SolarOutlook({
@@ -42,6 +44,8 @@ class SolarOutlook {
     required this.windowEnd,
     required this.cloudCoverPct,
     required this.condition,
+    required this.temperatureC,
+    required this.productionScore,
     required this.generatedAt,
   });
 
@@ -49,6 +53,11 @@ class SolarOutlook {
   final DateTime windowEnd;
   final int cloudCoverPct;
   final String condition;
+  final double temperatureC;
+
+  /// 0–100 from `productionScoreOf` (cloud cover, rain, panel heat) in
+  /// weather_service.dart.
+  final int productionScore;
 
   /// When this outlook was computed (not when BMKG produced the forecast).
   final DateTime generatedAt;

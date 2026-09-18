@@ -28,7 +28,11 @@ class _FakeWeatherService implements WeatherService {
   Future<List<WeatherPoint>> fetchForecast(String adm4Code) async => points;
 }
 
-Future<void> _pumpHub(WidgetTester tester, DateTime clock, List<WeatherPoint> points) async {
+Future<void> _pumpHub(
+  WidgetTester tester,
+  DateTime clock,
+  List<WeatherPoint> points,
+) async {
   DateTime now() => clock;
   tester.view.physicalSize = const Size(412, 915) * 3;
   tester.view.devicePixelRatio = 3;
@@ -95,7 +99,6 @@ void main() {
       await _pumpHub(tester, DateTime(2026, 9, 17, 16), points);
 
       expect(find.text('Jam terbaik hari ini sudah lewat'), findsOneWidget);
-      expect(find.text('Tadi jam 10.00–13.00.'), findsOneWidget);
       expect(find.text('Coba lagi besok pagi.'), findsOneWidget);
       expect(find.text('Jam terbaik untuk produksi hari ini'), findsNothing);
     },
@@ -107,16 +110,16 @@ void main() {
       await _pumpHub(tester, DateTime(2026, 9, 17, 16), [
         ...points,
         WeatherPoint(
-          time: DateTime(2026, 9, 18, 9),
+          time: DateTime(2026, 9, 18, 10),
           cloudCoverPct: 15,
           condition: 'Cerah Berawan',
           temperatureC: 28,
         ),
       ]);
 
-      expect(find.text('Jam terbaik hari ini sudah lewat'), findsOneWidget);
-      expect(find.text('Tadi jam 10.00–13.00.'), findsOneWidget);
-      expect(find.text('Besok 09.00–12.00'), findsOneWidget);
+      expect(find.text('Jam terbaik untuk produksi besok'), findsOneWidget);
+      expect(find.text('10.00–13.00'), findsOneWidget);
+      expect(find.text('Jam terbaik hari ini sudah lewat'), findsNothing);
       // Tomorrow is now the actionable one, so the dead-end hint drops out.
       expect(find.text('Coba lagi besok pagi.'), findsNothing);
     },
