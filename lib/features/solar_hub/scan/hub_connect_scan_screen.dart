@@ -107,6 +107,8 @@ class _HubConnectScanScreenState extends ConsumerState<HubConnectScanScreen> {
             scannedCode: scannedCode,
             applianceName: appliances.map((a) => a.name).join(', '),
             estKwh: estKwh,
+            loadKw:
+                appliances.fold<double>(0, (sum, a) => sum + a.watts) / 1000,
           ),
     );
     if (!mounted) return;

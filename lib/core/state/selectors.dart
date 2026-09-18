@@ -111,7 +111,7 @@ extension SnapshotQueries on CoopSnapshot {
           .toList()
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-  /// The cooperative's Arisan Energi month (admin view).
+  /// The cooperative's Tukar Kuota month (admin view).
   QuotaImpact quotaImpactOf(DateTime now) => quotaImpact(
     offers: offers,
     balances: [for (final m in memberProfiles) quotaOf(m.id, now)],
@@ -243,21 +243,25 @@ extension SnapshotQueries on CoopSnapshot {
     );
   }
 
-  /// [userId]'s most recent QR request: one still waiting, or one made in the
-  /// last three hours for today (so its outcome stays visible after the admin
-  /// decides, even if the member signs out and back in).
+  /// [userId]'s most recent QR scan: one still waiting, or one scanned in the
+  /// last three hours today (so its outcome stays visible after the admin
+  /// decides, even if the member signs out and back in). Plain bookings that
+  /// were never scanned don't count.
   HubBooking? latestHubRequestOf(String userId, DateTime now) {
     final today = dayOf(now);
+    DateTime scannedAt(HubBooking b) => b.requestedAt ?? b.createdAt;
     final list =
         bookingsOf(userId)
             .where(
               (b) =>
                   b.status == BookingStatus.pendingVerification ||
-                  (dayOf(b.bookingDate) == today &&
-                      now.difference(b.createdAt) < const Duration(hours: 3)),
+                  (b.requestedAt != null &&
+                      dayOf(b.bookingDate) == today &&
+                      now.difference(b.requestedAt!) <
+                          const Duration(hours: 3)),
             )
             .toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          ..sort((a, b) => scannedAt(b).compareTo(scannedAt(a)));
     return list.firstOrNull;
   }
 
