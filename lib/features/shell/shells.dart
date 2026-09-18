@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/design/components/ui_kit.dart';
 import '../../core/l10n/l10n.dart';
-import '../../core/paths.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
 
@@ -21,7 +20,13 @@ class MemberShell extends ConsumerWidget {
     final unread = me == null ? 0 : s.data.unreadMessagesOf(me);
     return _Shell(
       shell: shell,
-      onScanTap: () => context.push(Paths.scan),
+      flatBranchIndices: const [0, 4, 2, 3],
+      centerBranchIndex: 1,
+      centerItem: NavItem(
+        icon: Icons.solar_power_outlined,
+        activeIcon: Icons.solar_power_rounded,
+        label: l10n.navSolarHub,
+      ),
       items: [
         NavItem(
           icon: Icons.home_outlined,
@@ -29,9 +34,9 @@ class MemberShell extends ConsumerWidget {
           label: l10n.navHome,
         ),
         NavItem(
-          icon: Icons.solar_power_outlined,
-          activeIcon: Icons.solar_power_rounded,
-          label: l10n.navSolarHub,
+          icon: Icons.bolt_outlined,
+          activeIcon: Icons.bolt_rounded,
+          label: l10n.navRecords,
         ),
         NavItem(
           icon: Icons.chat_bubble_outline_rounded,
@@ -90,22 +95,51 @@ class AdminShell extends ConsumerWidget {
 }
 
 class _Shell extends StatelessWidget {
-  const _Shell({required this.shell, required this.items, this.onScanTap});
+  const _Shell({
+    required this.shell,
+    required this.items,
+    this.flatBranchIndices,
+    this.centerItem,
+    this.centerBranchIndex,
+  });
 
   final StatefulNavigationShell shell;
   final List<NavItem> items;
-  final VoidCallback? onScanTap;
+
+  /// Router branch index for each entry in [items], in order. Defaults to
+  /// the identity mapping (item `i` is branch `i`) when every branch is a
+  /// flat tab, i.e. there is no [centerItem].
+  final List<int>? flatBranchIndices;
+
+  /// The item raised into the floating center button instead of the flat
+  /// row (e.g. Solar Hub), and the branch it selects.
+  final NavItem? centerItem;
+  final int? centerBranchIndex;
 
   @override
   Widget build(BuildContext context) {
+    final branchIndices =
+        flatBranchIndices ?? List.generate(items.length, (i) => i);
+    final selectedFlatIndex = branchIndices.indexOf(shell.currentIndex);
     return Scaffold(
       body: shell,
       bottomNavigationBar: AppBottomNav(
         items: items,
-        index: shell.currentIndex,
-        onTap: (i) =>
-            shell.goBranch(i, initialLocation: i == shell.currentIndex),
-        onScanTap: onScanTap,
+        index: selectedFlatIndex,
+        onTap: (i) => shell.goBranch(
+          branchIndices[i],
+          initialLocation: branchIndices[i] == shell.currentIndex,
+        ),
+        centerItem: centerItem,
+        centerSelected:
+            centerBranchIndex != null &&
+            shell.currentIndex == centerBranchIndex,
+        onCenterTap: centerBranchIndex == null
+            ? null
+            : () => shell.goBranch(
+                centerBranchIndex!,
+                initialLocation: centerBranchIndex == shell.currentIndex,
+              ),
       ),
     );
   }

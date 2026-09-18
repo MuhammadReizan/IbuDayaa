@@ -929,24 +929,38 @@ class NavItem {
 }
 
 /// Bottom navigation with the Figma's short bar above the active tab.
+///
+/// Optionally raises one extra item (e.g. Solar Hub) in a floating center
+/// button instead of the flat row — [items] then holds only the flat tabs,
+/// split as evenly as possible around the raised [centerItem].
 class AppBottomNav extends StatelessWidget {
   const AppBottomNav({
     super.key,
     required this.items,
     required this.index,
     required this.onTap,
-    this.onScanTap,
+    this.centerItem,
+    this.centerSelected = false,
+    this.onCenterTap,
   });
 
   final List<NavItem> items;
+
+  /// Index into [items] of the selected flat tab, or -1 when [centerItem] is
+  /// the one selected.
   final int index;
   final ValueChanged<int> onTap;
-  final VoidCallback? onScanTap;
+
+  /// The raised center item (e.g. Solar Hub), or null for a plain flat row.
+  final NavItem? centerItem;
+  final bool centerSelected;
+  final VoidCallback? onCenterTap;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final hasScan = onScanTap != null && items.length == 4;
+    final hasCenter = centerItem != null && onCenterTap != null;
+    final leftCount = hasCenter ? (items.length / 2).ceil() : items.length;
 
     return DecoratedBox(
       decoration: const BoxDecoration(
@@ -963,29 +977,38 @@ class AppBottomNav extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  for (int i = 0; i < (hasScan ? 5 : items.length); i++) ...[
-                    if (hasScan && i == 2)
-                      const Expanded(child: SizedBox())
-                    else
+                  for (int i = 0; i < leftCount; i++)
+                    Expanded(
+                      child: _buildItem(
+                        context: context,
+                        item: items[i],
+                        itemIndex: i,
+                        text: text,
+                      ),
+                    ),
+                  if (hasCenter) ...[
+                    const Expanded(child: SizedBox()),
+                    for (int i = leftCount; i < items.length; i++)
                       Expanded(
                         child: _buildItem(
                           context: context,
-                          item: items[hasScan && i > 2 ? i - 1 : i],
-                          itemIndex: hasScan && i > 2 ? i - 1 : i,
+                          item: items[i],
+                          itemIndex: i,
                           text: text,
                         ),
                       ),
                   ],
                 ],
               ),
-              if (hasScan)
+              if (hasCenter)
                 Positioned(
                   top: -10,
                   child: Semantics(
                     button: true,
-                    label: 'Scan',
+                    selected: centerSelected,
+                    label: centerItem!.label,
                     child: GestureDetector(
-                      onTap: onScanTap,
+                      onTap: onCenterTap,
                       child: Container(
                         width: 58,
                         height: 58,
@@ -1006,8 +1029,10 @@ class AppBottomNav extends StatelessWidget {
                               ),
                             ],
                           ),
-                          child: const Icon(
-                            Icons.qr_code_scanner_rounded,
+                          child: Icon(
+                            centerSelected
+                                ? centerItem!.activeIcon
+                                : centerItem!.icon,
                             color: Colors.white,
                             size: 24,
                           ),
@@ -1099,6 +1124,7 @@ class AppTextField extends StatelessWidget {
     this.enabled = true,
     this.autofocus = false,
     this.textInputAction,
+    this.obscureText = false,
   });
 
   final String label;
@@ -1118,6 +1144,7 @@ class AppTextField extends StatelessWidget {
   final bool enabled;
   final bool autofocus;
   final TextInputAction? textInputAction;
+  final bool obscureText;
 
   @override
   Widget build(BuildContext context) {
@@ -1138,6 +1165,7 @@ class AppTextField extends StatelessWidget {
           autofocus: autofocus,
           onChanged: onChanged,
           textInputAction: textInputAction,
+          obscureText: obscureText,
           textCapitalization: textCapitalization,
           style: text.bodyLarge,
           decoration: InputDecoration(
