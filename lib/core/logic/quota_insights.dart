@@ -1,4 +1,4 @@
-/// What Arisan Energi (virtual quota trading) says about itself: who a member
+/// What Tukar Kuota (virtual quota trading) says about itself: who a member
 /// could trade with and what trading did for the whole cooperative. Pure arithmetic over stored rows — every number can
 /// be traced to an offer or a booking.
 library;
@@ -60,7 +60,7 @@ List<QuotaMatch> matchQuotaOffers({
   return matches;
 }
 
-/// The cooperative's month in Arisan Energi, for the admin.
+/// The cooperative's month in Tukar Kuota, for the admin.
 @immutable
 class QuotaImpact {
   const QuotaImpact({

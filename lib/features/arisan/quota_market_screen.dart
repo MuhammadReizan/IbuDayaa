@@ -15,7 +15,7 @@ import '../../core/state/actions.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
 
-/// Arisan Energi (virtual quota trading): members hand each other unused Solar
+/// Tukar Kuota (virtual quota trading): members hand each other unused Solar
 /// Hub quota. A trade completes the moment the second member answers — the
 /// post was the first member's agreement — and moves no electricity.
 class QuotaMarketScreen extends ConsumerWidget {

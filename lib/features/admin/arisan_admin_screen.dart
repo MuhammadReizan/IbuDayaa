@@ -211,7 +211,7 @@ class ArisanCreateScreen extends ConsumerStatefulWidget {
 
 class _ArisanCreateScreenState extends ConsumerState<ArisanCreateScreen> {
   final _form = GlobalKey<FormState>();
-  final _name = TextEditingController(text: 'Arisan Koperasi');
+  final _name = TextEditingController(text: 'Arisan Digital');
   final _amount = TextEditingController(text: '100.000');
   late DateTime _start = monthOf(ref.read(clockProvider)());
   final List<String> _order = [];

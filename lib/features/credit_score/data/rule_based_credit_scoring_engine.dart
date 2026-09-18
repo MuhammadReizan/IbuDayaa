@@ -123,9 +123,9 @@ class RuleBasedCreditScoringEngine implements CreditScoringEngine {
             : 'Pemakaian Solar Hub masih sedikit dalam 8 minggu terakhir.',
       CreditCategory.communityParticipation =>
         dir == FactorDirection.positive
-            ? 'Ikut arisan koperasi dan rutin berbagi kuota di Arisan Energi memperkuat profil Anda.'
+            ? 'Ikut arisan digital dan rutin berbagi kuota lewat Tukar Kuota memperkuat profil Anda.'
             : dir == FactorDirection.neutral
-            ? 'Berbagi kuota lewat Arisan Energi bisa menaikkan partisipasi komunitas Anda.'
+            ? 'Berbagi kuota lewat Tukar Kuota bisa menaikkan partisipasi komunitas Anda.'
             : 'Partisipasi komunitas masih minim dalam periode ini.',
     };
   }

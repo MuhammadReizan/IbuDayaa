@@ -342,7 +342,7 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
           type: 'quota',
           title: '${me.fullName} membagikan kuota untuk Anda',
           body:
-              '${kwh.toStringAsFixed(1)} kWh. Terima atau tolak di Arisan Energi.',
+              '${kwh.toStringAsFixed(1)} kWh. Terima atau tolak di Tukar Kuota.',
           route: Paths.quota,
         );
       }
@@ -424,7 +424,7 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
             : '${me.fullName} memberi kuota untuk Anda',
         body:
             '${offer.kwh.toStringAsFixed(1)} kWh. '
-            'Sudah tercatat di Arisan Energi.',
+            'Sudah tercatat di Tukar Kuota.',
         route: Paths.quota,
       );
     });
