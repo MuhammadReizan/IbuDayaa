@@ -138,7 +138,10 @@ class LoanDetailScreen extends ConsumerWidget {
               destructive: true,
             );
             if (!ok || !context.mounted) return;
-            await act(() => actions.cancelLoan(loan.id), l10n.loanToastCancelled);
+            await act(
+              () => actions.cancelLoan(loan.id),
+              l10n.loanToastCancelled,
+            );
           },
         ),
     ];

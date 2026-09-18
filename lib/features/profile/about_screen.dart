@@ -24,9 +24,7 @@ class AboutScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: AppSpacing.md),
-          Center(
-            child: IbuDayaLogo(height: 40, tagline: l10n.aboutTagline),
-          ),
+          Center(child: IbuDayaLogo(height: 40, tagline: l10n.aboutTagline)),
           const SizedBox(height: AppSpacing.sm),
           Text(
             AppConfig.versionLabel,

@@ -95,7 +95,11 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context);
-    final steps = [l10n.registerStepCode, l10n.registerStepPerson, l10n.labelPin];
+    final steps = [
+      l10n.registerStepCode,
+      l10n.registerStepPerson,
+      l10n.labelPin,
+    ];
 
     if (_step == 2) {
       return AppScaffold(
@@ -171,7 +175,10 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(l10n.registerMemberJoiningTo, style: text.bodySmall),
+                          Text(
+                            l10n.registerMemberJoiningTo,
+                            style: text.bodySmall,
+                          ),
                           Text(_coop!.name, style: text.titleMedium),
                           Text(_coop!.city, style: text.bodySmall),
                         ],
@@ -200,7 +207,10 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
                     hint: l10n.registerMemberFieldBusinessHint,
                     textCapitalization: TextCapitalization.words,
                     textInputAction: TextInputAction.next,
-                    validator: _required(l10n, l10n.registerMemberFieldBusiness),
+                    validator: _required(
+                      l10n,
+                      l10n.registerMemberFieldBusiness,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   AppTextField(

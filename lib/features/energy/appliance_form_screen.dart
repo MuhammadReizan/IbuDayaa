@@ -179,7 +179,10 @@ class _ApplianceFormScreenState extends ConsumerState<ApplianceFormScreen> {
             Row(
               children: [
                 Expanded(
-                  child: Text(l10n.applianceFormHoursPerDay, style: text.titleSmall),
+                  child: Text(
+                    l10n.applianceFormHoursPerDay,
+                    style: text.titleSmall,
+                  ),
                 ),
                 Text(
                   l10n.applianceHoursValue(decimalText(_hours)),

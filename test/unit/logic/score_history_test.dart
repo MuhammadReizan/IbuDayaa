@@ -51,9 +51,7 @@ void main() {
   });
 
   test('respects a custom months window', () {
-    final data = CoopSnapshot(
-      scoreSnapshots: [_snap(1, 10), _snap(9, 82)],
-    );
+    final data = CoopSnapshot(scoreSnapshots: [_snap(1, 10), _snap(9, 82)]);
     expect(data.scoreHistoryOf('u1', now, months: 12).length, 2);
     expect(data.scoreHistoryOf('u1', now, months: 3).length, 1);
   });

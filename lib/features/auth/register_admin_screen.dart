@@ -60,7 +60,11 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context);
-    final steps = [l10n.registerStepPerson, l10n.registerStepCoop, l10n.labelPin];
+    final steps = [
+      l10n.registerStepPerson,
+      l10n.registerStepCoop,
+      l10n.labelPin,
+    ];
     void back() => _step == 0 ? context.pop() : setState(() => _step--);
 
     if (_step == 2) {
@@ -102,7 +106,10 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(l10n.registerAdminSectionPerson, style: text.headlineSmall),
+                  Text(
+                    l10n.registerAdminSectionPerson,
+                    style: text.headlineSmall,
+                  ),
                   const SizedBox(height: AppSpacing.xl),
                   AppTextField(
                     label: l10n.registerMemberFieldName,
@@ -140,7 +147,10 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(l10n.registerAdminCoopHeading, style: text.headlineSmall),
+                  Text(
+                    l10n.registerAdminCoopHeading,
+                    style: text.headlineSmall,
+                  ),
                   const SizedBox(height: AppSpacing.xl),
                   AppTextField(
                     label: l10n.registerAdminCoopName,
