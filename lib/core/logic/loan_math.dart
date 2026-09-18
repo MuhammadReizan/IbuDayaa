@@ -101,7 +101,7 @@ class LoanEligibility {
   String get message => switch (blocker) {
     LoanBlocker.none => 'Anda bisa mengajukan hingga plafon ini.',
     LoanBlocker.notEnoughHistory =>
-      'Catat tagihan atau token minimal 3 bulan agar skor bisa dihitung.',
+      'Pakai Solar Hub minimal 3 bulan agar skor bisa dihitung.',
     LoanBlocker.scoreTooLow =>
       'Skor Anda belum mencapai batas minimum yang ditetapkan koperasi.',
     LoanBlocker.activeLoan =>
@@ -124,6 +124,11 @@ const Map<CreditBand, double> kCeilingShareByBand = {
   CreditBand.cukup: 0.5,
   CreditBand.perluPeningkatan: 0.25,
 };
+
+/// "Loan-Ready": a score exists and meets the cooperative's minimum. It says
+/// nothing about approval — an admin still decides every application.
+bool isLoanReady(CreditScore? score, int minScore) =>
+    score != null && score.score >= minScore;
 
 LoanEligibility loanEligibility({
   required Cooperative coop,

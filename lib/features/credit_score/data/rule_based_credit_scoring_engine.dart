@@ -117,15 +117,15 @@ class RuleBasedCreditScoringEngine implements CreditScoringEngine {
             : 'Terdapat keterlambatan pembayaran yang memengaruhi skor.',
       CreditCategory.businessActivity =>
         dir == FactorDirection.positive
-            ? 'Aktivitas usaha aktif mencerminkan kemampuan pengelolaan keuangan.'
+            ? 'Alat usaha sering dan rutin dipakai di Solar Hub (jumlah sesi, kWh, dan keteraturan mingguan).'
             : dir == FactorDirection.neutral
-            ? 'Aktivitas usaha cukup, namun masih bisa lebih konsisten.'
-            : 'Aktivitas usaha terbatas dalam periode penilaian.',
+            ? 'Pemakaian Solar Hub cukup; lebih sering dan rutin tiap minggu akan menaikkan skor.'
+            : 'Pemakaian Solar Hub masih sedikit dalam 8 minggu terakhir.',
       CreditCategory.communityParticipation =>
         dir == FactorDirection.positive
-            ? 'Partisipasi aktif di komunitas IbuDaya memperkuat profil Anda.'
+            ? 'Ikut arisan koperasi dan rutin berbagi kuota di Arisan Energi memperkuat profil Anda.'
             : dir == FactorDirection.neutral
-            ? 'Partisipasi komunitas bisa ditingkatkan untuk skor lebih tinggi.'
+            ? 'Berbagi kuota lewat Arisan Energi bisa menaikkan partisipasi komunitas Anda.'
             : 'Partisipasi komunitas masih minim dalam periode ini.',
     };
   }

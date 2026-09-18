@@ -10,6 +10,7 @@ import '../../core/logic/energy_insights.dart';
 import '../../core/paths.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
+import '../../core/logic/loan_math.dart';
 import '../credit_score/application/credit_score_provider.dart';
 
 class AdminMembersScreen extends ConsumerStatefulWidget {
@@ -99,6 +100,16 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
                                   ? PillTone.neutral
                                   : PillTone.info,
                             ),
+                            if (isLoanReady(
+                              score,
+                              data.cooperative?.loanMinScore ?? 60,
+                            )) ...[
+                              const SizedBox(height: AppSpacing.xs),
+                              StatusPill(
+                                label: l10n.loanReadyBadge,
+                                tone: PillTone.success,
+                              ),
+                            ],
                             if (active != null) ...[
                               const SizedBox(height: AppSpacing.xs),
                               StatusPill(

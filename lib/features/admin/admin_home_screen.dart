@@ -14,6 +14,7 @@ import '../../core/models/models.dart';
 import '../../core/paths.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
+import '../credit_score/application/credit_score_provider.dart';
 import '../shared/labels.dart';
 
 class AdminHomeScreen extends ConsumerWidget {
@@ -33,6 +34,8 @@ class AdminHomeScreen extends ConsumerWidget {
     final members = data.memberProfiles;
     final waitingLoans = data.loansAwaitingAdmin;
     final pendingPayments = data.pendingPayments;
+    final hubRequests = data.hubRequests;
+    final kpis = data.coopKpisOf(now, ref.read(creditScoringEngineProvider));
     final running = data.loans
         .where((l) => l.status == LoanStatus.disbursed)
         .toList();
@@ -152,6 +155,30 @@ class AdminHomeScreen extends ConsumerWidget {
                     ],
                   );
                 },
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TintedRow(
+                filled: hubRequests.isNotEmpty,
+                tone: hubRequests.isNotEmpty ? PillTone.warning : PillTone.info,
+                icon: Icons.qr_code_scanner_rounded,
+                title: l10n.adminRequestsCardTitle,
+                subtitle: hubRequests.isEmpty
+                    ? l10n.adminRequestsEmpty
+                    : '${hubRequests.length} · ${data.nameOf(hubRequests.first.userId)}',
+                onTap: () => context.push(Paths.adminHubRequests),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TintedRow(
+                icon: Icons.insights_rounded,
+                tone: PillTone.info,
+                title: l10n.adminKpiTitle,
+                subtitle: l10n.adminSummarySubtitle(
+                  kpis.activeMembers,
+                  kpis.members,
+                  kpis.loanReady,
+                  kpis.quotaTrades,
+                ),
+                onTap: () => context.push(Paths.adminSummary),
               ),
               if (overdue > 0) ...[
                 const SizedBox(height: AppSpacing.md),

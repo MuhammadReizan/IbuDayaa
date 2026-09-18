@@ -70,15 +70,15 @@ class ScoreScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
             TintedRow(
-              icon: Icons.document_scanner_rounded,
+              icon: Icons.solar_power_rounded,
               tone: readiness.monthsStillNeeded == 0
                   ? PillTone.success
                   : PillTone.warning,
               title: readiness.monthsStillNeeded == 0
                   ? l10n.scoreRecordsEnough
-                  : l10n.scoreScanMoreMonths(readiness.monthsStillNeeded),
-              subtitle: l10n.scoreScanMoreMonthsSubtitle,
-              onTap: () => context.push(Paths.scan),
+                  : l10n.scoreUseHubMoreMonths(readiness.monthsStillNeeded),
+              subtitle: l10n.scoreUseHubMoreMonthsSubtitle,
+              onTap: () => context.push(Paths.memberSolar),
             ),
             const SizedBox(height: AppSpacing.sm),
             TintedRow(
@@ -147,6 +147,13 @@ class ScoreScreen extends ConsumerWidget {
                     CreditBand.perluPeningkatan => PillTone.danger,
                   },
                 ),
+                if (coop != null && isLoanReady(score, coop.loanMinScore)) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  StatusPill(
+                    label: l10n.loanReadyBadge,
+                    tone: PillTone.success,
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   delta == null
@@ -183,6 +190,12 @@ class ScoreScreen extends ConsumerWidget {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SecondaryButton(
+            label: l10n.creditReportOpen,
+            icon: Icons.description_outlined,
+            onPressed: () => context.push(Paths.creditReport),
           ),
           if (data.scoreHistoryOf(me.id, now).length > 1) ...[
             const SizedBox(height: AppSpacing.md),
@@ -291,7 +304,9 @@ class _ScoreHistoryChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final maxScore = history.map((s) => s.score).reduce((a, b) => a > b ? a : b);
+    final maxScore = history
+        .map((s) => s.score)
+        .reduce((a, b) => a > b ? a : b);
     final last = history.last;
 
     return Row(
