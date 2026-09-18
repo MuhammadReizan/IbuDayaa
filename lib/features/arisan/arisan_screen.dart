@@ -66,7 +66,7 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
     final members = data.membersOfGroup(g.id);
     final pot = g.contributionIdr * members.length;
     final recipient = data.recipientFor(g, now);
-    final myTurn = data.turnMonthOf(g, me.id);
+    final myTurn = data.turnMonthOf(g, me.id, now);
     final mine = data.contributionFor(g.id, me.id, now);
     final rejected = data
         .paymentsOfGroup(g.id)
@@ -283,9 +283,11 @@ class _ArisanScreenState extends ConsumerState<ArisanScreen> {
             _MemberRow(
               name: data.nameOf(m.userId),
               turn: m.turnOrder,
-              turnMonth: DateTime(
-                g.startMonth.year,
-                g.startMonth.month + m.turnOrder - 1,
+              turnMonth: arisanTurnMonth(
+                startMonth: g.startMonth,
+                turnOrder: m.turnOrder,
+                memberCount: members.length,
+                now: now,
               ),
               isMe: m.userId == me.id,
               isRecipient: started && recipient?.userId == m.userId,

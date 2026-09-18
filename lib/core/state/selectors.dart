@@ -37,6 +37,27 @@ class ThreadSummary {
   DateTime get activity => last?.createdAt ?? thread.createdAt;
 }
 
+/// The month a `turnOrder`-th member receives the pot, given the group
+/// repeats every [memberCount] months: the current cycle's occurrence if her
+/// turn is happening in or before [now], otherwise the one it will recur to
+/// next. Pure so it is trivial to unit test independently of a snapshot.
+DateTime arisanTurnMonth({
+  required DateTime startMonth,
+  required int turnOrder,
+  required int memberCount,
+  required DateTime now,
+}) {
+  final cycleLength = memberCount < 1 ? 1 : memberCount;
+  final turnBase = turnOrder - 1;
+  final elapsed = monthsBetween(startMonth, now);
+  var offset = turnBase;
+  if (elapsed > turnBase) {
+    final cyclesPassed = ((elapsed - turnBase) / cycleLength).ceil();
+    offset = turnBase + cyclesPassed * cycleLength;
+  }
+  return DateTime(startMonth.year, startMonth.month + offset);
+}
+
 extension SnapshotQueries on CoopSnapshot {
   // -- People ----------------------------------------------------------------
 
@@ -176,11 +197,17 @@ extension SnapshotQueries on CoopSnapshot {
     return list[offset % list.length];
   }
 
-  DateTime turnMonthOf(ArisanGroup g, String userId) {
+  /// The month a member receives the pot — the current cycle's occurrence if
+  /// her turn is happening now, otherwise her next one. The group repeats
+  /// every [membersOfGroup(g.id).length] months (see [recipientFor]), so a
+  /// member's turn keeps recurring rather than happening only once.
+  DateTime turnMonthOf(ArisanGroup g, String userId, DateTime now) {
     final m = membersOfGroup(g.id).where((x) => x.userId == userId).firstOrNull;
-    return DateTime(
-      g.startMonth.year,
-      g.startMonth.month + (m?.turnOrder ?? 1) - 1,
+    return arisanTurnMonth(
+      startMonth: g.startMonth,
+      turnOrder: m?.turnOrder ?? 1,
+      memberCount: membersOfGroup(g.id).length,
+      now: now,
     );
   }
 

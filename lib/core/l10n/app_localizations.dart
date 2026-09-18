@@ -720,6 +720,14 @@ abstract class AppLocalizations {
   String get arisanAdminPickMembersHint;
   String get arisanAdminNeedMoreMembers;
   String get arisanAdminGroupCreatedToast;
+  String get arisanDrawButton;
+  String get arisanDrawDialogTitle;
+  String get arisanDrawHint;
+  String get arisanDrawInProgress;
+  String arisanDrawSlot(int turn, String name);
+  String get arisanDrawRedo;
+  String get arisanDrawConfirm;
+  String get arisanDrawCancel;
 
   String get adminHubTitle;
   String get adminHubCapacity;
@@ -2340,6 +2348,24 @@ class _IdStrings extends AppLocalizations {
   @override
   String get arisanAdminGroupCreatedToast =>
       'Grup arisan dibuat. Anggota sudah diberi tahu.';
+  @override
+  String get arisanDrawButton => 'Kocok Undian';
+  @override
+  String get arisanDrawDialogTitle => 'Mengocok Urutan Giliran';
+  @override
+  String get arisanDrawHint =>
+      'Setiap anggota hanya diundi sekali — yang sudah dapat giliran tidak '
+      'ikut diundi lagi sampai semua anggota lain kebagian.';
+  @override
+  String get arisanDrawInProgress => 'Mengocok…';
+  @override
+  String arisanDrawSlot(int turn, String name) => 'Giliran ke-$turn: $name';
+  @override
+  String get arisanDrawRedo => 'Kocok Ulang';
+  @override
+  String get arisanDrawConfirm => 'Gunakan Urutan Ini';
+  @override
+  String get arisanDrawCancel => 'Batal';
 
   @override
   String get adminHubTitle => 'Solar Hub & Slot';
@@ -4301,6 +4327,24 @@ class _EnStrings extends AppLocalizations {
   @override
   String get arisanAdminGroupCreatedToast =>
       'Arisan group created. Members have been notified.';
+  @override
+  String get arisanDrawButton => 'Draw Lottery';
+  @override
+  String get arisanDrawDialogTitle => 'Drawing Turn Order';
+  @override
+  String get arisanDrawHint =>
+      "Each member is drawn only once — once she's drawn, she's out of the "
+      'pool until everyone else has had a turn.';
+  @override
+  String get arisanDrawInProgress => 'Drawing…';
+  @override
+  String arisanDrawSlot(int turn, String name) => 'Turn #$turn: $name';
+  @override
+  String get arisanDrawRedo => 'Redraw';
+  @override
+  String get arisanDrawConfirm => 'Use This Order';
+  @override
+  String get arisanDrawCancel => 'Cancel';
 
   @override
   String get adminHubTitle => 'Solar Hub & Slots';

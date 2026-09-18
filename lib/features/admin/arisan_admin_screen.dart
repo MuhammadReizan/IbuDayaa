@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,7 @@ import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
 import '../../core/l10n/l10n.dart';
+import '../../core/logic/arisan_draw.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
 import '../../core/state/actions.dart';
@@ -172,10 +175,13 @@ class ArisanAdminScreen extends ConsumerWidget {
                                     ),
                                     Text(
                                       shortMonthYear(
-                                        DateTime(
-                                          g.startMonth.year,
-                                          g.startMonth.month + m.turnOrder - 1,
+                                        arisanTurnMonth(
+                                          startMonth: g.startMonth,
+                                          turnOrder: m.turnOrder,
+                                          memberCount: members.length,
+                                          now: now,
                                         ),
+                                        l10n: l10n,
                                       ),
                                       style: text.bodySmall,
                                     ),
@@ -280,6 +286,28 @@ class _ArisanCreateScreenState extends ConsumerState<ArisanCreateScreen> {
             Text(l10n.arisanAdminPickMembersTitle, style: text.titleSmall),
             const SizedBox(height: AppSpacing.xs),
             Text(l10n.arisanAdminPickMembersHint, style: text.bodySmall),
+            if (_order.length >= 2) ...[
+              const SizedBox(height: AppSpacing.md),
+              SecondaryButton(
+                label: l10n.arisanDrawButton,
+                icon: Icons.casino_rounded,
+                expand: false,
+                onPressed: () async {
+                  final drawn = await showDialog<List<String>>(
+                    context: context,
+                    builder: (_) => _ArisanDrawDialog(
+                      memberIds: _order,
+                      nameOf: data.nameOf,
+                    ),
+                  );
+                  if (drawn != null) {
+                    setState(() => _order
+                      ..clear()
+                      ..addAll(drawn));
+                  }
+                },
+              ),
+            ],
             const SizedBox(height: AppSpacing.md),
             if (members.length < 2)
               InfoBanner(
@@ -339,5 +367,129 @@ class _ArisanCreateScreenState extends ConsumerState<ArisanCreateScreen> {
     if (!mounted) return;
     setState(() => _busy = false);
     if (ok) context.pop();
+  }
+}
+
+/// A fair, transparent random draw for turn order: every selected member is
+/// drawn exactly once, revealed one at a time, so the admin (and anyone
+/// watching) sees nobody could be drawn twice — the same "once you're
+/// drawn, you're out of the pool" guarantee a physical kocok arisan gives.
+class _ArisanDrawDialog extends StatefulWidget {
+  const _ArisanDrawDialog({required this.memberIds, required this.nameOf});
+
+  final List<String> memberIds;
+  final String Function(String) nameOf;
+
+  @override
+  State<_ArisanDrawDialog> createState() => _ArisanDrawDialogState();
+}
+
+class _ArisanDrawDialogState extends State<_ArisanDrawDialog> {
+  late List<String> _drawn;
+  final List<String> _revealed = [];
+  Timer? _timer;
+  bool _done = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _drawn = drawArisanOrder(widget.memberIds);
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    var i = 0;
+    _timer = Timer.periodic(const Duration(milliseconds: 550), (t) {
+      if (i >= _drawn.length) {
+        t.cancel();
+        setState(() => _done = true);
+        return;
+      }
+      setState(() => _revealed.add(_drawn[i]));
+      i++;
+    });
+  }
+
+  void _redraw() {
+    setState(() {
+      _drawn = drawArisanOrder(widget.memberIds);
+      _revealed.clear();
+      _done = false;
+    });
+    _startTimer();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final text = Theme.of(context).textTheme;
+    return AlertDialog(
+      title: Text(l10n.arisanDrawDialogTitle),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.arisanDrawHint, style: text.bodySmall),
+            const SizedBox(height: AppSpacing.md),
+            for (int i = 0; i < _revealed.length; i++)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 12,
+                      backgroundColor: AppColors.primaryContainer,
+                      child: Text(
+                        '${i + 1}',
+                        style: text.labelSmall?.copyWith(
+                          color: AppColors.primaryDark,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(child: Text(widget.nameOf(_revealed[i]))),
+                  ],
+                ),
+              ),
+            if (!_done) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(l10n.arisanDrawInProgress, style: text.bodySmall),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.arisanDrawCancel),
+        ),
+        if (_done) ...[
+          TextButton(onPressed: _redraw, child: Text(l10n.arisanDrawRedo)),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(_drawn),
+            child: Text(l10n.arisanDrawConfirm),
+          ),
+        ],
+      ],
+    );
   }
 }
