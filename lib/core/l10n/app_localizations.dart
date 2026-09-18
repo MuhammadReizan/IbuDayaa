@@ -699,6 +699,26 @@ abstract class AppLocalizations {
   String get hubBookingMarkedUsedToast;
   String get hubConnectionRequestsSection;
   String get hubConnectionApprove;
+  String get adminBoardTitle;
+  String get adminBoardSubtitle;
+  String get adminBoardToday;
+  String get adminBoardTomorrow;
+  String get adminBoardOpen;
+  String get adminBoardClosed;
+  String get adminBoardClose;
+  String adminBoardCloseTitle(String slot);
+  String get adminBoardCloseBody;
+  String get adminBoardClosedToast;
+  String get adminBoardOpenedToast;
+  String adminBoardEnergy(String booked, String cap);
+  String adminBoardLoad(String load, String max);
+  String get adminBoardNoLoadLimit;
+  String get adminBoardNoBookings;
+  String solarWeatherCapacity(int pct, String effective, String base);
+  String get hubFieldMaxLoad;
+  String get hubFieldMaxLoadHelper;
+  String get solarSlotClosed;
+  String solarSlotLoadFull(String load, String max);
   String adminSummarySubtitle(int active, int total, int ready, int trades);
   String get adminSummaryActive;
   String get adminSummaryLoanReady;
@@ -1256,7 +1276,7 @@ class _IdStrings extends AppLocalizations {
   String get welcomeFeatureSolar => 'Pesan jadwal pakai Solar Hub koperasi';
   @override
   String get welcomeFeatureArisan =>
-      'Arisan energi dan pinjaman usaha dari koperasi';
+      'Arisan digital, tukar kuota, dan pinjaman usaha dari koperasi';
   @override
   String get welcomeTrySample => 'Coba dengan data contoh';
   @override
@@ -1449,7 +1469,7 @@ class _IdStrings extends AppLocalizations {
   @override
   String get scaffoldBookings => 'Jadwal Solar Hub';
   @override
-  String get scaffoldArisan => 'Arisan Koperasi';
+  String get scaffoldArisan => 'Arisan Digital';
   @override
   String get scaffoldQuota => 'Pasar Kuota';
   @override
@@ -1517,9 +1537,9 @@ class _IdStrings extends AppLocalizations {
   @override
   String get homeBookingHub => 'Booking Hub';
   @override
-  String get homeArisanEnergi => 'Arisan Koperasi';
+  String get homeArisanEnergi => 'Arisan Digital';
   @override
-  String get homeTukarKuota => 'Arisan Energi';
+  String get homeTukarKuota => 'Tukar Kuota';
   @override
   String get homeSkorKredit => 'Skor Kredit';
   @override
@@ -1814,7 +1834,7 @@ class _IdStrings extends AppLocalizations {
 
   // Arisan
   @override
-  String get arisanTitle => 'Arisan Koperasi';
+  String get arisanTitle => 'Arisan Digital';
   @override
   String get arisanNoGroup => 'Belum bergabung grup arisan';
   @override
@@ -2007,7 +2027,7 @@ class _IdStrings extends AppLocalizations {
   @override
   String get aboutDescription =>
       'IbuDaya membantu usaha mikro milik perempuan mengelola biaya '
-      'listrik, memakai Solar Hub koperasi, ikut arisan energi, dan '
+      'listrik, memakai Solar Hub koperasi, ikut arisan digital, tukar kuota, dan '
       'mengajukan pinjaman usaha ke koperasinya.';
   @override
   String get aboutNumbersSection => 'Dari mana angka-angkanya';
@@ -2302,6 +2322,54 @@ class _IdStrings extends AppLocalizations {
       'Permintaan koneksi menunggu verifikasi';
   @override
   String get hubConnectionApprove => 'Setujui';
+  @override
+  String get adminBoardTitle => 'Papan Slot Hub';
+  @override
+  String get adminBoardSubtitle =>
+      'Siapa memakai hub, sisa kWh dan kW tiap slot';
+  @override
+  String get adminBoardToday => 'Hari ini';
+  @override
+  String get adminBoardTomorrow => 'Besok';
+  @override
+  String get adminBoardOpen => 'Buka';
+  @override
+  String get adminBoardClosed => 'Ditutup';
+  @override
+  String get adminBoardClose => 'Tutup slot';
+  @override
+  String adminBoardCloseTitle(String slot) => 'Tutup slot $slot?';
+  @override
+  String get adminBoardCloseBody =>
+      'Slot ini tidak menerima booking atau permintaan QR baru. Booking yang sudah ada tidak dibatalkan otomatis, jadi kabari anggotanya.';
+  @override
+  String get adminBoardClosedToast => 'Slot ditutup.';
+  @override
+  String get adminBoardOpenedToast => 'Slot dibuka.';
+  @override
+  String adminBoardEnergy(String booked, String cap) =>
+      'Energi dipesan $booked dari $cap';
+  @override
+  String adminBoardLoad(String load, String max) =>
+      'Beban serentak $load dari $max kW';
+  @override
+  String get adminBoardNoLoadLimit =>
+      'Batas daya inverter belum diatur di Pengaturan Hub, jadi beban serentak belum dicek.';
+  @override
+  String get adminBoardNoBookings => 'Belum ada booking.';
+  @override
+  String solarWeatherCapacity(int pct, String effective, String base) =>
+      'Perkiraan kapasitas ±$pct% dari hari cerah (≈$effective dari $base)';
+  @override
+  String get hubFieldMaxLoad => 'Batas daya inverter';
+  @override
+  String get hubFieldMaxLoadHelper =>
+      'Daya yang bisa ditopang hub bersamaan (kW), dari spesifikasi inverter. Kosongkan jika belum diketahui; beban serentak tidak dicek.';
+  @override
+  String get solarSlotClosed => 'Ditutup admin';
+  @override
+  String solarSlotLoadFull(String load, String max) =>
+      'Beban serentak $load/$max kW — penuh';
   @override
   String adminSummarySubtitle(int active, int total, int ready, int trades) =>
       '$active/$total aktif · $ready siap pinjam · $trades pertukaran kuota';
@@ -2886,7 +2954,7 @@ class _IdStrings extends AppLocalizations {
   String arisanPayoutInfo(String name, String amount) =>
       'Arisan bulan ini sudah dicairkan ke $name ($amount).';
   @override
-  String get arisanEnergyTrading => 'Arisan Energi';
+  String get arisanEnergyTrading => 'Tukar Kuota';
   @override
   String get arisanEnergyTradingSub =>
       'Bagikan sisa kuota Solar Hub ke sesama anggota, atau minta saat butuh.';
@@ -2931,7 +2999,7 @@ class _IdStrings extends AppLocalizations {
   @override
   String get scoreInArisan => 'Sudah ikut arisan';
   @override
-  String get scoreJoinArisan => 'Ikut grup arisan koperasi';
+  String get scoreJoinArisan => 'Ikut grup arisan digital';
   @override
   String scoreAppliancesDeclaredCount(int count) => '$count alat terdaftar';
   @override
@@ -3239,7 +3307,7 @@ class _EnStrings extends AppLocalizations {
       'Book Solar Hub time slots at your cooperative';
   @override
   String get welcomeFeatureArisan =>
-      'Energy arisan and business financing from your cooperative';
+      'Digital arisan, quota swaps and business financing from your cooperative';
   @override
   String get welcomeTrySample => 'Try with sample data';
   @override
@@ -3428,7 +3496,7 @@ class _EnStrings extends AppLocalizations {
   @override
   String get scaffoldBookings => 'Solar Hub Schedule';
   @override
-  String get scaffoldArisan => 'Cooperative Arisan';
+  String get scaffoldArisan => 'Digital Arisan';
   @override
   String get scaffoldQuota => 'Quota Market';
   @override
@@ -3496,9 +3564,9 @@ class _EnStrings extends AppLocalizations {
   @override
   String get homeBookingHub => 'Book Hub';
   @override
-  String get homeArisanEnergi => 'Cooperative Arisan';
+  String get homeArisanEnergi => 'Digital Arisan';
   @override
-  String get homeTukarKuota => 'Arisan Energi';
+  String get homeTukarKuota => 'Quota Swap';
   @override
   String get homeSkorKredit => 'Credit Score';
   @override
@@ -3796,7 +3864,7 @@ class _EnStrings extends AppLocalizations {
 
   // Arisan
   @override
-  String get arisanTitle => 'Cooperative Arisan';
+  String get arisanTitle => 'Digital Arisan';
   @override
   String get arisanNoGroup => 'Not yet in an arisan group';
   @override
@@ -4286,6 +4354,54 @@ class _EnStrings extends AppLocalizations {
       'Connection requests awaiting verification';
   @override
   String get hubConnectionApprove => 'Approve';
+  @override
+  String get adminBoardTitle => 'Hub Slot Board';
+  @override
+  String get adminBoardSubtitle =>
+      'Who uses the hub, and the kWh and kW left in each slot';
+  @override
+  String get adminBoardToday => 'Today';
+  @override
+  String get adminBoardTomorrow => 'Tomorrow';
+  @override
+  String get adminBoardOpen => 'Open';
+  @override
+  String get adminBoardClosed => 'Closed';
+  @override
+  String get adminBoardClose => 'Close slot';
+  @override
+  String adminBoardCloseTitle(String slot) => 'Close the $slot slot?';
+  @override
+  String get adminBoardCloseBody =>
+      'This slot takes no new bookings or QR requests. Existing bookings are not cancelled automatically, so tell those members.';
+  @override
+  String get adminBoardClosedToast => 'Slot closed.';
+  @override
+  String get adminBoardOpenedToast => 'Slot reopened.';
+  @override
+  String adminBoardEnergy(String booked, String cap) =>
+      'Energy booked $booked of $cap';
+  @override
+  String adminBoardLoad(String load, String max) =>
+      'Simultaneous load $load of $max kW';
+  @override
+  String get adminBoardNoLoadLimit =>
+      'The inverter power limit isn\'t set in Hub Settings, so simultaneous load is not checked yet.';
+  @override
+  String get adminBoardNoBookings => 'No bookings yet.';
+  @override
+  String solarWeatherCapacity(int pct, String effective, String base) =>
+      'Estimated capacity about $pct% of a clear day (≈$effective of $base)';
+  @override
+  String get hubFieldMaxLoad => 'Inverter power limit';
+  @override
+  String get hubFieldMaxLoadHelper =>
+      'What the hub can carry at the same moment (kW), from the inverter spec. Leave blank if unknown; simultaneous load is then not checked.';
+  @override
+  String get solarSlotClosed => 'Closed by admin';
+  @override
+  String solarSlotLoadFull(String load, String max) =>
+      'Simultaneous load $load/$max kW — full';
   @override
   String adminSummarySubtitle(int active, int total, int ready, int trades) =>
       '$active/$total active · $ready loan-ready · $trades quota trades';
@@ -4872,7 +4988,7 @@ class _EnStrings extends AppLocalizations {
   String arisanPayoutInfo(String name, String amount) =>
       'This month\'s arisan payout has been disbursed to $name ($amount).';
   @override
-  String get arisanEnergyTrading => 'Energy Arisan';
+  String get arisanEnergyTrading => 'Quota Swap';
   @override
   String get arisanEnergyTradingSub =>
       'Share remaining Solar Hub quota with fellow members, or request when needed.';
@@ -4917,7 +5033,7 @@ class _EnStrings extends AppLocalizations {
   @override
   String get scoreInArisan => 'Already in arisan';
   @override
-  String get scoreJoinArisan => 'Join cooperative arisan group';
+  String get scoreJoinArisan => 'Join a digital arisan group';
   @override
   String scoreAppliancesDeclaredCount(int count) =>
       '$count appliance${count == 1 ? '' : 's'} registered';

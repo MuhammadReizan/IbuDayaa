@@ -13,6 +13,7 @@ import '../features/admin/announce_screen.dart';
 import '../features/admin/arisan_admin_screen.dart';
 import '../features/admin/coop_settings_screen.dart';
 import '../features/admin/coop_summary_screen.dart';
+import '../features/admin/hub_board_screen.dart';
 import '../features/admin/hub_requests_screen.dart';
 import '../features/admin/hub_settings_screen.dart';
 import '../features/admin/member_detail_screen.dart';
@@ -228,6 +229,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       _page(Paths.adminHub, (_) => const HubSettingsScreen()),
+      _page(Paths.adminHubBoard, (_) => const HubBoardScreen()),
       _page(Paths.adminSummary, (_) => const CoopSummaryScreen()),
       _page(Paths.adminHubRequests, (_) => const HubRequestsScreen()),
       _page(Paths.adminAnnounce, (_) => const AnnounceScreen()),

@@ -57,6 +57,7 @@ void main() {
     Paths.adminArisanNew,
     Paths.adminHub,
     Paths.adminHubRequests,
+    Paths.adminHubBoard,
     Paths.adminSummary,
     Paths.adminSettings,
     Paths.adminAnnounce,

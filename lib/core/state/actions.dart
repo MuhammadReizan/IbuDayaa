@@ -155,6 +155,7 @@ class AppActions {
     required DateTime date,
     required String applianceName,
     required double estKwh,
+    double loadKw = 0,
   }) async {
     final b = await _ref
         .read(solarRepositoryProvider)
@@ -164,6 +165,7 @@ class AppActions {
           date: date,
           applianceName: applianceName,
           estKwh: estKwh,
+          loadKw: loadKw,
         );
     await _refresh();
     return b;
@@ -176,6 +178,7 @@ class AppActions {
     required String scannedCode,
     required String applianceName,
     required double estKwh,
+    double loadKw = 0,
   }) async {
     final b = await _ref
         .read(solarRepositoryProvider)
@@ -184,6 +187,7 @@ class AppActions {
           scannedCode: scannedCode,
           applianceName: applianceName,
           estKwh: estKwh,
+          loadKw: loadKw,
         );
     await _refresh();
     return b;
@@ -247,6 +251,11 @@ class AppActions {
 
   Future<void> addSlot(String hubId, int start, int end) async {
     await _ref.read(solarRepositoryProvider).addSlot(_me, hubId, start, end);
+    await _refresh();
+  }
+
+  Future<void> setSlotOpen(String slotId, bool open) async {
+    await _ref.read(solarRepositoryProvider).setSlotOpen(_me, slotId, open);
     await _refresh();
   }
 

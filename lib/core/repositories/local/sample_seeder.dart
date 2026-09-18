@@ -80,7 +80,9 @@ class SampleSeeder {
     await db.update(Tbl.solarHubs, hub.id, {
       'name': 'Solar Hub Balai Melati',
       'location': 'Balai Warga RT 03, Palembang',
-      'daily_capacity_kwh': 60,
+      // 5 kWp x ~4 peak-sun hours x 0.8 = 16 kWh/day, the proposal's pilot hub.
+      'daily_capacity_kwh': 16,
+      'max_load_kw': 5,
     });
     final slots =
         db
@@ -184,7 +186,7 @@ class SampleSeeder {
     final arisan = LocalArisanRepository(db, () => monthsAgo(4));
     final group = await arisan.createGroup(
       admin: admin,
-      name: 'Arisan Koperasi Melati',
+      name: 'Arisan Digital Melati',
       contributionIdr: 150000,
       startMonth: monthsAgo(4),
       memberIdsInTurnOrder: ids,

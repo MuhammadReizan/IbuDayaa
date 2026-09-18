@@ -54,6 +54,7 @@ abstract final class Paths {
   static const adminArisan = '/a/arisan';
   static const adminArisanNew = '/a/arisan/new';
   static const adminHub = '/a/hub';
+  static const adminHubBoard = '/a/hub/board';
   static const adminSummary = '/a/summary';
   static const adminHubRequests = '/a/hub/requests';
   static const adminAnnounce = '/a/announce';
