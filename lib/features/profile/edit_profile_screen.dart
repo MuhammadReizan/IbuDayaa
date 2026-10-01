@@ -21,9 +21,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   // PLN household tariffs for non-subsidised connections (2024). Shown as
   // shortcuts only; the bill itself is the source of truth.
   static const _tariffs = [
-    (label: '900 VA non-subsidi', value: 1352.0),
-    (label: '1.300–2.200 VA', value: 1444.70),
-    (label: '3.500 VA ke atas', value: 1699.53),
+    (id: '900 VA non-subsidi', en: '900 VA non-subsidised', value: 1352.0),
+    (id: '1.300–2.200 VA', en: '1,300–2,200 VA', value: 1444.70),
+    (id: '3.500 VA ke atas', en: '3,500 VA and above', value: 1699.53),
   ];
 
   final _form = GlobalKey<FormState>();
@@ -135,7 +135,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 children: [
                   for (final t in _tariffs)
                     ActionChip(
-                      label: Text('${t.label} · ${formatRupiah(t.value)}'),
+                      label: Text(
+                        '${l10n.isEn ? t.en : t.id} · ${formatRupiah(t.value)}',
+                      ),
                       onPressed: () => setState(
                         () => _tariff.text = t.value
                             .toStringAsFixed(2)

@@ -107,7 +107,11 @@ class MessagesScreen extends ConsumerWidget {
                 contentPadding: EdgeInsets.zero,
                 leading: MemberAvatar(name: p.fullName),
                 title: Text(p.fullName),
-                subtitle: Text(p.isAdmin ? 'Admin koperasi' : p.businessName),
+                subtitle: Text(
+                  p.isAdmin
+                      ? AppLocalizations.of(context).registerAsAdmin
+                      : p.businessName,
+                ),
                 onTap: () => Navigator.of(ctx).pop(p),
               ),
           ],
@@ -173,15 +177,17 @@ class _ThreadRow extends StatelessWidget {
             },
           );
 
+    final l10n = AppLocalizations.of(context);
+    final lastBody = last?.bodyFor(english: l10n.isEn) ?? '';
     final preview = last == null
-        ? 'Belum ada pesan'
+        ? l10n.messagesEmpty
         : last.isSystem
-        ? last.body
+        ? lastBody
         : last.senderId == me.id
-        ? 'Anda: ${last.body}'
+        ? '${l10n.messagesYouPrefix}: $lastBody'
         : senderName != null && t.thread.kind != ThreadKind.direct
-        ? '$senderName: ${last.body}'
-        : last.body;
+        ? '$senderName: $lastBody'
+        : lastBody;
 
     return InkWell(
       onTap: () => context.push(Paths.thread(t.thread.id)),

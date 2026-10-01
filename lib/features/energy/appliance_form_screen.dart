@@ -27,7 +27,9 @@ class _ApplianceFormScreenState extends ConsumerState<ApplianceFormScreen> {
   final _form = GlobalKey<FormState>();
   late String _kind = widget.existing?.kind ?? 'oven';
   late final _name = TextEditingController(
-    text: widget.existing?.name ?? kApplianceKinds['oven']!.label,
+    text:
+        widget.existing?.name ??
+        applianceKindLabel('oven', AppLocalizations.current),
   );
   late final _watts = TextEditingController(
     text: (widget.existing?.watts ?? kApplianceKinds['oven']!.watts)
@@ -46,14 +48,19 @@ class _ApplianceFormScreenState extends ConsumerState<ApplianceFormScreen> {
   }
 
   void _pickKind(String kind) {
+    final l10n = AppLocalizations.of(context);
     final preset = kApplianceKinds[kind]!;
-    final wasPresetName = kApplianceKinds.values.any(
-      (p) => p.label == _name.text,
+    // A name still equal to some preset (in either language) is a default the
+    // member has not edited, so it may follow the newly chosen preset.
+    final wasPresetName = kApplianceKinds.entries.any(
+      (p) =>
+          p.value.label == _name.text ||
+          applianceKindLabel(p.key, l10n) == _name.text,
     );
     setState(() {
       _kind = kind;
       if (_name.text.trim().isEmpty || wasPresetName) {
-        _name.text = kind == 'other' ? '' : preset.label;
+        _name.text = kind == 'other' ? '' : applianceKindLabel(kind, l10n);
       }
       _watts.text = preset.watts.round().toString();
     });

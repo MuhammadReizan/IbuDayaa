@@ -182,7 +182,7 @@ class _CoopSettingsScreenState extends ConsumerState<CoopSettingsScreen> {
               l10n.coopSettingsCeilingByScore(
                 [
                   for (final e in kCeilingShareByBand.entries.toList().reversed)
-                    '${e.key.label} ${formatRupiah((max * e.value / 100000).floor() * 100000)}',
+                    '${e.key.localizedLabel(l10n)} ${formatRupiah((max * e.value / 100000).floor() * 100000)}',
                 ].join(' · '),
               ),
               style: text.bodySmall,

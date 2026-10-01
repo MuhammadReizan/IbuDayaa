@@ -17,25 +17,41 @@ abstract class LocalRepo {
 
   Profile profileById(String id) {
     final row = db.find(Tbl.profiles, id);
-    if (row == null) throw const AppException('Akun tidak ditemukan.');
+    if (row == null) {
+      throw const AppException(
+        'Akun tidak ditemukan.',
+        en: 'Account not found.',
+      );
+    }
     return Profile.fromRow(row);
   }
 
   Cooperative cooperativeById(String id) {
     final row = db.find(Tbl.cooperatives, id);
-    if (row == null) throw const AppException('Koperasi tidak ditemukan.');
+    if (row == null) {
+      throw const AppException(
+        'Koperasi tidak ditemukan.',
+        en: 'Cooperative not found.',
+      );
+    }
     return Cooperative.fromRow(row);
   }
 
   void requireAdmin(Profile actor, String cooperativeId) {
     if (!actor.isAdmin || actor.cooperativeId != cooperativeId) {
-      throw const AppException('Hanya admin koperasi yang bisa melakukan ini.');
+      throw const AppException(
+        'Hanya admin koperasi yang bisa melakukan ini.',
+        en: 'Only a cooperative admin can do this.',
+      );
     }
   }
 
   void requireMember(Profile actor) {
     if (actor.isAdmin) {
-      throw const AppException('Fitur ini khusus untuk anggota koperasi.');
+      throw const AppException(
+        'Fitur ini khusus untuk anggota koperasi.',
+        en: 'This feature is only for cooperative members.',
+      );
     }
   }
 
@@ -47,11 +63,15 @@ abstract class LocalRepo {
       .map(Profile.fromRow)
       .toList();
 
+  /// [titleEn]/[bodyEn] are the English versions; the recipient's language is
+  /// not known here, so both are stored and the UI picks one.
   Future<void> notify({
     required String userId,
     required String type,
     required String title,
     required String body,
+    required String titleEn,
+    required String bodyEn,
     String? route,
   }) => db.insert(
     Tbl.notifications,
@@ -61,6 +81,8 @@ abstract class LocalRepo {
       type: type,
       title: title,
       body: body,
+      titleEn: titleEn,
+      bodyEn: bodyEn,
       route: route,
       createdAt: now(),
     ).toRow(),
@@ -71,6 +93,8 @@ abstract class LocalRepo {
     required String type,
     required String title,
     required String body,
+    required String titleEn,
+    required String bodyEn,
     String? route,
   }) async {
     for (final a in adminsOf(cooperativeId)) {
@@ -79,6 +103,8 @@ abstract class LocalRepo {
         type: type,
         title: title,
         body: body,
+        titleEn: titleEn,
+        bodyEn: bodyEn,
         route: route,
       );
     }
@@ -92,12 +118,17 @@ abstract class LocalRepo {
     return row == null ? null : MessageThread.fromRow(row);
   }
 
-  Future<void> postSystemMessage(String threadId, String body) => db.insert(
+  Future<void> postSystemMessage(
+    String threadId,
+    String body, {
+    required String bodyEn,
+  }) => db.insert(
     Tbl.messages,
     Message(
       id: newId(),
       threadId: threadId,
       body: body,
+      bodyEn: bodyEn,
       createdAt: now(),
     ).toRow(),
   );
@@ -170,6 +201,26 @@ abstract class LocalRepo {
     );
   }
 
+  /// "September 2026" in English, for the `*En` halves of stored texts.
+  String monthLabelEn(DateTime d) {
+    const names = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    final m = monthOf(d);
+    return '${names[m.month - 1]} ${m.year}';
+  }
+
   String monthLabel(DateTime d) {
     const names = [
       'Januari',
@@ -189,3 +240,7 @@ abstract class LocalRepo {
     return '${names[m.month - 1]} ${m.year}';
   }
 }
+
+/// A kWh or kW figure with one decimal in Indonesian writing (comma), for the
+/// Indonesian half of a message that is stored or thrown with both languages.
+String kwhId(double v) => v.toStringAsFixed(1).replaceAll('.', ',');

@@ -83,9 +83,15 @@ class NotificationsScreen extends ConsumerWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(n.title, style: text.titleSmall),
+                                  Text(
+                                    n.titleFor(english: l10n.isEn),
+                                    style: text.titleSmall,
+                                  ),
                                   const SizedBox(height: 2),
-                                  Text(n.body, style: text.bodySmall),
+                                  Text(
+                                    n.bodyFor(english: l10n.isEn),
+                                    style: text.bodySmall,
+                                  ),
                                   const SizedBox(height: AppSpacing.xs),
                                   Text(
                                     relativeTimeLabel(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import 'info_banner.dart';
 
 /// Shown wherever a loan is discussed. The cooperative, not the app, lends —
@@ -7,27 +8,24 @@ import 'info_banner.dart';
 class LoanDecisionNotice extends StatelessWidget {
   const LoanDecisionNotice({super.key});
 
-  static const String text =
-      'Keputusan pinjaman dibuat oleh admin koperasi Anda, bukan oleh '
-      'aplikasi. Skor hanya membantu admin menilai.';
-
   @override
-  Widget build(BuildContext context) =>
-      const InfoBanner(tone: InfoTone.info, message: text);
+  Widget build(BuildContext context) => InfoBanner(
+    tone: InfoTone.info,
+    message: AppLocalizations.of(context).loanDecisionNotice,
+  );
 }
 
 /// Mandatory notice on the roof estimate. The result is an initial estimate
 /// that needs on-site verification.
 class VerificationNotice extends StatelessWidget {
-  const VerificationNotice({super.key, this.text = _default});
+  const VerificationNotice({super.key, this.text});
 
-  static const String _default =
-      'Ini estimasi awal dari ukuran yang Anda masukkan. Teknisi tetap perlu '
-      'memeriksa atap sebelum pemasangan.';
-
-  final String text;
+  /// Overrides the standard sentence when a screen needs its own wording.
+  final String? text;
 
   @override
-  Widget build(BuildContext context) =>
-      InfoBanner(tone: InfoTone.warning, message: text);
+  Widget build(BuildContext context) => InfoBanner(
+    tone: InfoTone.warning,
+    message: text ?? AppLocalizations.of(context).verificationNotice,
+  );
 }

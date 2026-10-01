@@ -267,7 +267,12 @@ class _FactorCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text(f.label, style: text.titleSmall)),
+              Expanded(
+                child: Text(
+                  f.labelFor(english: AppLocalizations.of(context).isEn),
+                  style: text.titleSmall,
+                ),
+              ),
               if (delta != null && delta != 0) ...[
                 StatusPill(
                   label: '${delta > 0 ? '+' : ''}$delta',
@@ -284,7 +289,10 @@ class _FactorCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           AppProgressBar(value: ratio, color: color),
           const SizedBox(height: AppSpacing.sm),
-          Text(f.reason, style: text.bodySmall),
+          Text(
+            f.reasonFor(english: AppLocalizations.of(context).isEn),
+            style: text.bodySmall,
+          ),
         ],
       ),
     );

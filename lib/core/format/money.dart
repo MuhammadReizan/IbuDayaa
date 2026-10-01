@@ -1,13 +1,23 @@
 import 'package:intl/intl.dart';
 
+import '../l10n/l10n.dart';
+
 /// Indonesian rupiah formatting. See docs/DESIGN_SYSTEM.md §9.
 ///
 /// Always route currency through here — never format inline in a widget.
-final NumberFormat _rupiah = NumberFormat.currency(
+final NumberFormat _rupiahId = NumberFormat.currency(
   locale: 'id_ID',
   symbol: 'Rp ',
   decimalDigits: 0,
 );
+final NumberFormat _rupiahEn = NumberFormat.currency(
+  locale: 'en_US',
+  symbol: 'Rp ',
+  decimalDigits: 0,
+);
+
+NumberFormat get _rupiah =>
+    AppLocalizations.current.isEn ? _rupiahEn : _rupiahId;
 
 /// `2000000` -> `"Rp 2.000.000"`. Negatives -> `"-Rp 2.000.000"`.
 String formatRupiah(num value) {

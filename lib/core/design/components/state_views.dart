@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../brand/brand_art.dart';
+import '../../l10n/l10n.dart';
 import '../tokens.dart';
 import 'app_buttons.dart';
 
@@ -119,13 +120,10 @@ class EmptyState extends StatelessWidget {
 }
 
 class ErrorStateView extends StatelessWidget {
-  const ErrorStateView({
-    super.key,
-    this.message = 'Terjadi kesalahan. Coba lagi.',
-    this.onRetry,
-  });
+  const ErrorStateView({super.key, this.message, this.onRetry});
 
-  final String message;
+  /// Defaults to the generic "try again" sentence in the chosen language.
+  final String? message;
   final VoidCallback? onRetry;
 
   @override
@@ -151,11 +149,15 @@ class ErrorStateView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text(message, style: text.bodyMedium, textAlign: TextAlign.center),
+            Text(
+              message ?? AppLocalizations.of(context).errorGenericRetry,
+              style: text.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
             if (onRetry != null) ...[
               const SizedBox(height: AppSpacing.lg),
               SecondaryButton(
-                label: 'Coba lagi',
+                label: AppLocalizations.of(context).actionRetry,
                 onPressed: onRetry,
                 expand: false,
               ),

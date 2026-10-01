@@ -31,6 +31,13 @@ class RuleBasedCreditScoringEngine implements CreditScoringEngine {
     CreditCategory.communityParticipation: 'Partisipasi komunitas',
   };
 
+  static const Map<CreditCategory, String> _labelsEn = {
+    CreditCategory.energyUsage: 'Energy usage consistency',
+    CreditCategory.paymentHistory: 'Payment history',
+    CreditCategory.businessActivity: 'Business activity',
+    CreditCategory.communityParticipation: 'Community participation',
+  };
+
   @override
   CreditScore compute(CreditScoreInputs inputs) {
     final signals = {
@@ -59,6 +66,8 @@ class RuleBasedCreditScoringEngine implements CreditScoringEngine {
             points: pts,
             maxPoints: max,
             reason: _reason(cat, direction, pts, max),
+            labelEn: _labelsEn[cat],
+            reasonEn: _reasonEn(cat, direction),
           );
         })
         .toList(growable: false);
@@ -71,6 +80,9 @@ class RuleBasedCreditScoringEngine implements CreditScoringEngine {
       band: band,
       factors: factors,
       eligibilityLabel: _eligibilityLabel(score),
+      eligibilityLabelEn: score >= 65
+          ? 'Eligible to view the financing simulation'
+          : 'The score needs to improve to access the financing simulation',
       computedAt: DateTime.now(),
     );
   }
@@ -93,6 +105,36 @@ class RuleBasedCreditScoringEngine implements CreditScoringEngine {
       return 'Layak untuk melihat simulasi pembiayaan';
     }
     return 'Skor perlu ditingkatkan untuk mengakses simulasi pembiayaan';
+  }
+
+  /// English twin of [_reason]; keep the two in step.
+  static String _reasonEn(CreditCategory cat, FactorDirection dir) {
+    return switch (cat) {
+      CreditCategory.energyUsage =>
+        dir == FactorDirection.positive
+            ? 'Your energy use is consistent — a sign of good power management.'
+            : dir == FactorDirection.neutral
+            ? 'The consistency of your energy use can still improve.'
+            : 'Your energy use was not consistent in this period.',
+      CreditCategory.paymentHistory =>
+        dir == FactorDirection.positive
+            ? 'On-time arisan payments raise your score.'
+            : dir == FactorDirection.neutral
+            ? 'Some arisan payments were not recorded on time.'
+            : 'Late payments are affecting your score.',
+      CreditCategory.businessActivity =>
+        dir == FactorDirection.positive
+            ? 'Your business appliances are used often and regularly at the Solar Hub (number of sessions, kWh and weekly regularity).'
+            : dir == FactorDirection.neutral
+            ? 'Solar Hub use is adequate; more frequent, regular weekly use will raise the score.'
+            : 'Solar Hub use has been low over the last 8 weeks.',
+      CreditCategory.communityParticipation =>
+        dir == FactorDirection.positive
+            ? 'Joining the digital arisan and regularly sharing quota through Quota Swap strengthens your profile.'
+            : dir == FactorDirection.neutral
+            ? 'Sharing quota through Quota Swap can raise your community participation.'
+            : 'Community participation has been minimal in this period.',
+    };
   }
 
   /// Per-category templated reason (docs/DATA_MODEL.md §3.11).

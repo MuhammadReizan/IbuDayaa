@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../design/tokens.dart';
+import '../l10n/l10n.dart';
 
 /// Replacement for Flutter's default red/grey error box
 /// (installed as `ErrorWidget.builder` in bootstrap).
@@ -29,10 +30,12 @@ class AppErrorBox extends StatelessWidget {
                 size: 32,
               ),
               const SizedBox(height: AppSpacing.sm),
-              const Text(
-                'Terjadi kesalahan pada tampilan ini.',
+              // No BuildContext ancestry is guaranteed for an error widget, so
+              // use the language in use rather than looking it up.
+              Text(
+                AppLocalizations.current.errorViewBroken,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textPrimary),
+                style: const TextStyle(color: AppColors.textPrimary),
               ),
               if (kDebugMode && details != null) ...[
                 const SizedBox(height: AppSpacing.sm),

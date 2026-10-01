@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/auth/credentials.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
+import '../../core/l10n/l10n.dart';
 
 /// Title, dots, message and keypad, laid out to fit a 360 dp phone without
 /// the keypad covering anything.
@@ -196,7 +197,7 @@ class _PinCreateViewState extends State<PinCreateView> {
 
     if (_pin != _first) {
       setState(() {
-        _error = 'PIN tidak sama. Ulangi dari awal.';
+        _error = AppLocalizations.of(context).pinMismatch;
         _pin = '';
         _first = '';
         _confirming = false;

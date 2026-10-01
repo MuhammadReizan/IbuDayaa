@@ -104,12 +104,24 @@ class CreditFactor {
     required this.points,
     required this.maxPoints,
     required this.reason,
+    this.labelEn,
+    this.reasonEn,
   });
 
   final CreditCategory category;
 
   /// Indonesian display label (e.g. \"Konsistensi pemakaian energi\").
   final String label;
+
+  /// English versions of [label] and [reason]; the UI shows the pair that
+  /// matches the language the user chose.
+  final String? labelEn;
+  final String? reasonEn;
+
+  String labelFor({required bool english}) =>
+      english ? (labelEn ?? label) : label;
+  String reasonFor({required bool english}) =>
+      english ? (reasonEn ?? reason) : reason;
 
   final FactorDirection direction;
 
@@ -134,6 +146,7 @@ class CreditScore {
     required this.factors,
     required this.eligibilityLabel,
     required this.computedAt,
+    this.eligibilityLabelEn,
   });
 
   /// Total score, 0–100. Equals the sum of all [factors] points.
@@ -147,6 +160,7 @@ class CreditScore {
   /// Short eligibility message (e.g. \"Layak untuk melihat simulasi pembiayaan\").
   /// Does NOT include rupiah figures — those belong to the financing domain.
   final String eligibilityLabel;
+  final String? eligibilityLabelEn;
 
   final DateTime computedAt;
 }

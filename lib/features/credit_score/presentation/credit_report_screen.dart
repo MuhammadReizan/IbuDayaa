@@ -49,7 +49,9 @@ class CreditReportScreen extends ConsumerWidget {
         confirmLabel: l10n.creditReportCopy,
       );
       if (!ok || !context.mounted) return;
-      await Clipboard.setData(ClipboardData(text: report.toPlainText()));
+      await Clipboard.setData(
+        ClipboardData(text: report.toPlainText(english: l10n.isEn)),
+      );
       if (context.mounted) showAppSnack(context, l10n.creditReportCopied);
     }
 
@@ -99,7 +101,7 @@ class CreditReportScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.md),
                 for (final f in report.score.factors)
                   KeyValueRow(
-                    label: f.label,
+                    label: f.labelFor(english: l10n.isEn),
                     value: '${f.points}/${f.maxPoints}',
                   ),
               ],

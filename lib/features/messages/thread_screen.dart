@@ -95,7 +95,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
       appBar: AppBar(
         centerTitle: true,
         leading: IconButton(
-          tooltip: 'Kembali',
+          tooltip: l10n.actionBack,
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
@@ -103,10 +103,11 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
           children: [
             Text(summary.title, maxLines: 1, overflow: TextOverflow.ellipsis),
             Text(switch (thread.kind) {
-              ThreadKind.announcement => 'Pengumuman koperasi',
-              ThreadKind.group => '$participants peserta',
-              ThreadKind.support => me.isAdmin ? 'Anggota' : 'Admin koperasi',
-              ThreadKind.direct => 'Anggota koperasi',
+              ThreadKind.announcement => l10n.threadSubAnnouncement,
+              ThreadKind.group => l10n.threadParticipants(participants),
+              ThreadKind.support =>
+                me.isAdmin ? l10n.roleMember : l10n.registerAsAdmin,
+              ThreadKind.direct => l10n.registerAsMember,
             }, style: text.labelSmall),
           ],
         ),
@@ -117,10 +118,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
             Expanded(
               child: messages.isEmpty
                   ? Center(
-                      child: Text(
-                        'Belum ada pesan. Mulai percakapan.',
-                        style: text.bodyMedium,
-                      ),
+                      child: Text(l10n.threadEmpty, style: text.bodyMedium),
                     )
                   : ListView.builder(
                       reverse: true,
@@ -153,7 +151,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                                 ),
                               ),
                             ChatBubble(
-                              body: m.body,
+                              body: m.bodyFor(english: l10n.isEn),
                               time: formatClock(m.createdAt),
                               mine: m.senderId == me.id,
                               system: m.isSystem,
@@ -172,7 +170,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                 padding: const EdgeInsets.all(AppSpacing.md),
                 color: AppColors.surfaceAlt,
                 child: Text(
-                  'Hanya admin yang bisa mengirim pengumuman.',
+                  l10n.threadReadOnly,
                   textAlign: TextAlign.center,
                   style: text.bodySmall,
                 ),

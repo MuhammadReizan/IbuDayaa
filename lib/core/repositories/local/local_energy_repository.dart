@@ -24,20 +24,34 @@ class LocalEnergyRepository extends LocalRepo
     String? replaceId,
     String? bookingId,
   }) async {
-    if (kwh <= 0) throw const AppException('Jumlah kWh harus lebih dari 0.');
+    if (kwh <= 0) {
+      throw const AppException(
+        'Jumlah kWh harus lebih dari 0.',
+        en: 'The kWh amount must be more than 0.',
+      );
+    }
     if (totalIdr <= 0) {
-      throw const AppException('Total pembayaran harus lebih dari 0.');
+      throw const AppException(
+        'Total pembayaran harus lebih dari 0.',
+        en: 'The total payment must be more than 0.',
+      );
     }
     final month = monthOf(periodMonth);
     if (month.isAfter(monthOf(now()))) {
-      throw const AppException('Bulan tagihan tidak boleh di masa depan.');
+      throw const AppException(
+        'Bulan tagihan tidak boleh di masa depan.',
+        en: 'The bill month can\'t be in the future.',
+      );
     }
 
     String? targetId = replaceId;
     if (targetId != null) {
       final existing = db.find(Tbl.energyRecords, targetId);
       if (existing == null || existing['user_id'] != me.id) {
-        throw const AppException('Catatan tidak ditemukan.');
+        throw const AppException(
+          'Catatan tidak ditemukan.',
+          en: 'Record not found.',
+        );
       }
     } else if (kind == EnergyKind.postpaid) {
       // One bill per month: re-scanning a month corrects it instead of
@@ -79,7 +93,10 @@ class LocalEnergyRepository extends LocalRepo
   Future<void> deleteRecord(Profile me, String recordId) async {
     final row = db.find(Tbl.energyRecords, recordId);
     if (row == null || row['user_id'] != me.id) {
-      throw const AppException('Catatan tidak ditemukan.');
+      throw const AppException(
+        'Catatan tidak ditemukan.',
+        en: 'Record not found.',
+      );
     }
     await db.delete(Tbl.energyRecords, recordId);
   }
@@ -94,21 +111,38 @@ class LocalEnergyRepository extends LocalRepo
     required double hoursPerDay,
     required int daysPerWeek,
   }) async {
-    if (name.trim().isEmpty) throw const AppException('Nama alat wajib diisi.');
+    if (name.trim().isEmpty) {
+      throw const AppException(
+        'Nama alat wajib diisi.',
+        en: 'Enter the appliance name.',
+      );
+    }
     if (watts <= 0 || watts > 20000) {
-      throw const AppException('Daya alat harus antara 1 dan 20.000 watt.');
+      throw const AppException(
+        'Daya alat harus antara 1 dan 20.000 watt.',
+        en: 'Appliance power must be between 1 and 20,000 watts.',
+      );
     }
     if (hoursPerDay <= 0 || hoursPerDay > 24) {
-      throw const AppException('Jam pemakaian harus antara 0 dan 24.');
+      throw const AppException(
+        'Jam pemakaian harus antara 0 dan 24.',
+        en: 'Hours of use must be between 0 and 24.',
+      );
     }
     if (daysPerWeek < 1 || daysPerWeek > 7) {
-      throw const AppException('Hari pemakaian harus 1 sampai 7.');
+      throw const AppException(
+        'Hari pemakaian harus 1 sampai 7.',
+        en: 'Days of use must be 1 to 7.',
+      );
     }
 
     if (id != null) {
       final row = db.find(Tbl.appliances, id);
       if (row == null || row['user_id'] != me.id) {
-        throw const AppException('Alat tidak ditemukan.');
+        throw const AppException(
+          'Alat tidak ditemukan.',
+          en: 'Appliance not found.',
+        );
       }
     }
 
@@ -134,7 +168,10 @@ class LocalEnergyRepository extends LocalRepo
   Future<void> deleteAppliance(Profile me, String applianceId) async {
     final row = db.find(Tbl.appliances, applianceId);
     if (row == null || row['user_id'] != me.id) {
-      throw const AppException('Alat tidak ditemukan.');
+      throw const AppException(
+        'Alat tidak ditemukan.',
+        en: 'Appliance not found.',
+      );
     }
     await db.delete(Tbl.appliances, applianceId);
   }
@@ -145,7 +182,10 @@ class LocalEnergyRepository extends LocalRepo
     RoofAssessment draft,
   ) async {
     if (draft.lengthM <= 0 || draft.widthM <= 0) {
-      throw const AppException('Panjang dan lebar atap harus lebih dari 0.');
+      throw const AppException(
+        'Panjang dan lebar atap harus lebih dari 0.',
+        en: 'The roof length and width must be more than 0.',
+      );
     }
     final saved = RoofAssessment(
       id: newId(),

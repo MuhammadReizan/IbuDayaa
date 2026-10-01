@@ -17,7 +17,7 @@ class LocalAuthRepository extends LocalRepo implements AuthRepository {
   static const List<(int, int)> _defaultSlots = [
     (8, 10),
     (10, 12),
-    (13, 15),
+    (12, 15),
     (15, 17),
   ];
 
@@ -42,29 +42,41 @@ class LocalAuthRepository extends LocalRepo implements AuthRepository {
     if (p == null) {
       throw const AppException(
         'Nomor HP tidak valid. Contoh yang benar: 0812-3456-7890.',
+        en: 'Invalid phone number. A correct example: 0812-3456-7890.',
       );
     }
     return p;
   }
 
   void _checkPin(String pin) {
-    if (!isValidPin(pin)) throw const AppException('PIN harus 6 angka.');
+    if (!isValidPin(pin)) {
+      throw const AppException(
+        'PIN harus 6 angka.',
+        en: 'The PIN must be 6 digits.',
+      );
+    }
     if (isWeakPin(pin)) {
       throw const AppException(
         'PIN terlalu mudah ditebak. Hindari angka yang sama semua atau '
         'berurutan.',
+        en: 'That PIN is too easy to guess. Avoid all-identical or sequential digits.',
       );
     }
   }
 
   void _ensurePhoneFree(String phone) {
     if (db.first(Tbl.profiles, (r) => r['phone'] == phone) != null) {
-      throw const AppException('Nomor HP ini sudah terdaftar. Silakan masuk.');
+      throw const AppException(
+        'Nomor HP ini sudah terdaftar. Silakan masuk.',
+        en: 'This phone number is already registered. Please sign in.',
+      );
     }
   }
 
-  void _required(String value, String label) {
-    if (value.trim().isEmpty) throw AppException('$label wajib diisi.');
+  void _required(String value, String label, String labelEn) {
+    if (value.trim().isEmpty) {
+      throw AppException('$label wajib diisi.', en: '$labelEn is required.');
+    }
   }
 
   Future<void> _storeCredential(String userId, String pin) {
@@ -93,9 +105,9 @@ class LocalAuthRepository extends LocalRepo implements AuthRepository {
   }) async {
     final p = _phone(phone);
     _checkPin(pin);
-    _required(fullName, 'Nama');
-    _required(cooperativeName, 'Nama koperasi');
-    _required(city, 'Kota');
+    _required(fullName, 'Nama', 'Name');
+    _required(cooperativeName, 'Nama koperasi', 'Cooperative name');
+    _required(city, 'Kota', 'City');
     _ensurePhoneFree(p);
 
     return db.transaction(() async {
@@ -189,14 +201,15 @@ class LocalAuthRepository extends LocalRepo implements AuthRepository {
   }) async {
     final p = _phone(phone);
     _checkPin(pin);
-    _required(fullName, 'Nama');
-    _required(businessName, 'Nama usaha');
-    _required(city, 'Kota');
+    _required(fullName, 'Nama', 'Name');
+    _required(businessName, 'Nama usaha', 'Business name');
+    _required(city, 'Kota', 'City');
     final coop = await findCooperativeByInviteCode(inviteCode);
     if (coop == null) {
       throw const AppException(
         'Kode koperasi tidak ditemukan. Tanyakan lagi kodenya ke admin '
         'koperasi Anda.',
+        en: 'Cooperative code not found. Ask your cooperative admin for the code again.',
       );
     }
     _ensurePhoneFree(p);
@@ -246,6 +259,7 @@ class LocalAuthRepository extends LocalRepo implements AuthRepository {
         supportId,
         'Selamat bergabung di ${coop.name}. Tanyakan apa saja ke admin di '
         'sini.',
+        bodyEn: 'Welcome to ${coop.name}. Ask the admin anything here.',
       );
 
       await notifyAdmins(
@@ -254,6 +268,10 @@ class LocalAuthRepository extends LocalRepo implements AuthRepository {
         title: 'Anggota baru bergabung',
         body:
             '${profile.fullName} (${profile.businessName}) masuk ke koperasi.',
+        titleEn: 'New member joined',
+        bodyEn:
+            '${profile.fullName} (${profile.businessName}) joined the '
+            'cooperative.',
         route: Paths.adminMember(userId),
       );
 
@@ -267,12 +285,18 @@ class LocalAuthRepository extends LocalRepo implements AuthRepository {
     final p = _phone(phone);
     final row = db.first(Tbl.profiles, (r) => r['phone'] == p);
     if (row == null) {
-      throw const AppException('Nomor HP ini belum terdaftar. Daftar dulu.');
+      throw const AppException(
+        'Nomor HP ini belum terdaftar. Daftar dulu.',
+        en: 'This phone number isn\'t registered. Sign up first.',
+      );
     }
     final profile = Profile.fromRow(row);
     final cred = db.find(Tbl.localCredentials, profile.id);
     if (cred == null) {
-      throw const AppException('Akun ini belum punya PIN. Hubungi admin.');
+      throw const AppException(
+        'Akun ini belum punya PIN. Hubungi admin.',
+        en: 'This account doesn\'t have a PIN yet. Contact the admin.',
+      );
     }
 
     final t = now();
@@ -281,6 +305,7 @@ class LocalAuthRepository extends LocalRepo implements AuthRepository {
       final secs = lockedUntil.difference(t).inSeconds + 1;
       throw AppException(
         'Terlalu banyak percobaan. Coba lagi dalam $secs detik.',
+        en: 'Too many attempts. Try again in $secs seconds.',
       );
     }
 
@@ -299,6 +324,7 @@ class LocalAuthRepository extends LocalRepo implements AuthRepository {
         throw AppException(
           'PIN salah $maxAttempts kali. Tunggu '
           '${lockDuration.inSeconds} detik lalu coba lagi.',
+          en: 'Wrong PIN $maxAttempts times. Wait ${lockDuration.inSeconds} seconds and try again.',
         );
       }
       await db.update(Tbl.localCredentials, profile.id, {
@@ -306,6 +332,7 @@ class LocalAuthRepository extends LocalRepo implements AuthRepository {
       });
       throw AppException(
         'PIN salah. Sisa percobaan: ${maxAttempts - attempts}.',
+        en: 'Wrong PIN. Attempts left: ${maxAttempts - attempts}.',
       );
     }
 
@@ -327,17 +354,25 @@ class LocalAuthRepository extends LocalRepo implements AuthRepository {
     required String newPin,
   }) async {
     final cred = db.find(Tbl.localCredentials, userId);
-    if (cred == null) throw const AppException('Akun tidak ditemukan.');
+    if (cred == null) {
+      throw const AppException(
+        'Akun tidak ditemukan.',
+        en: 'Account not found.',
+      );
+    }
     if (!PinHasher.verify(
       currentPin,
       rStr(cred, 'pin_salt'),
       rStr(cred, 'pin_hash'),
     )) {
-      throw const AppException('PIN lama salah.');
+      throw const AppException('PIN lama salah.', en: 'The old PIN is wrong.');
     }
     _checkPin(newPin);
     if (newPin == currentPin) {
-      throw const AppException('PIN baru harus berbeda dari PIN lama.');
+      throw const AppException(
+        'PIN baru harus berbeda dari PIN lama.',
+        en: 'The new PIN must differ from the old PIN.',
+      );
     }
     final salt = PinHasher.newSalt();
     await db.update(Tbl.localCredentials, userId, {
@@ -351,9 +386,12 @@ class LocalAuthRepository extends LocalRepo implements AuthRepository {
   @override
   Future<Profile> updateProfile(Profile profile) async {
     profileById(profile.id);
-    _required(profile.fullName, 'Nama');
+    _required(profile.fullName, 'Nama', 'Name');
     if (profile.tariffIdrPerKwh <= 0) {
-      throw const AppException('Tarif listrik harus lebih dari 0.');
+      throw const AppException(
+        'Tarif listrik harus lebih dari 0.',
+        en: 'The electricity tariff must be more than 0.',
+      );
     }
     await db.update(Tbl.profiles, profile.id, {
       'full_name': profile.fullName.trim(),

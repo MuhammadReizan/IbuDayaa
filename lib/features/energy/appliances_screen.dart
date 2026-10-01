@@ -67,9 +67,11 @@ class AppliancesScreen extends ConsumerWidget {
                     icon: applianceIcon(a.kind),
                     tone: PillTone.success,
                     title: a.name,
-                    subtitle:
-                        '${a.watts.round()} W · ${formatKwhValue(a.hoursPerDay)} jam/hari · '
-                        '${a.daysPerWeek} hari/minggu',
+                    subtitle: AppLocalizations.of(context).applianceUsage(
+                      a.watts.round(),
+                      formatKwhValue(a.hoursPerDay),
+                      a.daysPerWeek,
+                    ),
                     trailing: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [

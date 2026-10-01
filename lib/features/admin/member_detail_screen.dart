@@ -182,7 +182,10 @@ class _MemberDetailScreenState extends ConsumerState<MemberDetailScreen> {
                         Row(
                           children: [
                             Expanded(
-                              child: Text(f.label, style: text.bodyMedium),
+                              child: Text(
+                                f.labelFor(english: l10n.isEn),
+                                style: text.bodyMedium,
+                              ),
                             ),
                             Text(
                               '${f.points}/${f.maxPoints}',

@@ -13,7 +13,12 @@ class LocalMessageRepository extends LocalRepo
 
   MessageThread _thread(String id) {
     final row = db.find(Tbl.messageThreads, id);
-    if (row == null) throw const AppException('Percakapan tidak ditemukan.');
+    if (row == null) {
+      throw const AppException(
+        'Percakapan tidak ditemukan.',
+        en: 'Conversation not found.',
+      );
+    }
     return MessageThread.fromRow(row);
   }
 
@@ -31,10 +36,16 @@ class LocalMessageRepository extends LocalRepo
   }) async {
     final other = profileById(otherUserId);
     if (other.cooperativeId != me.cooperativeId) {
-      throw const AppException('Anggota ini bukan dari koperasi Anda.');
+      throw const AppException(
+        'Anggota ini bukan dari koperasi Anda.',
+        en: 'This member isn\'t from your cooperative.',
+      );
     }
     if (other.id == me.id) {
-      throw const AppException('Tidak bisa mengirim pesan ke diri sendiri.');
+      throw const AppException(
+        'Tidak bisa mengirim pesan ke diri sendiri.',
+        en: 'You can\'t message yourself.',
+      );
     }
 
     final mine = db
@@ -72,16 +83,30 @@ class LocalMessageRepository extends LocalRepo
     required String body,
   }) async {
     final text = body.trim();
-    if (text.isEmpty) throw const AppException('Pesan masih kosong.');
+    if (text.isEmpty) {
+      throw const AppException(
+        'Pesan masih kosong.',
+        en: 'The message is empty.',
+      );
+    }
     if (text.length > 2000) {
-      throw const AppException('Pesan terlalu panjang (maks. 2.000 huruf).');
+      throw const AppException(
+        'Pesan terlalu panjang (maks. 2.000 huruf).',
+        en: 'The message is too long (max. 2,000 characters).',
+      );
     }
     final thread = _thread(threadId);
     if (!_isParticipant(threadId, me.id)) {
-      throw const AppException('Anda tidak ada di percakapan ini.');
+      throw const AppException(
+        'Anda tidak ada di percakapan ini.',
+        en: 'You aren\'t in this conversation.',
+      );
     }
     if (thread.kind == ThreadKind.announcement && !me.isAdmin) {
-      throw const AppException('Hanya admin yang bisa menulis pengumuman.');
+      throw const AppException(
+        'Hanya admin yang bisa menulis pengumuman.',
+        en: 'Only an admin can write announcements.',
+      );
     }
 
     return db.transaction(() async {
@@ -105,7 +130,9 @@ class LocalMessageRepository extends LocalRepo
             userId: id,
             type: 'announcement',
             title: 'Pengumuman koperasi',
+            titleEn: 'Cooperative announcement',
             body: text.length > 120 ? '${text.substring(0, 117)}...' : text,
+            bodyEn: text.length > 120 ? '${text.substring(0, 117)}...' : text,
             route: Paths.thread(threadId),
           );
         }
@@ -163,24 +190,42 @@ class LocalMessageRepository extends LocalRepo
   Future<Cooperative> updateSettings(Profile admin, Cooperative updated) async {
     requireAdmin(admin, updated.id);
     if (updated.name.trim().isEmpty) {
-      throw const AppException('Nama koperasi wajib diisi.');
+      throw const AppException(
+        'Nama koperasi wajib diisi.',
+        en: 'Enter the cooperative name.',
+      );
     }
     if (updated.loanFlatMonthlyRatePct < 0 ||
         updated.loanFlatMonthlyRatePct > 10) {
-      throw const AppException('Bunga per bulan harus antara 0% dan 10%.');
+      throw const AppException(
+        'Bunga per bulan harus antara 0% dan 10%.',
+        en: 'The monthly interest must be between 0% and 10%.',
+      );
     }
     if (updated.loanMaxAmountIdr < 500000) {
-      throw const AppException('Plafon maksimum minimal Rp 500.000.');
+      throw const AppException(
+        'Plafon maksimum minimal Rp 500.000.',
+        en: 'The maximum limit must be at least Rp 500,000.',
+      );
     }
     if (updated.loanMinScore < 0 || updated.loanMinScore > 100) {
-      throw const AppException('Skor minimum harus 0 sampai 100.');
+      throw const AppException(
+        'Skor minimum harus 0 sampai 100.',
+        en: 'The minimum score must be 0 to 100.',
+      );
     }
     if (updated.loanTenors.isEmpty ||
         updated.loanTenors.any((t) => t < 1 || t > 36)) {
-      throw const AppException('Pilih minimal satu tenor antara 1–36 bulan.');
+      throw const AppException(
+        'Pilih minimal satu tenor antara 1–36 bulan.',
+        en: 'Choose at least one term between 1 and 36 months.',
+      );
     }
     if (updated.memberMonthlyQuotaKwh < 0) {
-      throw const AppException('Kuota anggota tidak boleh negatif.');
+      throw const AppException(
+        'Kuota anggota tidak boleh negatif.',
+        en: 'The member quota can\'t be negative.',
+      );
     }
     await db.update(Tbl.cooperatives, updated.id, {
       'name': updated.name.trim(),

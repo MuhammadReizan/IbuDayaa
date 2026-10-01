@@ -143,16 +143,22 @@ class WelcomeScreen extends ConsumerWidget {
     }
     if (!context.mounted) return;
 
+    final l10n = AppLocalizations.of(context);
     final accounts = [
       (
         phone: SampleSeeder.adminPhone,
         name: 'Ibu Ratna',
-        role: 'Admin koperasi',
+        role: l10n.registerAsAdmin,
+        isAdmin: true,
       ),
       for (final m in SampleSeeder.members)
-        (phone: m.phone, name: m.name, role: 'Anggota · ${m.business}'),
+        (
+          phone: m.phone,
+          name: m.name,
+          role: l10n.roleMemberWithBusiness(m.business),
+          isAdmin: false,
+        ),
     ];
-    final l10n = AppLocalizations.of(context);
     final picked = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -180,12 +186,10 @@ class WelcomeScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.md),
               for (final a in accounts) ...[
                 TintedRow(
-                  icon: a.role.startsWith('Admin')
+                  icon: a.isAdmin
                       ? Icons.admin_panel_settings_rounded
                       : Icons.storefront_rounded,
-                  tone: a.role.startsWith('Admin')
-                      ? PillTone.solar
-                      : PillTone.success,
+                  tone: a.isAdmin ? PillTone.solar : PillTone.success,
                   title: a.name,
                   subtitle: a.role,
                   onTap: () => Navigator.of(ctx).pop(a.phone),

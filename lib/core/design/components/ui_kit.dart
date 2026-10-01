@@ -520,7 +520,7 @@ class PinDots extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: '$filled dari $length angka PIN terisi',
+      label: AppLocalizations.of(context).pinDotsSemantics(filled, length),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1208,7 +1208,13 @@ Future<bool> runAction(
     if (success != null && context.mounted) showAppSnack(context, success);
     return true;
   } on AppException catch (e) {
-    if (context.mounted) showAppSnack(context, e.message, error: true);
+    if (context.mounted) {
+      showAppSnack(
+        context,
+        e.localized(english: AppLocalizations.of(context).isEn),
+        error: true,
+      );
+    }
   } catch (e, st) {
     debugPrint('Action failed: $e\n$st');
     if (context.mounted) {

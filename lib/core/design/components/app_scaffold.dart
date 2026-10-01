@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import '../tokens.dart';
 
 /// Consistent screen frame: a flat app bar with a back affordance, a `SafeArea`,
@@ -68,7 +69,7 @@ class AppScaffold extends StatelessWidget {
                       padding: const EdgeInsets.only(left: AppSpacing.sm),
                       child: _RoundIconButton(
                         icon: Icons.arrow_back_rounded,
-                        tooltip: 'Kembali',
+                        tooltip: AppLocalizations.of(context).actionBack,
                         onPressed: onBack!,
                       ),
                     )

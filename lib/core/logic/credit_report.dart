@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import '../../features/credit_score/domain/credit_scoring_engine.dart';
 import '../db/row.dart';
 import '../format/format.dart';
+import '../l10n/l10n.dart';
 import '../models/models.dart';
 import 'credit_signals.dart';
 import 'energy_insights.dart';
@@ -53,8 +54,10 @@ class CreditReport {
 
   bool get loanReady => score.score >= minScore;
 
-  /// Plain text a member can paste into a message to a lender.
-  String toPlainText() {
+  /// Plain text a member can paste into a message to a lender, in the
+  /// language she is using the app in.
+  String toPlainText({bool english = false}) {
+    if (english) return _plainTextEn();
     final b = StringBuffer()
       ..writeln('LAPORAN KREDIT ENERGI - IbuDaya')
       ..writeln('Nama: $memberName')
@@ -99,6 +102,58 @@ class CreditReport {
         '(bukan model AI). Angka kWh adalah estimasi perangkat lunak '
         '(daya alat x jam slot), bukan pembacaan sensor. Laporan ini bukan '
         'keputusan pinjaman; keputusan ada pada pemberi pinjaman.',
+      );
+    return b.toString();
+  }
+}
+
+extension on CreditReport {
+  /// English twin of [CreditReport.toPlainText]; keep the two in step.
+  String _plainTextEn() {
+    final b = StringBuffer()
+      ..writeln('ENERGY CREDIT REPORT - IbuDaya')
+      ..writeln('Name: $memberName')
+      ..writeln('Business: $businessName')
+      ..writeln('Cooperative: $cooperativeName')
+      ..writeln('Created: ${formatShortDate(generatedAt)} ${generatedAt.year}')
+      ..writeln()
+      ..writeln(
+        'Score: ${score.score}/100 (${score.band.localizedLabel(AppLocalizations.current)})'
+        '${loanReady ? ' - meets the cooperative loan minimum ($minScore)' : ' - does not yet meet the cooperative loan minimum ($minScore)'}',
+      )
+      ..writeln('Score breakdown:');
+    for (final f in score.factors) {
+      b.writeln('- ${f.labelFor(english: true)}: ${f.points}/${f.maxPoints}');
+    }
+    b
+      ..writeln()
+      ..writeln('Solar Hub use per month:');
+    if (months.isEmpty) {
+      b.writeln('- (none yet)');
+    }
+    for (final m in months) {
+      b.writeln('- ${monthYearLabel(m.month)}: ${formatKwh(m.kwh)}');
+    }
+    b
+      ..writeln(
+        'Activity in the last 8 weeks: $sessions8w sessions, ${formatKwh(kwh8w)}; '
+        'registered business appliances: $appliances',
+      )
+      ..writeln(
+        'Quota sharing: shared $quotaGiven times, received $quotaReceived times',
+      )
+      ..writeln('Confirmed arisan dues: $duesConfirmed')
+      ..writeln(
+        installmentsDue == 0
+            ? 'Loan installments: none due yet'
+            : 'Installments paid on time: $installmentsOnTime of $installmentsDue due',
+      )
+      ..writeln()
+      ..writeln(
+        'Note: the score is computed with fixed rules that can be inspected '
+        '(not an AI model). The kWh figures are a software estimate '
+        '(appliance power x slot hours), not a sensor reading. This report is '
+        'not a loan decision; the lender decides.',
       );
     return b.toString();
   }

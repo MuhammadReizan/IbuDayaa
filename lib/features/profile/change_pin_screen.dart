@@ -28,7 +28,7 @@ class _ChangePinScreenState extends ConsumerState<ChangePinScreen> {
       context.pop();
     } on AppException catch (e) {
       if (!mounted) return;
-      showAppSnack(context, e.message, error: true);
+      showAppSnack(context, e.localized(english: l10n.isEn), error: true);
       setState(() {
         _busy = false;
         _current = null;

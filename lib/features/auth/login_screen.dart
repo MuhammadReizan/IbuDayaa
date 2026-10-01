@@ -47,7 +47,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               await ref.read(actionsProvider).login(phone, pin);
               return null;
             } on AppException catch (e) {
-              return e.message;
+              return e.localized(english: l10n.isEn);
             }
           },
           footer: TextLinkButton(

@@ -40,6 +40,29 @@ const double kPanelDeratePctPerC = 0.4;
 /// Penalty when BMKG forecasts rain or thunder for the point.
 const int kRainPenalty = 25;
 
+/// BMKG's Indonesian weather descriptions in English. A description not listed
+/// here is shown as BMKG wrote it rather than guessed at.
+const Map<String, String> _conditionEn = {
+  'cerah': 'Clear',
+  'cerah berawan': 'Partly cloudy',
+  'berawan': 'Mostly cloudy',
+  'berawan tebal': 'Overcast',
+  'udara kabur': 'Hazy',
+  'asap': 'Smoke',
+  'kabut': 'Fog',
+  'hujan ringan': 'Light rain',
+  'hujan sedang': 'Moderate rain',
+  'hujan lebat': 'Heavy rain',
+  'hujan lokal': 'Isolated showers',
+  'hujan petir': 'Thunderstorm',
+};
+
+/// [condition] (BMKG's Indonesian text) for display in the chosen language.
+String conditionLabel(String condition, {required bool english}) {
+  if (!english) return condition;
+  return _conditionEn[condition.trim().toLowerCase()] ?? condition;
+}
+
 bool isRainy(String condition) {
   final c = condition.toLowerCase();
   return c.contains('hujan') || c.contains('petir');

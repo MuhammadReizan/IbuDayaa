@@ -42,6 +42,7 @@ class AppLocalizationsProvider extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = ref.watch(resolvedLocaleProvider);
     final l10n = AppLocalizations.forLocale(locale);
+    AppLocalizations.current = l10n;
     return AppLocalizationsScope(l10n: l10n, child: child);
   }
 }
@@ -66,6 +67,11 @@ abstract class AppLocalizations {
     assert(scope != null, 'AppLocalizationsScope not found in widget tree');
     return scope!.l10n;
   }
+
+  /// The language in use. Set by [AppLocalizationsProvider] whenever the
+  /// locale changes, so formatters that have no BuildContext (dates, rupiah,
+  /// kWh) still follow it. Widgets should keep using [of].
+  static AppLocalizations current = const _IdStrings();
 
   /// Whether the current localization is English.
   bool get isEn => this is _EnStrings;
@@ -308,6 +314,8 @@ abstract class AppLocalizations {
   String get homeHelloPrefix;
   String get homeBillLabel;
   String billMonthLabel(String month);
+  String get homeBillNoSessions;
+  String homeBillTariffNote(String tariff);
   String get homeBillNoData;
   String get homeBillNoDataHint;
   String get homeChangePctSuffix;
@@ -581,6 +589,17 @@ abstract class AppLocalizations {
   String get arisanQuotaSentToast;
   String get bookingCancelledToast;
   String get bookingRecordedToast;
+  String get bookingNoScanYet;
+  String get bookingScanBtn;
+  String get bookingSummaryTitle;
+  String get bookingEnergyLabel;
+  String bookingEnergyFormula(String watts, int hours);
+  String get hubCameraDeniedTitle;
+  String get hubCameraDeniedMsg;
+  String get hubCameraErrorTitle;
+  String get hubCameraErrorMsg;
+  String get bookingHistoryTab;
+  String get bookingNoHistory;
   String solarBookingComeOnTime(String hubName);
   String get bookingCustomApplianceSublabel;
   String get appliancesMonthlyEstimateLabel;
@@ -679,6 +698,8 @@ abstract class AppLocalizations {
   String get hubCapacityHint;
   String hubCapacitySuggestion(String kwh);
   String get hubCapacityUse;
+  String hubQuotaSizing(int members, String quota, String needed);
+  String get hubQuotaSizingLow;
   String get hubFieldWeatherCode;
   String get hubFieldWeatherCodeHelper;
   String get hubFieldQuota;
@@ -1019,6 +1040,107 @@ abstract class AppLocalizations {
   String get eligibilityNotEnoughHistory;
   String get eligibilityScoreTooLow;
   String get eligibilityActiveLoan;
+
+  // -- Added for full id/en coverage --
+  String get loanDecisionNotice;
+  String get verificationNotice;
+  String get paymentsReviewNotice;
+  String get pinMismatch;
+  String pinDotsSemantics(int filled, int length);
+  String roleMemberWithBusiness(String business);
+  String applianceUsage(int watts, String hours, int days);
+  String monthsCount(int n);
+  String loanServiceFeeLine(String rate, int tenor);
+  String loanConfirmMessage(String amount, int tenor, String monthly);
+  String get dateToday;
+  String get messagesYouPrefix;
+  String get threadSubAnnouncement;
+  String threadParticipants(int n);
+  String get threadEmpty;
+  String get threadReadOnly;
+  String get errorViewBroken;
+  String get actionRetry;
+  String threadAnnouncementTitle(String coop);
+
+  // ── Installment schedule ──────────────────────────────────────────────────
+  String get scaffoldInstallments;
+  String get instNoLoanTitle;
+  String get instNoLoanMsg;
+  String get instRemaining;
+  String instPaidOfTotal(String paid, String total);
+  String get instNextTitle;
+  String get instPayBtn;
+  String instPayInstruction(String amount);
+  String instPayInstructionWithBank(String amount, String bankAccount);
+  String get instPayConfirmTitle;
+  String instPayConfirmMsg(int seq, String amount);
+  String get instSentToast;
+  String get instRejectedToast;
+  String get instPayInOrder;
+  String get instNotice;
+  String get instStatusPaid;
+  String get instStatusPaidLate;
+  String get instStatusLate;
+  String get instStatusAwaiting;
+  String get instStatusRejected;
+  String get instStatusOverdue;
+  String get instStatusUpcoming;
+  String instNumber(int seq, int total);
+  String instDueOn(String date);
+  String instPaidOn(String date);
+  String instSentOn(String date);
+  String instRejectedReason(String reason);
+  String get instRepaidTitle;
+  String get instRepaidMsg;
+  String get scaffoldAdminInstallments;
+  String get adminInstallmentsMenu;
+  String get adminInstAwaitingEmpty;
+  String get adminInstOutstanding;
+  String get adminInstCollected;
+  String get adminInstOverdueLabel;
+  String get adminInstNextTitle;
+  String get adminInstLoansTitle;
+  String get adminInstLoansEmpty;
+  String get adminInstNotice;
+  String get adminInstRejectTitle;
+  String adminInstConfirmMsg(String name, int seq, String amount);
+  String adminInstLoanRowSub(int paid, int total, String outstanding);
+  String get adminNeedsActionTitle;
+  String get adminAllClearTitle;
+  String get adminAllClearMsg;
+  String get adminTodoLoans;
+  String get adminTodoInstallments;
+  String adminTodoOverdue(int n);
+  String adminInstallmentsCardSub(String outstanding, int running);
+
+  // ── Monthly quota, seats per slot ─────────────────────────────────────────
+  String quotaCardTitle(String month);
+  String quotaCardRemaining(String remaining, String total);
+  String get quotaCardUsed;
+  String get quotaCardReserved;
+  String get quotaCardToday;
+  String hubRequestQuotaLeft(String left, String name);
+  String adminMemberMonthsRecorded(int n);
+  String get quotaStatAllowance;
+  String get quotaStatShared;
+  String get quotaStatReceived;
+  String quotaCardTrades(String given, String received);
+  String quotaDaysLeft(int days);
+  String quotaPaceLine(String perDay, String lastDate);
+  String get quotaEmptyLine;
+  String get quotaCardNote;
+  String solarQuotaBreakdown(String used, String reserved);
+  String solarSlotSeats(int booked, int limit);
+  String solarSlotSeatsLeft(int left);
+  String get solarSlotMine;
+  String solarBookingDayEnergy(String remaining, String capacity);
+  String get solarBookingApplianceHint;
+  String get solarQuotaAfterBooking;
+  String get hubFieldSlotMembers;
+  String get hubFieldSlotMembersHelper;
+  String get hubFieldSlotMembersInvalid;
+  String adminBoardSeats(int booked, int limit);
+  String get adminBoardDayEnergy;
 }
 
 // ---------------------------------------------------------------------------
@@ -1284,8 +1406,8 @@ class _IdStrings extends AppLocalizations {
   @override
   String get welcomeSampleBanner =>
       'Aplikasi akan membuat "Koperasi Energi Melati" berisi 1 admin dan '
-      '4 anggota dengan catatan listrik, arisan, dan pengajuan pinjaman '
-      'rekaan. Semua angka di dalamnya bukan data asli. Anda bisa '
+      '5 anggota dengan riwayat sesi hub, kuota 35 kWh, arisan, pinjaman, dan '
+      'cicilan rekaan. Semua angka di dalamnya bukan data asli. Anda bisa '
       'menghapusnya kapan saja dari menu Tentang.';
   @override
   String get welcomeLoginAs => 'Masuk sebagai';
@@ -1521,7 +1643,12 @@ class _IdStrings extends AppLocalizations {
   @override
   String get homeBillLabel => 'Tagihan listrik';
   @override
-  String billMonthLabel(String month) => 'Listrik $month';
+  String billMonthLabel(String month) => 'Pemakaian hub $month';
+  @override
+  String get homeBillNoSessions => 'Belum ada sesi hub bulan ini';
+  @override
+  String homeBillTariffNote(String tariff) =>
+      'Dihitung dengan tarif PLN $tariff/kWh';
   @override
   String get homeBillNoData => 'Belum ada catatan';
   @override
@@ -1529,7 +1656,7 @@ class _IdStrings extends AppLocalizations {
       'Foto tagihan atau struk token PLN Anda. Angkanya dibaca '
       'otomatis, lalu Anda periksa.';
   @override
-  String get homeChangePctSuffix => '% dari bulan lalu';
+  String get homeChangePctSuffix => 'dari bulan lalu';
   @override
   String get homeAnalysis => 'Analisis';
   @override
@@ -1577,7 +1704,7 @@ class _IdStrings extends AppLocalizations {
       'CO₂ memakai asumsi 0,87 kg per kWh listrik PLN. Hemat dihitung '
       'dari energi hub yang sudah Anda tandai terpakai × tarif Anda.';
   @override
-  String homeFromTokens(int count) => 'dari $count token';
+  String homeFromTokens(int count) => 'dari $count sesi hub';
 
   // Profile
   @override
@@ -2076,6 +2203,31 @@ class _IdStrings extends AppLocalizations {
   @override
   String get bookingRecordedToast => 'Tercatat.';
   @override
+  String get bookingNoScanYet => 'Belum ada scan';
+  @override
+  String get bookingScanBtn => 'Scan QR';
+  @override
+  String get bookingSummaryTitle => 'Ringkasan booking';
+  @override
+  String get bookingEnergyLabel => 'Energi';
+  @override
+  String bookingEnergyFormula(String watts, int hours) =>
+      '$watts W × $hours jam';
+  @override
+  String get hubCameraDeniedTitle => 'Izin kamera ditolak';
+  @override
+  String get hubCameraDeniedMsg =>
+      'Aktifkan izin kamera untuk IbuDaya di Pengaturan HP, lalu coba lagi.';
+  @override
+  String get hubCameraErrorTitle => 'Kamera tidak bisa dipakai';
+  @override
+  String get hubCameraErrorMsg =>
+      'Tutup aplikasi lain yang memakai kamera, lalu coba lagi.';
+  @override
+  String get bookingHistoryTab => 'Riwayat';
+  @override
+  String get bookingNoHistory => 'Belum ada riwayat pemakaian hub.';
+  @override
   String solarBookingComeOnTime(String hubName) =>
       'Datang ke $hubName sesuai jadwal.';
   @override
@@ -2275,6 +2427,12 @@ class _IdStrings extends AppLocalizations {
   @override
   String get hubCapacityUse => 'Pakai';
   @override
+  String hubQuotaSizing(int members, String quota, String needed) =>
+      'Untuk $members anggota × $quota per bulan, kapasitas yang cukup kira-kira $needed per hari (÷ 30 hari).';
+  @override
+  String get hubQuotaSizingLow =>
+      'Kapasitas sekarang lebih kecil dari itu, jadi tidak semua anggota bisa memakai kuotanya penuh.';
+  @override
   String get hubFieldWeatherCode => 'Kode wilayah cuaca (BMKG)';
   @override
   String get hubFieldWeatherCodeHelper =>
@@ -2286,7 +2444,7 @@ class _IdStrings extends AppLocalizations {
   String get hubFieldQuota => 'Kuota default tiap anggota per bulan';
   @override
   String get hubFieldQuotaHelper =>
-      'Dipakai kalau anggota belum punya alokasi kapasitas sendiri. Atur alokasi per anggota di halaman detail anggota.';
+      'Dipakai kalau anggota belum punya alokasi kapasitas sendiri. Bawaan 35 kWh per bulan (≈ 1,2 kWh per hari). Atur alokasi per anggota di halaman detail anggota.';
   @override
   String get hubFieldQuotaRequired => 'Isi kuota.';
   @override
@@ -2546,7 +2704,7 @@ class _IdStrings extends AppLocalizations {
   String get hubConnectTitle => 'Sambungkan ke Solar Hub';
   @override
   String get hubConnectInstruction =>
-      'Arahkan kamera ke kode QR di sambungan hub Anda.';
+      'Arahkan kamera ke kode QR di hub. Pastikan Anda sudah booking slot hari ini.';
   @override
   String get hubConnectWrongCode => 'QR ini bukan QR Solar Hub koperasi Anda.';
   @override
@@ -2791,10 +2949,10 @@ class _IdStrings extends AppLocalizations {
   String obsTopApplianceBody(String cost) =>
       '±$cost/bulan. Pindahkan ke jam Solar Hub.';
   @override
-  String get obsConfirmBookingTitle => 'Konfirmasi pemakaian hub';
+  String get obsConfirmBookingTitle => 'Jadwal tanpa scan QR';
   @override
   String obsConfirmBookingBody(int count) =>
-      '$count jadwal sudah lewat. Tandai sudah dipakai agar penghematan tercatat.';
+      '$count jadwal sudah lewat tanpa scan QR, jadi belum tercatat. Hubungi admin kalau Anda sebenarnya sudah memakai hub.';
   @override
   String get obsUseHubTitle => 'Pakai Solar Hub bulan ini';
   @override
@@ -2862,7 +3020,7 @@ class _IdStrings extends AppLocalizations {
   String get solarTodaySlots => 'Slot hari ini';
   @override
   String get solarSlotCapacityNote =>
-      'Kapasitas per slot dibagi mengikuti perkiraan terik matahari 06.00–18.00: slot siang mendapat bagian lebih besar.';
+      'Tiap slot dibatasi jumlah anggota. Energi hub dihitung per hari dan dipakai bersama oleh semua slot.';
   @override
   String get solarSlotPassed => 'Lewat';
   @override
@@ -3048,6 +3206,233 @@ class _IdStrings extends AppLocalizations {
   @override
   String get eligibilityActiveLoan =>
       'Selesaikan pinjaman yang masih berjalan sebelum mengajukan lagi.';
+
+  @override
+  String get loanDecisionNotice =>
+      'Keputusan pinjaman dibuat oleh admin koperasi Anda, bukan oleh aplikasi. Skor hanya membantu admin menilai.';
+  @override
+  String get verificationNotice =>
+      'Ini estimasi awal dari ukuran yang Anda masukkan. Teknisi tetap perlu memeriksa atap sebelum pemasangan.';
+  @override
+  String get paymentsReviewNotice =>
+      'Konfirmasi hanya setelah uang benar-benar diterima bendahara. Setoran yang dikonfirmasi ikut menaikkan skor anggota.';
+  @override
+  String get pinMismatch => 'PIN tidak sama. Ulangi dari awal.';
+  @override
+  String pinDotsSemantics(int filled, int length) =>
+      '$filled dari $length angka PIN terisi';
+  @override
+  String roleMemberWithBusiness(String business) => 'Anggota · $business';
+  @override
+  String applianceUsage(int watts, String hours, int days) =>
+      '$watts W · $hours jam/hari · $days hari/minggu';
+  @override
+  String monthsCount(int n) => '$n bulan';
+  @override
+  String loanServiceFeeLine(String rate, int tenor) =>
+      'Jasa $rate/bulan × $tenor bulan';
+  @override
+  String loanConfirmMessage(String amount, int tenor, String monthly) =>
+      '$amount ($tenor bulan, $monthly/bulan)';
+  @override
+  String get dateToday => 'Hari ini';
+  @override
+  String get messagesYouPrefix => 'Anda';
+  @override
+  String get threadSubAnnouncement => 'Pengumuman koperasi';
+  @override
+  String threadParticipants(int n) => '$n peserta';
+  @override
+  String get threadEmpty => 'Belum ada pesan. Mulai percakapan.';
+  @override
+  String get threadReadOnly => 'Hanya admin yang bisa mengirim pengumuman.';
+  @override
+  String get errorViewBroken => 'Terjadi kesalahan pada tampilan ini.';
+  @override
+  String get actionRetry => 'Coba lagi';
+  @override
+  String threadAnnouncementTitle(String coop) => 'Pengumuman $coop';
+
+  // ── Installment schedule ──────────────────────────────────────────────────
+  @override
+  String get scaffoldInstallments => 'Jadwal Cicilan';
+  @override
+  String get instNoLoanTitle => 'Belum ada cicilan';
+  @override
+  String get instNoLoanMsg =>
+      'Jadwal cicilan muncul setelah koperasi mencatat dana pinjaman Anda dicairkan.';
+  @override
+  String get instRemaining => 'Sisa cicilan';
+  @override
+  String instPaidOfTotal(String paid, String total) =>
+      '$paid dari $total sudah lunas';
+  @override
+  String get instNextTitle => 'Cicilan berikutnya';
+  @override
+  String get instPayBtn => 'Saya sudah bayar';
+  @override
+  String instPayInstruction(String amount) =>
+      'Serahkan cicilan $amount tunai ke bendahara koperasi, lalu tekan tombol di bawah. Admin akan mengonfirmasi.';
+  @override
+  String instPayInstructionWithBank(String amount, String bankAccount) =>
+      'Serahkan cicilan $amount tunai ke bendahara koperasi, atau transfer ke $bankAccount. Setelah itu tekan tombol di bawah — admin akan mengonfirmasi.';
+  @override
+  String get instPayConfirmTitle => 'Kirim konfirmasi pembayaran?';
+  @override
+  String instPayConfirmMsg(int seq, String amount) =>
+      'Cicilan ke-$seq sebesar $amount. Kirim hanya kalau Anda sudah membayar; admin akan memeriksanya.';
+  @override
+  String get instSentToast => 'Terkirim. Menunggu konfirmasi admin.';
+  @override
+  String get instRejectedToast => 'Pembayaran ditolak. Anggota diberi tahu.';
+  @override
+  String get instPayInOrder => 'Bayar cicilan sebelumnya dulu.';
+  @override
+  String get instNotice =>
+      'Cicilan tercatat lunas setelah admin mengonfirmasi pembayaran Anda. Aplikasi ini tidak memindahkan uang.';
+  @override
+  String get instStatusPaid => 'Lunas';
+  @override
+  String get instStatusPaidLate => 'Lunas, terlambat';
+  @override
+  String get instStatusLate => 'Terlambat';
+  @override
+  String get instStatusAwaiting => 'Menunggu konfirmasi';
+  @override
+  String get instStatusRejected => 'Ditolak';
+  @override
+  String get instStatusOverdue => 'Lewat jatuh tempo';
+  @override
+  String get instStatusUpcoming => 'Belum jatuh tempo';
+  @override
+  String instNumber(int seq, int total) => 'Cicilan $seq dari $total';
+  @override
+  String instDueOn(String date) => 'Jatuh tempo $date';
+  @override
+  String instPaidOn(String date) => 'Dibayar $date';
+  @override
+  String instSentOn(String date) => 'Dikirim $date';
+  @override
+  String instRejectedReason(String reason) => 'Ditolak admin: $reason';
+  @override
+  String get instRepaidTitle => 'Pinjaman lunas';
+  @override
+  String get instRepaidMsg =>
+      'Semua cicilan sudah tercatat lunas. Terima kasih.';
+  @override
+  String get scaffoldAdminInstallments => 'Jadwal Cicilan';
+  @override
+  String get adminInstallmentsMenu => 'Jadwal & konfirmasi cicilan';
+  @override
+  String get adminInstAwaitingEmpty =>
+      'Tidak ada pembayaran cicilan yang menunggu konfirmasi.';
+  @override
+  String get adminInstOutstanding => 'Belum lunas';
+  @override
+  String get adminInstCollected => 'Sudah diterima';
+  @override
+  String get adminInstOverdueLabel => 'Lewat tempo';
+  @override
+  String get adminInstNextTitle => 'Jatuh tempo berikutnya';
+  @override
+  String get adminInstLoansTitle => 'Pinjaman berjalan';
+  @override
+  String get adminInstLoansEmpty =>
+      'Belum ada pinjaman yang dicairkan. Jadwal muncul setelah Anda mencatat dana dicairkan.';
+  @override
+  String get adminInstNotice =>
+      'Cocokkan dengan uang yang benar-benar Anda terima sebelum mengonfirmasi.';
+  @override
+  String get adminInstRejectTitle => 'Tolak pembayaran cicilan';
+  @override
+  String adminInstConfirmMsg(String name, int seq, String amount) =>
+      '$name · cicilan ke-$seq · $amount';
+  @override
+  String adminInstLoanRowSub(int paid, int total, String outstanding) =>
+      '$paid dari $total lunas · sisa $outstanding';
+  @override
+  String get adminNeedsActionTitle => 'Perlu ditindaklanjuti';
+  @override
+  String get adminAllClearTitle => 'Semua beres';
+  @override
+  String get adminAllClearMsg =>
+      'Tidak ada pengajuan, setoran, cicilan, atau permintaan hub yang menunggu.';
+  @override
+  String get adminTodoLoans => 'Pengajuan menunggu review';
+  @override
+  String get adminTodoInstallments => 'Cicilan menunggu konfirmasi';
+  @override
+  String adminTodoOverdue(int n) => '$n cicilan lewat jatuh tempo';
+  @override
+  String adminInstallmentsCardSub(String outstanding, int running) =>
+      '$outstanding belum lunas · $running pinjaman berjalan';
+
+  // ── Monthly quota, seats per slot ─────────────────────────────────────────
+  @override
+  String quotaCardTitle(String month) => 'Jatah energi $month';
+  @override
+  String quotaCardRemaining(String remaining, String total) =>
+      '$remaining tersisa dari $total';
+  @override
+  String get quotaCardUsed => 'Terpakai';
+  @override
+  String get quotaCardReserved => 'Dipesan';
+  @override
+  String get quotaCardToday => 'Hari ini';
+  @override
+  String hubRequestQuotaLeft(String left, String name) =>
+      'Sisa kuota $name bulan ini: $left';
+  @override
+  String adminMemberMonthsRecorded(int n) => '$n bulan tercatat';
+  @override
+  String get quotaStatAllowance => 'Jatah';
+  @override
+  String get quotaStatShared => 'Dibagikan';
+  @override
+  String get quotaStatReceived => 'Diterima';
+  @override
+  String quotaCardTrades(String given, String received) =>
+      'Dibagikan $given · diterima $received bulan ini';
+  @override
+  String quotaDaysLeft(int days) => '$days hari lagi';
+  @override
+  String quotaPaceLine(String perDay, String lastDate) =>
+      'Sisa jatah cukup ±$perDay per hari sampai $lastDate.';
+  @override
+  String get quotaEmptyLine =>
+      'Jatah bulan ini habis. Minta kuota dari anggota lain di Tukar Kuota.';
+  @override
+  String get quotaCardNote =>
+      'kWh dihitung dari watt alat × jam slot dan tercatat setelah admin menyetujui scan QR. Ini perkiraan, bukan alat ukur.';
+  @override
+  String solarQuotaBreakdown(String used, String reserved) =>
+      'Terpakai $used · dipesan $reserved';
+  @override
+  String solarSlotSeats(int booked, int limit) => '$booked/$limit anggota';
+  @override
+  String solarSlotSeatsLeft(int left) => '$left kursi tersisa';
+  @override
+  String get solarSlotMine => 'Sudah Anda pesan';
+  @override
+  String solarBookingDayEnergy(String remaining, String capacity) =>
+      'Energi hub hari itu: sisa $remaining dari $capacity';
+  @override
+  String get solarBookingApplianceHint =>
+      'Boleh pilih lebih dari satu alat: satu booking, satu kursi.';
+  @override
+  String get solarQuotaAfterBooking => 'Sisa kuota setelah booking';
+  @override
+  String get hubFieldSlotMembers => 'Maks. anggota per slot';
+  @override
+  String get hubFieldSlotMembersHelper =>
+      'Berlaku untuk semua slot. Isi 0 untuk tanpa batas. Slot penuh kalau kursinya habis, bukan karena satu booking memakai banyak energi.';
+  @override
+  String get hubFieldSlotMembersInvalid => 'Isi angka 0–100.';
+  @override
+  String adminBoardSeats(int booked, int limit) =>
+      limit == 0 ? 'Anggota $booked' : 'Anggota $booked dari $limit';
+  @override
+  String get adminBoardDayEnergy => 'Energi hub hari ini';
 }
 
 // ---------------------------------------------------------------------------
@@ -3315,7 +3700,7 @@ class _EnStrings extends AppLocalizations {
   @override
   String get welcomeSampleBanner =>
       'The app will create "Koperasi Energi Melati" with 1 admin and '
-      '4 members with sample electricity records, arisan, and loan applications. '
+      '5 members with sample hub sessions, a 35 kWh quota, arisan, loans and installments. '
       'All figures are fictional. You can remove them anytime from the About menu.';
   @override
   String get welcomeLoginAs => 'Sign in as';
@@ -3548,7 +3933,12 @@ class _EnStrings extends AppLocalizations {
   @override
   String get homeBillLabel => 'Electricity bill';
   @override
-  String billMonthLabel(String month) => 'Electricity $month';
+  String billMonthLabel(String month) => 'Hub usage $month';
+  @override
+  String get homeBillNoSessions => 'No hub sessions yet this month';
+  @override
+  String homeBillTariffNote(String tariff) =>
+      'Valued at the PLN rate of $tariff/kWh';
   @override
   String get homeBillNoData => 'No records yet';
   @override
@@ -3556,7 +3946,7 @@ class _EnStrings extends AppLocalizations {
       'Take a photo of your PLN bill or token receipt. '
       'The figures are read automatically for you to verify.';
   @override
-  String get homeChangePctSuffix => '% from last month';
+  String get homeChangePctSuffix => 'from last month';
   @override
   String get homeAnalysis => 'Analysis';
   @override
@@ -3605,7 +3995,7 @@ class _EnStrings extends AppLocalizations {
       'Savings are calculated from hub energy you have marked as used × your tariff.';
   @override
   String homeFromTokens(int count) =>
-      'from $count token${count == 1 ? '' : 's'}';
+      'from $count hub session${count == 1 ? '' : 's'}';
 
   // Profile
   @override
@@ -4109,6 +4499,30 @@ class _EnStrings extends AppLocalizations {
   @override
   String get bookingRecordedToast => 'Recorded.';
   @override
+  String get bookingNoScanYet => 'No scan yet';
+  @override
+  String get bookingScanBtn => 'Scan QR';
+  @override
+  String get bookingSummaryTitle => 'Booking summary';
+  @override
+  String get bookingEnergyLabel => 'Energy';
+  @override
+  String bookingEnergyFormula(String watts, int hours) => '$watts W × $hours h';
+  @override
+  String get hubCameraDeniedTitle => 'Camera permission denied';
+  @override
+  String get hubCameraDeniedMsg =>
+      'Allow camera access for IbuDaya in your phone settings, then try again.';
+  @override
+  String get hubCameraErrorTitle => "The camera can't be used";
+  @override
+  String get hubCameraErrorMsg =>
+      'Close other apps that use the camera, then try again.';
+  @override
+  String get bookingHistoryTab => 'History';
+  @override
+  String get bookingNoHistory => 'No hub usage history yet.';
+  @override
   String solarBookingComeOnTime(String hubName) =>
       'Come to $hubName as scheduled.';
   @override
@@ -4307,6 +4721,12 @@ class _EnStrings extends AppLocalizations {
   @override
   String get hubCapacityUse => 'Use';
   @override
+  String hubQuotaSizing(int members, String quota, String needed) =>
+      "For $members members × $quota a month, about $needed a day covers everyone's whole quota (÷ 30 days).";
+  @override
+  String get hubQuotaSizingLow =>
+      'The current capacity is lower than that, so not every member can use her whole quota.';
+  @override
   String get hubFieldWeatherCode => 'BMKG weather region code';
   @override
   String get hubFieldWeatherCodeHelper =>
@@ -4318,8 +4738,9 @@ class _EnStrings extends AppLocalizations {
   String get hubFieldQuota => 'Default monthly quota per member';
   @override
   String get hubFieldQuotaHelper =>
-      "Used when a member doesn't have her own capacity allocation. Set a "
-      'per-member allocation on her member detail page.';
+      "Used when a member doesn't have her own capacity allocation. The "
+      'default is 35 kWh a month (≈ 1.2 kWh a day). Set a per-member '
+      'allocation on her member detail page.';
   @override
   String get hubFieldQuotaRequired => 'Enter the quota.';
   @override
@@ -4578,7 +4999,7 @@ class _EnStrings extends AppLocalizations {
   String get hubConnectTitle => 'Connect to Solar Hub';
   @override
   String get hubConnectInstruction =>
-      'Point your camera at the QR code on your hub connection.';
+      "Point your camera at the hub's QR code. Make sure you have booked a slot for today.";
   @override
   String get hubConnectWrongCode =>
       'This isn\'t your cooperative\'s Solar Hub QR.';
@@ -4824,10 +5245,10 @@ class _EnStrings extends AppLocalizations {
   String obsTopApplianceBody(String cost) =>
       '±$cost/month. Shift usage to Solar Hub hours.';
   @override
-  String get obsConfirmBookingTitle => 'Confirm hub usage';
+  String get obsConfirmBookingTitle => 'Bookings without a QR scan';
   @override
   String obsConfirmBookingBody(int count) =>
-      '$count schedule(s) passed. Mark as used to log savings.';
+      '$count past booking(s) have no QR scan, so nothing was recorded. Contact the admin if you did use the hub.';
   @override
   String get obsUseHubTitle => 'Use the Solar Hub this month';
   @override
@@ -4896,7 +5317,7 @@ class _EnStrings extends AppLocalizations {
   String get solarTodaySlots => 'Today\'s slots';
   @override
   String get solarSlotCapacityNote =>
-      'Slot capacity is divided based on estimated sunlight (06:00–18:00): afternoon slots get a larger share.';
+      "Each slot has a limit on members. The hub's energy is counted per day and shared by every slot.";
   @override
   String get solarSlotPassed => 'Passed';
   @override
@@ -5083,9 +5504,238 @@ class _EnStrings extends AppLocalizations {
   @override
   String get eligibilityActiveLoan =>
       'Complete your active loan before applying again.';
+
+  @override
+  String get loanDecisionNotice =>
+      'Your cooperative admin decides on the loan, not the app. The score only helps the admin assess.';
+  @override
+  String get verificationNotice =>
+      'This is an initial estimate from the measurements you entered. A technician still needs to inspect the roof before installation.';
+  @override
+  String get paymentsReviewNotice =>
+      'Confirm only after the treasurer has actually received the money. Confirmed payments also raise the member\'s score.';
+  @override
+  String get pinMismatch => 'The PINs don\'t match. Start again.';
+  @override
+  String pinDotsSemantics(int filled, int length) =>
+      '$filled of $length PIN digits entered';
+  @override
+  String roleMemberWithBusiness(String business) => 'Member · $business';
+  @override
+  String applianceUsage(int watts, String hours, int days) =>
+      '$watts W · $hours h/day · $days days/week';
+  @override
+  String monthsCount(int n) => '$n months';
+  @override
+  String loanServiceFeeLine(String rate, int tenor) =>
+      'Service fee $rate/month × $tenor months';
+  @override
+  String loanConfirmMessage(String amount, int tenor, String monthly) =>
+      '$amount ($tenor months, $monthly/month)';
+  @override
+  String get dateToday => 'Today';
+  @override
+  String get messagesYouPrefix => 'You';
+  @override
+  String get threadSubAnnouncement => 'Cooperative announcement';
+  @override
+  String threadParticipants(int n) => '$n participants';
+  @override
+  String get threadEmpty => 'No messages yet. Start the conversation.';
+  @override
+  String get threadReadOnly => 'Only an admin can send announcements.';
+  @override
+  String get errorViewBroken => 'Something went wrong on this screen.';
+  @override
+  String get actionRetry => 'Try again';
+  @override
+  String threadAnnouncementTitle(String coop) => 'Announcements $coop';
+
+  // ── Installment schedule ──────────────────────────────────────────────────
+  @override
+  String get scaffoldInstallments => 'Installment Schedule';
+  @override
+  String get instNoLoanTitle => 'No installments yet';
+  @override
+  String get instNoLoanMsg =>
+      'Your schedule appears once the cooperative records your loan funds as disbursed.';
+  @override
+  String get instRemaining => 'Remaining';
+  @override
+  String instPaidOfTotal(String paid, String total) => '$paid of $total paid';
+  @override
+  String get instNextTitle => 'Next installment';
+  @override
+  String get instPayBtn => 'I have paid';
+  @override
+  String instPayInstruction(String amount) =>
+      'Hand in the installment of $amount to the treasurer in cash, then tap the button below. Admin will confirm.';
+  @override
+  String instPayInstructionWithBank(String amount, String bankAccount) =>
+      'Hand in the installment of $amount to the treasurer in cash, or transfer to $bankAccount. Then tap the button below — admin will confirm.';
+  @override
+  String get instPayConfirmTitle => 'Send payment confirmation?';
+  @override
+  String instPayConfirmMsg(int seq, String amount) =>
+      'Installment $seq of $amount. Send it only if you have already paid; the admin will check it.';
+  @override
+  String get instSentToast => 'Sent. Waiting for admin confirmation.';
+  @override
+  String get instRejectedToast => 'Payment rejected. The member was told.';
+  @override
+  String get instPayInOrder => 'Pay the earlier installment first.';
+  @override
+  String get instNotice =>
+      'An installment is recorded as paid once an admin confirms your payment. This app does not move any money.';
+  @override
+  String get instStatusPaid => 'Paid';
+  @override
+  String get instStatusPaidLate => 'Paid late';
+  @override
+  String get instStatusLate => 'Late';
+  @override
+  String get instStatusAwaiting => 'Awaiting confirmation';
+  @override
+  String get instStatusRejected => 'Rejected';
+  @override
+  String get instStatusOverdue => 'Overdue';
+  @override
+  String get instStatusUpcoming => 'Not due yet';
+  @override
+  String instNumber(int seq, int total) => 'Installment $seq of $total';
+  @override
+  String instDueOn(String date) => 'Due $date';
+  @override
+  String instPaidOn(String date) => 'Paid $date';
+  @override
+  String instSentOn(String date) => 'Sent $date';
+  @override
+  String instRejectedReason(String reason) => 'Rejected by admin: $reason';
+  @override
+  String get instRepaidTitle => 'Loan repaid';
+  @override
+  String get instRepaidMsg =>
+      'Every installment is recorded as paid. Thank you.';
+  @override
+  String get scaffoldAdminInstallments => 'Installment Schedule';
+  @override
+  String get adminInstallmentsMenu => 'Installments & confirmation';
+  @override
+  String get adminInstAwaitingEmpty =>
+      'No installment payments are waiting for confirmation.';
+  @override
+  String get adminInstOutstanding => 'Outstanding';
+  @override
+  String get adminInstCollected => 'Received';
+  @override
+  String get adminInstOverdueLabel => 'Overdue';
+  @override
+  String get adminInstNextTitle => 'Due next';
+  @override
+  String get adminInstLoansTitle => 'Loans being repaid';
+  @override
+  String get adminInstLoansEmpty =>
+      'No loan has been disbursed yet. The schedule appears once you record the funds as disbursed.';
+  @override
+  String get adminInstNotice =>
+      'Match it with the money you actually received before confirming.';
+  @override
+  String get adminInstRejectTitle => 'Reject installment payment';
+  @override
+  String adminInstConfirmMsg(String name, int seq, String amount) =>
+      '$name · installment $seq · $amount';
+  @override
+  String adminInstLoanRowSub(int paid, int total, String outstanding) =>
+      '$paid of $total paid · $outstanding left';
+  @override
+  String get adminNeedsActionTitle => 'Needs your attention';
+  @override
+  String get adminAllClearTitle => 'All clear';
+  @override
+  String get adminAllClearMsg =>
+      'No applications, payments, installments or hub requests are waiting.';
+  @override
+  String get adminTodoLoans => 'Applications waiting for review';
+  @override
+  String get adminTodoInstallments => 'Installments awaiting confirmation';
+  @override
+  String adminTodoOverdue(int n) => '$n installments overdue';
+  @override
+  String adminInstallmentsCardSub(String outstanding, int running) =>
+      '$outstanding outstanding · $running loans running';
+
+  // ── Monthly quota, seats per slot ─────────────────────────────────────────
+  @override
+  String quotaCardTitle(String month) => 'Energy allowance $month';
+  @override
+  String quotaCardRemaining(String remaining, String total) =>
+      '$remaining left of $total';
+  @override
+  String get quotaCardUsed => 'Used';
+  @override
+  String get quotaCardReserved => 'Booked';
+  @override
+  String get quotaCardToday => 'Today';
+  @override
+  String hubRequestQuotaLeft(String left, String name) =>
+      "$name's quota left this month: $left";
+  @override
+  String adminMemberMonthsRecorded(int n) =>
+      n == 1 ? '1 month recorded' : '$n months recorded';
+  @override
+  String get quotaStatAllowance => 'Allowance';
+  @override
+  String get quotaStatShared => 'Shared';
+  @override
+  String get quotaStatReceived => 'Received';
+  @override
+  String quotaCardTrades(String given, String received) =>
+      'Shared $given · received $received this month';
+  @override
+  String quotaDaysLeft(int days) =>
+      days == 1 ? '1 day left' : '$days days left';
+  @override
+  String quotaPaceLine(String perDay, String lastDate) =>
+      'What is left covers about $perDay a day until $lastDate.';
+  @override
+  String get quotaEmptyLine =>
+      "This month's allowance is used up. Ask other members for quota in Quota Swap.";
+  @override
+  String get quotaCardNote =>
+      'kWh is worked out from appliance watts × slot hours and recorded once an admin approves the QR scan. It is an estimate, not a meter reading.';
+  @override
+  String solarQuotaBreakdown(String used, String reserved) =>
+      'Used $used · booked $reserved';
+  @override
+  String solarSlotSeats(int booked, int limit) => '$booked/$limit members';
+  @override
+  String solarSlotSeatsLeft(int left) =>
+      left == 1 ? '1 seat left' : '$left seats left';
+  @override
+  String get solarSlotMine => 'Already booked';
+  @override
+  String solarBookingDayEnergy(String remaining, String capacity) =>
+      'Hub energy that day: $remaining of $capacity left';
+  @override
+  String get solarBookingApplianceHint =>
+      'You can pick more than one appliance: one booking, one seat.';
+  @override
+  String get solarQuotaAfterBooking => 'Quota left after booking';
+  @override
+  String get hubFieldSlotMembers => 'Max members per slot';
+  @override
+  String get hubFieldSlotMembersHelper =>
+      'Applies to every slot. Enter 0 for no limit. A slot is full when its seats are taken, not because one booking uses a lot of energy.';
+  @override
+  String get hubFieldSlotMembersInvalid => 'Enter a number from 0 to 100.';
+  @override
+  String adminBoardSeats(int booked, int limit) =>
+      limit == 0 ? 'Members $booked' : 'Members $booked of $limit';
+  @override
+  String get adminBoardDayEnergy => 'Hub energy today';
 }
 
 // Internal helper — avoids importing SampleSeeder into this file.
 abstract final class _SamplePin {
-  static const String pin = '1234';
+  static const String pin = '147258';
 }

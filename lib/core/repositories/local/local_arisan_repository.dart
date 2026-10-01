@@ -13,7 +13,12 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
 
   ArisanGroup _group(String id) {
     final row = db.find(Tbl.arisanGroups, id);
-    if (row == null) throw const AppException('Grup arisan tidak ditemukan.');
+    if (row == null) {
+      throw const AppException(
+        'Grup arisan tidak ditemukan.',
+        en: 'Arisan group not found.',
+      );
+    }
     return ArisanGroup.fromRow(row);
   }
 
@@ -34,19 +39,31 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
   }) async {
     requireAdmin(admin, admin.cooperativeId);
     if (name.trim().isEmpty) {
-      throw const AppException('Nama grup wajib diisi.');
+      throw const AppException(
+        'Nama grup wajib diisi.',
+        en: 'Enter the group name.',
+      );
     }
     if (contributionIdr < 1000) {
-      throw const AppException('Iuran minimal Rp 1.000.');
+      throw const AppException(
+        'Iuran minimal Rp 1.000.',
+        en: 'Minimum dues are Rp 1,000.',
+      );
     }
     final ids = memberIdsInTurnOrder.toSet().toList();
     if (ids.length < 2) {
-      throw const AppException('Grup arisan butuh minimal 2 anggota.');
+      throw const AppException(
+        'Grup arisan butuh minimal 2 anggota.',
+        en: 'An arisan group needs at least 2 members.',
+      );
     }
     for (final id in ids) {
       final p = profileById(id);
       if (p.cooperativeId != admin.cooperativeId || p.isAdmin) {
-        throw AppException('${p.fullName} bukan anggota koperasi ini.');
+        throw AppException(
+          '${p.fullName} bukan anggota koperasi ini.',
+          en: '${p.fullName} is not a member of this cooperative.',
+        );
       }
     }
 
@@ -96,12 +113,17 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
           body:
               'Giliran Anda ke-${i + 1} dari ${ids.length}. Iuran '
               'Rp${_thousands(contributionIdr)} per bulan.',
+          titleEn: 'You joined the group ${group.name}',
+          bodyEn:
+              'Your turn is ${i + 1} of ${ids.length}. Dues are '
+              'Rp${_thousands(contributionIdr, ",")} per month.',
           route: Paths.arisan,
         );
       }
       await postSystemMessage(
         threadId,
         'Grup ${group.name} dibuat dengan ${ids.length} anggota.',
+        bodyEn: 'Group ${group.name} was created with ${ids.length} members.',
       );
       return group;
     });
@@ -116,11 +138,17 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
   }) async {
     final group = _group(groupId);
     if (!_membersOf(groupId).any((m) => m.userId == me.id)) {
-      throw const AppException('Anda bukan anggota grup ini.');
+      throw const AppException(
+        'Anda bukan anggota grup ini.',
+        en: 'You aren\'t a member of this group.',
+      );
     }
     final month = monthOf(periodMonth);
     if (month.isBefore(group.startMonth)) {
-      throw const AppException('Arisan belum dimulai pada bulan itu.');
+      throw const AppException(
+        'Arisan belum dimulai pada bulan itu.',
+        en: 'The arisan hasn\'t started in that month.',
+      );
     }
     final duplicate = db.first(
       Tbl.arisanPayments,
@@ -136,6 +164,9 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
         duplicate['status'] == 'pending'
             ? 'Setoran bulan ini sudah dikirim dan menunggu konfirmasi admin.'
             : 'Iuran bulan ini sudah lunas.',
+        en: duplicate['status'] == 'pending'
+            ? 'Your payment for this month has been sent and is waiting for admin confirmation.'
+            : "This month's dues are already paid.",
       );
     }
 
@@ -159,6 +190,10 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
         body:
             '${me.fullName} menyetor iuran ${group.name} '
             '${monthLabel(month)}.',
+        titleEn: 'Arisan payment awaiting confirmation',
+        bodyEn:
+            '${me.fullName} paid the ${group.name} dues for '
+            '${monthLabelEn(month)}.',
         route: Paths.adminPayments,
       );
       return payment;
@@ -173,15 +208,26 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
     String? note,
   }) async {
     final row = db.find(Tbl.arisanPayments, paymentId);
-    if (row == null) throw const AppException('Setoran tidak ditemukan.');
+    if (row == null) {
+      throw const AppException(
+        'Setoran tidak ditemukan.',
+        en: 'Payment not found.',
+      );
+    }
     final payment = ArisanPayment.fromRow(row);
     final group = _group(payment.groupId);
     requireAdmin(admin, group.cooperativeId);
     if (payment.status != PaymentStatus.pending) {
-      throw const AppException('Setoran ini sudah diproses.');
+      throw const AppException(
+        'Setoran ini sudah diproses.',
+        en: 'This payment has already been processed.',
+      );
     }
     if (!approve && (note == null || note.trim().isEmpty)) {
-      throw const AppException('Tulis alasan penolakan agar anggota paham.');
+      throw const AppException(
+        'Tulis alasan penolakan agar anggota paham.',
+        en: 'Write the reason for rejecting so the member understands.',
+      );
     }
 
     await db.transaction(() async {
@@ -199,6 +245,11 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
             ? 'Iuran ${group.name} ${monthLabel(payment.periodMonth)} sudah '
                   'dicatat lunas.'
             : 'Setoran ${group.name} ditolak: ${note!.trim()}',
+        titleEn: approve ? 'Dues confirmed' : 'Payment rejected',
+        bodyEn: approve
+            ? '${group.name} dues for ${monthLabelEn(payment.periodMonth)} '
+                  'are recorded as paid.'
+            : '${group.name} payment rejected: ${note!.trim()}',
         route: Paths.arisan,
       );
     });
@@ -215,7 +266,10 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
     requireAdmin(admin, group.cooperativeId);
     final members = _membersOf(groupId);
     if (!members.any((m) => m.userId == userId)) {
-      throw const AppException('Penerima bukan anggota grup ini.');
+      throw const AppException(
+        'Penerima bukan anggota grup ini.',
+        en: 'The recipient isn\'t a member of this group.',
+      );
     }
     final month = monthOf(periodMonth);
     final already = db.first(
@@ -226,7 +280,10 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
           r['period_month'] == dateOnly(month),
     );
     if (already != null) {
-      throw const AppException('Pencairan untuk bulan ini sudah dicatat.');
+      throw const AppException(
+        'Pencairan untuk bulan ini sudah dicatat.',
+        en: 'This month\'s payout has already been recorded.',
+      );
     }
 
     return db.transaction(() async {
@@ -250,6 +307,10 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
         body:
             'Rp${_thousands(payout.amountIdr)} dari ${group.name} untuk '
             '${monthLabel(month)}.',
+        titleEn: 'Your arisan turn has been paid out',
+        bodyEn:
+            'Rp${_thousands(payout.amountIdr, ",")} from ${group.name} for '
+            '${monthLabelEn(month)}.',
         route: Paths.arisan,
       );
       return payout;
@@ -282,14 +343,20 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
     if (available + 1e-9 < kwh) {
       throw AppException(
         'Kuota ${giver.fullName} bulan ini tinggal '
-        '${available.toStringAsFixed(1)} kWh.',
+        '${kwhId(available)} kWh.',
+        en: '${giver.fullName}\'s quota this month is down to ${available.toStringAsFixed(1)} kWh.',
       );
     }
   }
 
   QuotaOffer _offer(String id) {
     final row = db.find(Tbl.quotaOffers, id);
-    if (row == null) throw const AppException('Penawaran tidak ditemukan.');
+    if (row == null) {
+      throw const AppException(
+        'Penawaran tidak ditemukan.',
+        en: 'Offer not found.',
+      );
+    }
     return QuotaOffer.fromRow(row);
   }
 
@@ -303,7 +370,10 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
   }) async {
     requireMember(me);
     if (kwh <= 0 || kwh > 1000) {
-      throw const AppException('Jumlah kuota harus lebih dari 0 kWh.');
+      throw const AppException(
+        'Jumlah kuota harus lebih dari 0 kWh.',
+        en: 'The quota amount must be more than 0 kWh.',
+      );
     }
     if (kind == QuotaKind.share) _requireAvailable(me, kwh);
     Profile? target;
@@ -311,13 +381,17 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
       if (kind != QuotaKind.share) {
         throw const AppException(
           'Hanya kuota yang dibagikan yang bisa dikirim ke anggota tertentu.',
+          en: 'Only shared quota can be sent to a specific member.',
         );
       }
       target = profileById(toMemberId);
       if (target.cooperativeId != me.cooperativeId ||
           target.id == me.id ||
           target.isAdmin) {
-        throw const AppException('Anggota penerima tidak valid.');
+        throw const AppException(
+          'Anggota penerima tidak valid.',
+          en: 'Invalid recipient member.',
+        );
       }
     }
     final t = now();
@@ -341,8 +415,10 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
           userId: target.id,
           type: 'quota',
           title: '${me.fullName} membagikan kuota untuk Anda',
-          body:
-              '${kwh.toStringAsFixed(1)} kWh. Terima atau tolak di Tukar Kuota.',
+          body: '${kwhId(kwh)} kWh. Terima atau tolak di Tukar Kuota.',
+          titleEn: '${me.fullName} is sharing quota with you',
+          bodyEn:
+              '${kwh.toStringAsFixed(1)} kWh. Accept or decline in Quota Swap.',
           route: Paths.quota,
         );
       }
@@ -362,6 +438,7 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
         offer.counterpartyId != me.id) {
       throw const AppException(
         'Kuota ini bukan untuk Anda atau sudah dijawab.',
+        en: 'This quota isn\'t for you or has already been answered.',
       );
     }
     final owner = profileById(offer.ownerId);
@@ -380,8 +457,14 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
             ? '${me.fullName} menerima kuota Anda'
             : '${me.fullName} menolak kuota Anda',
         body: accept
-            ? '${offer.kwh.toStringAsFixed(1)} kWh sudah tercatat.'
-            : '${offer.kwh.toStringAsFixed(1)} kWh tidak jadi berpindah.',
+            ? '${kwhId(offer.kwh)} kWh sudah tercatat.'
+            : '${kwhId(offer.kwh)} kWh tidak jadi berpindah.',
+        titleEn: accept
+            ? '${me.fullName} accepted your quota'
+            : '${me.fullName} declined your quota',
+        bodyEn: accept
+            ? '${offer.kwh.toStringAsFixed(1)} kWh has been recorded.'
+            : '${offer.kwh.toStringAsFixed(1)} kWh will not be transferred.',
         route: Paths.quota,
       );
     });
@@ -395,13 +478,22 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
     requireMember(me);
     final offer = _offer(offerId);
     if (offer.cooperativeId != me.cooperativeId) {
-      throw const AppException('Penawaran ini bukan dari koperasi Anda.');
+      throw const AppException(
+        'Penawaran ini bukan dari koperasi Anda.',
+        en: 'This offer isn\'t from your cooperative.',
+      );
     }
     if (offer.ownerId == me.id) {
-      throw const AppException('Ini penawaran Anda sendiri.');
+      throw const AppException(
+        'Ini penawaran Anda sendiri.',
+        en: 'This is your own offer.',
+      );
     }
     if (offer.status != QuotaStatus.open) {
-      throw const AppException('Penawaran ini sudah ditanggapi anggota lain.');
+      throw const AppException(
+        'Penawaran ini sudah ditanggapi anggota lain.',
+        en: 'Another member has already responded to this offer.',
+      );
     }
     // The owner's post is her agreement and this response is the other side's,
     // so the trade completes at once — no second confirmation. The giver's
@@ -423,8 +515,14 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
             ? '${me.fullName} menerima kuota Anda'
             : '${me.fullName} memberi kuota untuk Anda',
         body:
-            '${offer.kwh.toStringAsFixed(1)} kWh. '
+            '${kwhId(offer.kwh)} kWh. '
             'Sudah tercatat di Tukar Kuota.',
+        titleEn: offer.kind == QuotaKind.share
+            ? '${me.fullName} accepted your quota'
+            : '${me.fullName} gave you quota',
+        bodyEn:
+            '${offer.kwh.toStringAsFixed(1)} kWh. '
+            'Already recorded in Quota Swap.',
         route: Paths.quota,
       );
     });
@@ -439,11 +537,15 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
     if (offer.ownerId != me.id) {
       throw const AppException(
         'Hanya pembuat penawaran yang bisa membatalkan.',
+        en: 'Only the offer creator can cancel it.',
       );
     }
     if (offer.status == QuotaStatus.completed ||
         offer.status == QuotaStatus.cancelled) {
-      throw const AppException('Penawaran ini sudah selesai.');
+      throw const AppException(
+        'Penawaran ini sudah selesai.',
+        en: 'This offer is already completed.',
+      );
     }
     await db.transaction(() async {
       await db.update(Tbl.quotaOffers, offerId, {
@@ -457,7 +559,11 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
           title: 'Penawaran kuota dibatalkan',
           body:
               '${me.fullName} membatalkan penawaran '
-              '${offer.kwh.toStringAsFixed(1)} kWh.',
+              '${kwhId(offer.kwh)} kWh.',
+          titleEn: 'Quota offer cancelled',
+          bodyEn:
+              '${me.fullName} cancelled the '
+              '${offer.kwh.toStringAsFixed(1)} kWh offer.',
           route: Paths.quota,
         );
       }
@@ -465,11 +571,11 @@ class LocalArisanRepository extends LocalRepo implements ArisanRepository {
   }
 }
 
-String _thousands(int v) {
+String _thousands(int v, [String sep = '.']) {
   final s = v.abs().toString();
   final b = StringBuffer();
   for (int i = 0; i < s.length; i++) {
-    if (i > 0 && (s.length - i) % 3 == 0) b.write('.');
+    if (i > 0 && (s.length - i) % 3 == 0) b.write(sep);
     b.write(s[i]);
   }
   return b.toString();

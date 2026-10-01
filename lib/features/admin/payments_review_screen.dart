@@ -43,12 +43,7 @@ class PaymentsReviewScreen extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const InfoBanner(
-            tone: InfoTone.info,
-            message:
-                'Konfirmasi hanya setelah uang benar-benar diterima bendahara. '
-                'Setoran yang dikonfirmasi ikut menaikkan skor anggota.',
-          ),
+          InfoBanner(tone: InfoTone.info, message: l10n.paymentsReviewNotice),
           const SizedBox(height: AppSpacing.lg),
           SectionHeader(title: '${l10n.labelPending} (${pending.length})'),
           if (pending.isEmpty)

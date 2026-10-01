@@ -101,6 +101,7 @@ class Message {
     required this.threadId,
     this.senderId,
     required this.body,
+    this.bodyEn,
     required this.createdAt,
   });
 
@@ -110,23 +111,31 @@ class Message {
   /// Null for system messages (loan status changes and the like).
   final String? senderId;
   final String body;
+
+  /// English text of a system message; what a person typed has none.
+  final String? bodyEn;
   final DateTime createdAt;
 
   bool get isSystem => senderId == null;
+
+  String bodyFor({required bool english}) => english ? (bodyEn ?? body) : body;
 
   factory Message.fromRow(Map<String, dynamic> r) => Message(
     id: rStr(r, 'id'),
     threadId: rStr(r, 'thread_id'),
     senderId: rStrN(r, 'sender_id'),
     body: rStr(r, 'body'),
+    bodyEn: rStrN(r, 'body_en'),
     createdAt: rDate(r, 'created_at'),
   );
 
+  // TODO(supabase-migration): `body_en` has no matching column yet.
   Map<String, dynamic> toRow() => {
     'id': id,
     'thread_id': threadId,
     'sender_id': senderId,
     'body': body,
+    if (bodyEn != null) 'body_en': bodyEn,
     'created_at': ts(createdAt),
   };
 }
@@ -139,6 +148,8 @@ class AppNotification {
     required this.type,
     required this.title,
     required this.body,
+    this.titleEn,
+    this.bodyEn,
     this.route,
     this.readAt,
     required this.createdAt,
@@ -151,11 +162,20 @@ class AppNotification {
   final String type;
   final String title;
   final String body;
+
+  /// English versions, written when the notification was created (the sender
+  /// cannot know which language the recipient reads). Null → show Indonesian.
+  final String? titleEn;
+  final String? bodyEn;
   final String? route;
   final DateTime? readAt;
   final DateTime createdAt;
 
   bool get isRead => readAt != null;
+
+  String titleFor({required bool english}) =>
+      english ? (titleEn ?? title) : title;
+  String bodyFor({required bool english}) => english ? (bodyEn ?? body) : body;
 
   factory AppNotification.fromRow(Map<String, dynamic> r) => AppNotification(
     id: rStr(r, 'id'),
@@ -163,6 +183,8 @@ class AppNotification {
     type: rStr(r, 'type'),
     title: rStr(r, 'title'),
     body: rStr(r, 'body'),
+    titleEn: rStrN(r, 'title_en'),
+    bodyEn: rStrN(r, 'body_en'),
     route: rStrN(r, 'route'),
     readAt: rDateN(r, 'read_at'),
     createdAt: rDate(r, 'created_at'),
@@ -174,6 +196,9 @@ class AppNotification {
     'type': type,
     'title': title,
     'body': body,
+    // TODO(supabase-migration): `title_en` / `body_en` have no columns yet.
+    if (titleEn != null) 'title_en': titleEn,
+    if (bodyEn != null) 'body_en': bodyEn,
     'route': route,
     'read_at': readAt == null ? null : ts(readAt!),
     'created_at': ts(createdAt),
