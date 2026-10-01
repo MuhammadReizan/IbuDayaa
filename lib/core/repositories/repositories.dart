@@ -236,9 +236,27 @@ abstract interface class LoanRepository {
 
   Future<void> disburse({required Profile admin, required String loanId});
 
+  /// Admin-only: records an installment as paid — confirming one the member
+  /// sent, or noting cash handed over in person.
   Future<void> markInstallmentPaid({
     required Profile admin,
     required String installmentId,
+  });
+
+  /// The borrower says she paid an installment; it waits for an admin to
+  /// confirm, like an arisan dues payment. Installments are paid in order.
+  Future<void> submitInstallmentPayment({
+    required Profile me,
+    required String installmentId,
+    String? note,
+  });
+
+  /// Admin-only: the payment a member sent did not arrive. The reason is
+  /// required and the member can send it again.
+  Future<void> rejectInstallmentPayment({
+    required Profile admin,
+    required String installmentId,
+    required String reason,
   });
 }
 

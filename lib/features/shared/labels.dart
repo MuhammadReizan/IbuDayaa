@@ -78,8 +78,21 @@ String loanEventLabel(String type) => switch (type) {
   'repaid' => 'Pinjaman lunas',
   'cancelled' => 'Pengajuan dibatalkan',
   'installment_paid' => 'Cicilan diterima',
+  'installment_submitted' => 'Pembayaran cicilan dikirim',
+  'installment_rejected' => 'Pembayaran cicilan ditolak',
   _ => type,
 };
+
+/// A loan event's note as the reader's language. The app writes 'Cicilan ke-3' or
+/// 'Cicilan ke-3: reason' for installment events; the number is shown as
+/// 'Installment 3' in English and the reason (typed by the admin) stays as
+/// written. Any other note is content and is shown as it is.
+String localizedLoanEventNote(String note, AppLocalizations l10n) {
+  final m = RegExp(r'^Cicilan ke-(d+)(?:: (.*))?$').firstMatch(note);
+  if (m == null || !l10n.isEn) return note;
+  final reason = m.group(2);
+  return 'Installment ${m.group(1)}${reason == null ? '' : ': $reason'}';
+}
 
 String localizedLoanEventLabel(
   String type,
@@ -93,6 +106,10 @@ String localizedLoanEventLabel(
   'repaid' => l10n.isEn ? 'Loan repaid' : 'Pinjaman lunas',
   'cancelled' => l10n.isEn ? 'Application cancelled' : 'Pengajuan dibatalkan',
   'installment_paid' => l10n.isEn ? 'Installment received' : 'Cicilan diterima',
+  'installment_submitted' =>
+    l10n.isEn ? 'Installment payment sent' : 'Pembayaran cicilan dikirim',
+  'installment_rejected' =>
+    l10n.isEn ? 'Installment payment rejected' : 'Pembayaran cicilan ditolak',
   _ => type,
 };
 

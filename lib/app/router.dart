@@ -16,6 +16,7 @@ import '../features/admin/coop_summary_screen.dart';
 import '../features/admin/hub_board_screen.dart';
 import '../features/admin/hub_requests_screen.dart';
 import '../features/admin/hub_settings_screen.dart';
+import '../features/admin/installments_admin_screen.dart';
 import '../features/admin/member_detail_screen.dart';
 import '../features/admin/payments_review_screen.dart';
 import '../features/arisan/arisan_screen.dart';
@@ -33,6 +34,7 @@ import '../features/energy/appliances_screen.dart';
 import '../features/energy/energy_analysis_screen.dart';
 import '../features/energy/energy_records_screen.dart';
 import '../features/home/member_home_screen.dart';
+import '../features/loans/installments_screen.dart';
 import '../features/loans/loan_apply_screen.dart';
 import '../features/loans/loan_detail_screen.dart';
 import '../features/loans/loans_screen.dart';
@@ -158,6 +160,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       _page(Paths.score, (_) => const ScoreScreen()),
       _page(Paths.creditReport, (_) => const CreditReportScreen()),
       _page(Paths.loanApply, (_) => const LoanApplyScreen()),
+      _page(Paths.installments, (_) => const InstallmentsScreen()),
       _page(
         Paths.loans,
         (_) => const LoansScreen(),
@@ -217,6 +220,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       _page(Paths.adminPayments, (_) => const PaymentsReviewScreen()),
+      _page(Paths.adminInstallments, (_) => const InstallmentsAdminScreen()),
       _page(
         Paths.adminArisan,
         (_) => const ArisanAdminScreen(),

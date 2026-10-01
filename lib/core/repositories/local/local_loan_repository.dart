@@ -1,4 +1,7 @@
+import 'dart:ui' show Locale;
+
 import '../../../features/credit_score/domain/credit_scoring_engine.dart';
+import '../../l10n/l10n.dart';
 import '../../db/ids.dart';
 import '../../db/tables.dart';
 import '../../errors.dart';
@@ -14,11 +17,21 @@ class LocalLoanRepository extends LocalRepo implements LoanRepository {
 
   final CreditScoringEngine engine;
 
+  /// English text for [AppException.en].
+  static final AppLocalizations _en = AppLocalizations.forLocale(
+    const Locale('en'),
+  );
+
   static const int minimumAmountIdr = 500000;
 
   LoanApplication _loan(String id) {
     final row = db.find(Tbl.loanApplications, id);
-    if (row == null) throw const AppException('Pengajuan tidak ditemukan.');
+    if (row == null) {
+      throw const AppException(
+        'Pengajuan tidak ditemukan.',
+        en: 'Application not found.',
+      );
+    }
     return LoanApplication.fromRow(row);
   }
 
@@ -42,17 +55,27 @@ class LocalLoanRepository extends LocalRepo implements LoanRepository {
   Future<void> _tellMember(
     LoanApplication loan,
     String title,
-    String body,
-  ) async {
+    String body, {
+    required String titleEn,
+    required String bodyEn,
+  }) async {
     await notify(
       userId: loan.userId,
       type: 'loan',
       title: title,
       body: body,
+      titleEn: titleEn,
+      bodyEn: bodyEn,
       route: Paths.loan(loan.id),
     );
     final thread = supportThreadOf(loan.userId);
-    if (thread != null) await postSystemMessage(thread.id, '$title. $body');
+    if (thread != null) {
+      await postSystemMessage(
+        thread.id,
+        '$title. $body',
+        bodyEn: '$titleEn. $bodyEn',
+      );
+    }
   }
 
   Future<void> _move(
@@ -64,6 +87,9 @@ class LocalLoanRepository extends LocalRepo implements LoanRepository {
       throw AppException(
         'Pengajuan berstatus "${loan.status.label}" tidak bisa diubah menjadi '
         '"${to.label}".',
+        en:
+            'An application with status "${loan.status.localizedLabel(_en)}" '
+            'cannot be changed to "${to.localizedLabel(_en)}".',
       );
     }
     await db.update(Tbl.loanApplications, loan.id, {'status': to.db, ...extra});
@@ -94,15 +120,29 @@ class LocalLoanRepository extends LocalRepo implements LoanRepository {
       score: score,
       hasActiveLoan: hasActive,
     );
-    if (!eligibility.canApply) throw AppException(eligibility.message);
+    if (!eligibility.canApply) {
+      throw AppException(
+        eligibility.message,
+        en: eligibility.localizedMessage(_en),
+      );
+    }
     if (amountIdr < minimumAmountIdr) {
-      throw const AppException('Nominal minimal Rp 500.000.');
+      throw const AppException(
+        'Nominal minimal Rp 500.000.',
+        en: 'The minimum amount is Rp 500,000.',
+      );
     }
     if (amountIdr > eligibility.ceilingIdr) {
-      throw const AppException('Nominal melebihi plafon Anda.');
+      throw const AppException(
+        'Nominal melebihi plafon Anda.',
+        en: 'The amount exceeds your limit.',
+      );
     }
     if (!coop.loanTenors.contains(tenorMonths)) {
-      throw const AppException('Tenor ini tidak disediakan koperasi.');
+      throw const AppException(
+        'Tenor ini tidak disediakan koperasi.',
+        en: 'The cooperative doesn\'t offer this term.',
+      );
     }
 
     final quote = quoteLoan(
@@ -129,6 +169,7 @@ class LocalLoanRepository extends LocalRepo implements LoanRepository {
           for (final f in score.factors)
             ScoreFactorSnapshot(
               label: f.label,
+              labelEn: f.labelEn,
               points: f.points,
               maxPoints: f.maxPoints,
             ),
@@ -145,6 +186,10 @@ class LocalLoanRepository extends LocalRepo implements LoanRepository {
         body:
             '${me.fullName} mengajukan Rp${_thousands(amountIdr)} '
             'untuk ${purpose.label.toLowerCase()}.',
+        titleEn: 'New loan application',
+        bodyEn:
+            '${me.fullName} applied for Rp${_thousands(amountIdr, ",")} '
+            'for ${purpose.localizedLabel(_en).toLowerCase()}.',
         route: Paths.adminLoan(loan.id),
       );
       final thread = supportThreadOf(me.id);
@@ -153,6 +198,9 @@ class LocalLoanRepository extends LocalRepo implements LoanRepository {
           thread.id,
           'Pengajuan pinjaman Rp${_thousands(amountIdr)} terkirim dan '
           'menunggu review admin.',
+          bodyEn:
+              'Your loan application of Rp${_thousands(amountIdr, ",")} was '
+              'sent and is waiting for admin review.',
         );
       }
       return loan;
@@ -163,12 +211,16 @@ class LocalLoanRepository extends LocalRepo implements LoanRepository {
   Future<void> cancel({required Profile me, required String loanId}) async {
     final loan = _loan(loanId);
     if (loan.userId != me.id) {
-      throw const AppException('Anda tidak bisa membatalkan pengajuan ini.');
+      throw const AppException(
+        'Anda tidak bisa membatalkan pengajuan ini.',
+        en: 'You can\'t cancel this application.',
+      );
     }
     if (loan.status != LoanStatus.submitted) {
       throw const AppException(
         'Pengajuan yang sudah direview tidak bisa dibatalkan sendiri. '
         'Hubungi admin.',
+        en: 'An application that has already been reviewed cannot be cancelled by you. Contact the admin.',
       );
     }
     await db.transaction(() async {
@@ -179,6 +231,8 @@ class LocalLoanRepository extends LocalRepo implements LoanRepository {
         type: 'loan',
         title: 'Pengajuan dibatalkan anggota',
         body: '${me.fullName} membatalkan pengajuannya.',
+        titleEn: 'Application cancelled by the member',
+        bodyEn: '${me.fullName} cancelled their application.',
         route: Paths.adminLoan(loan.id),
       );
     });
@@ -198,6 +252,8 @@ class LocalLoanRepository extends LocalRepo implements LoanRepository {
         loan,
         'Pengajuan sedang direview',
         'Admin ${admin.fullName} sedang memeriksa pengajuan Anda.',
+        titleEn: 'Application under review',
+        bodyEn: 'Admin ${admin.fullName} is reviewing your application.',
       );
     });
   }
@@ -223,6 +279,11 @@ class LocalLoanRepository extends LocalRepo implements LoanRepository {
         'Pengajuan disetujui',
         'Admin menyetujui Rp${_thousands(loan.amountIdr)}. Dana akan '
             'dicairkan oleh koperasi.${clean == null ? '' : ' Catatan: $clean'}',
+        titleEn: 'Application approved',
+        bodyEn:
+            'The admin approved Rp${_thousands(loan.amountIdr, ",")}. The '
+            'cooperative will disburse the funds.'
+            '${clean == null ? '' : ' Note: $clean'}',
       );
     });
   }
@@ -236,7 +297,10 @@ class LocalLoanRepository extends LocalRepo implements LoanRepository {
     final loan = _loan(loanId);
     requireAdmin(admin, loan.cooperativeId);
     if (reason.trim().isEmpty) {
-      throw const AppException('Tulis alasan penolakan agar anggota paham.');
+      throw const AppException(
+        'Tulis alasan penolakan agar anggota paham.',
+        en: 'Write the reason for rejecting so the member understands.',
+      );
     }
     await db.transaction(() async {
       await _move(loan, LoanStatus.rejected, {
@@ -249,6 +313,8 @@ class LocalLoanRepository extends LocalRepo implements LoanRepository {
         loan,
         'Pengajuan belum disetujui',
         'Alasan dari admin: ${reason.trim()}',
+        titleEn: 'Application not approved',
+        bodyEn: 'Reason from the admin: ${reason.trim()}',
       );
     });
   }
@@ -287,6 +353,10 @@ class LocalLoanRepository extends LocalRepo implements LoanRepository {
         'Dana pinjaman dicairkan',
         'Cicilan Rp${_thousands(loan.monthlyInstallmentIdr)} per bulan '
             'selama ${loan.tenorMonths} bulan mulai bulan depan.',
+        titleEn: 'Loan funds disbursed',
+        bodyEn:
+            'Installments of Rp${_thousands(loan.monthlyInstallmentIdr, ",")} '
+            'per month for ${loan.tenorMonths} months, starting next month.',
       );
     });
   }
@@ -297,15 +367,26 @@ class LocalLoanRepository extends LocalRepo implements LoanRepository {
     required String installmentId,
   }) async {
     final row = db.find(Tbl.loanInstallments, installmentId);
-    if (row == null) throw const AppException('Cicilan tidak ditemukan.');
+    if (row == null) {
+      throw const AppException(
+        'Cicilan tidak ditemukan.',
+        en: 'Installment not found.',
+      );
+    }
     final installment = LoanInstallment.fromRow(row);
     final loan = _loan(installment.loanId);
     requireAdmin(admin, loan.cooperativeId);
     if (loan.status != LoanStatus.disbursed) {
-      throw const AppException('Pinjaman ini tidak sedang berjalan.');
+      throw const AppException(
+        'Pinjaman ini tidak sedang berjalan.',
+        en: 'This loan isn\'t active.',
+      );
     }
     if (installment.isPaid) {
-      throw const AppException('Cicilan ini sudah dicatat lunas.');
+      throw const AppException(
+        'Cicilan ini sudah dicatat lunas.',
+        en: 'This installment is already recorded as paid.',
+      );
     }
 
     await db.transaction(() async {
@@ -330,6 +411,8 @@ class LocalLoanRepository extends LocalRepo implements LoanRepository {
           loan,
           'Pinjaman lunas',
           'Terima kasih. Semua cicilan sudah tercatat lunas.',
+          titleEn: 'Loan repaid',
+          bodyEn: 'Thank you. All installments are recorded as paid.',
         );
       } else {
         await notify(
@@ -339,18 +422,153 @@ class LocalLoanRepository extends LocalRepo implements LoanRepository {
           body:
               'Pembayaran Rp${_thousands(installment.amountIdr)} sudah '
               'dikonfirmasi admin.',
+          titleEn: 'Installment ${installment.seq} recorded',
+          bodyEn:
+              'Payment of Rp${_thousands(installment.amountIdr, ",")} was '
+              'confirmed by the admin.',
           route: Paths.loan(loan.id),
         );
       }
     });
   }
+
+  @override
+  Future<void> submitInstallmentPayment({
+    required Profile me,
+    required String installmentId,
+    String? note,
+  }) async {
+    requireMember(me);
+    final row = db.find(Tbl.loanInstallments, installmentId);
+    final installment = row == null ? null : LoanInstallment.fromRow(row);
+    final loan = installment == null ? null : _loan(installment.loanId);
+    if (installment == null || loan == null || loan.userId != me.id) {
+      throw const AppException(
+        'Cicilan tidak ditemukan.',
+        en: 'Installment not found.',
+      );
+    }
+    if (loan.status != LoanStatus.disbursed) {
+      throw const AppException(
+        'Pinjaman ini tidak sedang berjalan.',
+        en: 'This loan isn\'t active.',
+      );
+    }
+    if (installment.isPaid) {
+      throw const AppException(
+        'Cicilan ini sudah dicatat lunas.',
+        en: 'This installment is already recorded as paid.',
+      );
+    }
+    if (installment.isAwaitingConfirmation) {
+      throw const AppException(
+        'Pembayaran ini sudah dikirim dan menunggu konfirmasi admin.',
+        en: 'This payment has been sent and is waiting for admin confirmation.',
+      );
+    }
+    final earlierOpen = db.first(
+      Tbl.loanInstallments,
+      (r) =>
+          r['loan_id'] == loan.id &&
+          (r['seq'] as num) < installment.seq &&
+          r['paid_at'] == null &&
+          r['payment_submitted_at'] == null,
+    );
+    if (earlierOpen != null) {
+      throw const AppException(
+        'Bayar cicilan sebelumnya dulu.',
+        en: 'Pay the earlier installment first.',
+      );
+    }
+
+    final clean = (note == null || note.trim().isEmpty) ? null : note.trim();
+    await db.transaction(() async {
+      await db.update(Tbl.loanInstallments, installmentId, {
+        'payment_submitted_at': now().toIso8601String(),
+        'payment_note': clean,
+        'review_note': null,
+      });
+      await _event(
+        loan.id,
+        me.id,
+        'installment_submitted',
+        'Cicilan ke-${installment.seq}',
+      );
+      await notifyAdmins(
+        cooperativeId: loan.cooperativeId,
+        type: 'payment',
+        title: 'Cicilan menunggu konfirmasi',
+        body:
+            '${me.fullName} membayar cicilan ke-${installment.seq} '
+            '(Rp${_thousands(installment.amountIdr)}).',
+        titleEn: 'Installment awaiting confirmation',
+        bodyEn:
+            '${me.fullName} paid installment ${installment.seq} '
+            '(Rp${_thousands(installment.amountIdr, ",")}).',
+        route: Paths.adminInstallments,
+      );
+    });
+  }
+
+  @override
+  Future<void> rejectInstallmentPayment({
+    required Profile admin,
+    required String installmentId,
+    required String reason,
+  }) async {
+    final row = db.find(Tbl.loanInstallments, installmentId);
+    if (row == null) {
+      throw const AppException(
+        'Cicilan tidak ditemukan.',
+        en: 'Installment not found.',
+      );
+    }
+    final installment = LoanInstallment.fromRow(row);
+    final loan = _loan(installment.loanId);
+    requireAdmin(admin, loan.cooperativeId);
+    if (!installment.isAwaitingConfirmation) {
+      throw const AppException(
+        'Tidak ada pembayaran cicilan yang menunggu konfirmasi.',
+        en: 'There is no installment payment waiting for confirmation.',
+      );
+    }
+    final clean = reason.trim();
+    if (clean.isEmpty) {
+      throw const AppException(
+        'Tulis alasan penolakan agar anggota paham.',
+        en: 'Write the reason for rejecting so the member understands.',
+      );
+    }
+
+    await db.transaction(() async {
+      await db.update(Tbl.loanInstallments, installmentId, {
+        'payment_submitted_at': null,
+        'review_note': clean,
+      });
+      await _event(
+        loan.id,
+        admin.id,
+        'installment_rejected',
+        'Cicilan ke-${installment.seq}: $clean',
+      );
+      await notify(
+        userId: loan.userId,
+        type: 'loan',
+        title: 'Pembayaran cicilan ditolak',
+        body: 'Cicilan ke-${installment.seq} belum diterima: $clean',
+        titleEn: 'Installment payment rejected',
+        bodyEn: 'Installment ${installment.seq} was not received: $clean',
+        route: Paths.installments,
+      );
+    });
+  }
 }
 
-String _thousands(int v) {
+String _thousands(int v, [String sep = '.']) {
   final s = v.abs().toString();
   final b = StringBuffer();
   for (int i = 0; i < s.length; i++) {
-    if (i > 0 && (s.length - i) % 3 == 0) b.write('.');
+    if (i > 0 && (s.length - i) % 3 == 0) b.write(sep);
     b.write(s[i]);
   }
   return b.toString();

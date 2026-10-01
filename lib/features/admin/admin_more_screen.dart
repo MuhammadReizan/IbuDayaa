@@ -61,6 +61,13 @@ class AdminMoreScreen extends ConsumerWidget {
             tone: PillTone.warning,
           ),
           item(
+            Icons.account_balance_rounded,
+            l10n.adminInstallmentsMenu,
+            Paths.adminInstallments,
+            badge: data.installmentsAwaiting.length,
+            tone: PillTone.warning,
+          ),
+          item(
             Icons.groups_rounded,
             l10n.adminArisanMenu,
             Paths.adminArisan,

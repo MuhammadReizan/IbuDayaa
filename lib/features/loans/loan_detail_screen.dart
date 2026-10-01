@@ -14,9 +14,20 @@ import '../../core/state/actions.dart';
 import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
 import '../credit_score/application/credit_score_provider.dart';
+import '../credit_score/domain/credit_scoring_engine.dart';
 import '../shared/labels.dart';
+import 'installment_row.dart';
 
 /// One application, for the member who made it or an admin reviewing it.
+/// The band is stored on the application as its Indonesian label; show it in
+/// the chosen language.
+String _bandLabel(String stored, AppLocalizations l10n) {
+  for (final b in CreditBand.values) {
+    if (b.label == stored) return b.localizedLabel(l10n);
+  }
+  return stored;
+}
+
 class LoanDetailScreen extends ConsumerWidget {
   const LoanDetailScreen({
     super.key,
@@ -195,7 +206,7 @@ class LoanDetailScreen extends ConsumerWidget {
                 const Divider(height: AppSpacing.xl),
                 KeyValueRow(
                   label: l10n.loanApplyTenor,
-                  value: '${loan.tenorMonths} bulan',
+                  value: l10n.monthsCount(loan.tenorMonths),
                 ),
                 KeyValueRow(
                   label: l10n.loanApplyTitle,
@@ -270,14 +281,19 @@ class LoanDetailScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.lg),
           SectionCard(
             title:
-                '${l10n.homeSkorKredit}: ${loan.scoreSnapshot} (${loan.scoreBand})',
+                '${l10n.homeSkorKredit}: ${loan.scoreSnapshot} (${_bandLabel(loan.scoreBand, l10n)})',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 for (final f in loan.scoreFactors) ...[
                   Row(
                     children: [
-                      Expanded(child: Text(f.label, style: text.bodyMedium)),
+                      Expanded(
+                        child: Text(
+                          f.labelFor(english: l10n.isEn),
+                          style: text.bodyMedium,
+                        ),
+                      ),
                       Text(
                         '${f.points}/${f.maxPoints}',
                         style: text.titleSmall,
@@ -318,45 +334,14 @@ class LoanDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   for (final i in installments)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: AppSpacing.xs,
-                      ),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 32,
-                            child: Text('${i.seq}', style: text.titleSmall),
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  formatRupiah(i.amountIdr),
-                                  style: text.titleSmall,
-                                ),
-                                Text(
-                                  i.isPaid
-                                      ? '${l10n.labelCompleted} ${formatShortDate(i.paidAt!, l10n: l10n)}'
-                                      : '${l10n.labelDate} ${formatShortDate(i.dueDate, l10n: l10n)} ${i.dueDate.year}',
-                                  style: text.bodySmall,
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (i.isPaid)
-                            StatusPill(
-                              label: i.paidOnTime
-                                  ? l10n.labelCompleted
-                                  : l10n.labelPending,
-                              tone: i.paidOnTime
-                                  ? PillTone.success
-                                  : PillTone.warning,
-                            )
-                          else if (isAdmin &&
-                              loan.status == LoanStatus.disbursed)
-                            TextButton(
+                    InstallmentRow(
+                      installment: i,
+                      now: now,
+                      action:
+                          isAdmin &&
+                              loan.status == LoanStatus.disbursed &&
+                              !i.isPaid
+                          ? TextButton(
                               onPressed: () async {
                                 final ok = await confirmDialog(
                                   context,
@@ -372,18 +357,16 @@ class LoanDetailScreen extends ConsumerWidget {
                               },
                               child: Text(l10n.actionConfirm),
                             )
-                          else
-                            StatusPill(
-                              label: i.isOverdue(now)
-                                  ? l10n.homeLoanOverdue
-                                  : l10n.labelPending,
-                              tone: i.isOverdue(now)
-                                  ? PillTone.danger
-                                  : PillTone.neutral,
-                            ),
-                        ],
-                      ),
+                          : null,
                     ),
+                  if (!isAdmin && loan.userId == me.id) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    SecondaryButton(
+                      label: l10n.scaffoldInstallments,
+                      icon: Icons.event_note_rounded,
+                      onPressed: () => context.push(Paths.installments),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -399,7 +382,8 @@ class LoanDetailScreen extends ConsumerWidget {
                     subtitle: [
                       if (events[i].actorId != null)
                         data.nameOf(events[i].actorId),
-                      if (events[i].note != null) events[i].note!,
+                      if (events[i].note != null)
+                        localizedLoanEventNote(events[i].note!, l10n),
                     ].join(' · '),
                     time: formatDateTime(events[i].createdAt, l10n: l10n),
                     tone:

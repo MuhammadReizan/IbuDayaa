@@ -19,7 +19,12 @@ class AppActions {
 
   Profile get _me {
     final me = _ref.read(appStateProvider).me;
-    if (me == null) throw const AppException('Silakan masuk terlebih dahulu.');
+    if (me == null) {
+      throw const AppException(
+        'Silakan masuk terlebih dahulu.',
+        en: 'Please sign in first.',
+      );
+    }
     return me;
   }
 
@@ -430,6 +435,34 @@ class AppActions {
     await _ref
         .read(loanRepositoryProvider)
         .markInstallmentPaid(admin: _me, installmentId: installmentId);
+    await _refresh();
+  }
+
+  Future<void> submitInstallmentPayment(
+    String installmentId, {
+    String? note,
+  }) async {
+    await _ref
+        .read(loanRepositoryProvider)
+        .submitInstallmentPayment(
+          me: _me,
+          installmentId: installmentId,
+          note: note,
+        );
+    await _refresh();
+  }
+
+  Future<void> rejectInstallmentPayment(
+    String installmentId,
+    String reason,
+  ) async {
+    await _ref
+        .read(loanRepositoryProvider)
+        .rejectInstallmentPayment(
+          admin: _me,
+          installmentId: installmentId,
+          reason: reason,
+        );
     await _refresh();
   }
 

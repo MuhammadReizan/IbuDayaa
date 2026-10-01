@@ -32,6 +32,7 @@ abstract final class Paths {
   static const loanApply = '/loan/apply';
   static const loans = '/loans';
   static String loan(String id) => '/loans/$id';
+  static const installments = '/installments';
 
   // Shared.
   static String thread(String id) => '/thread/$id';
@@ -51,6 +52,7 @@ abstract final class Paths {
   static String adminLoan(String id) => '/a/loans/$id';
   static String adminMember(String id) => '/a/members/$id';
   static const adminPayments = '/a/payments';
+  static const adminInstallments = '/a/installments';
   static const adminArisan = '/a/arisan';
   static const adminArisanNew = '/a/arisan/new';
   static const adminHub = '/a/hub';

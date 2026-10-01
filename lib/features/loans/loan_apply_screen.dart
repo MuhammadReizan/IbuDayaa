@@ -72,7 +72,7 @@ class _LoanApplyScreenState extends ConsumerState<LoanApplyScreen> {
               ),
               KeyValueRow(
                 label: l10n.loanApplyTenor,
-                value: '${done.tenorMonths} bulan',
+                value: l10n.monthsCount(done.tenorMonths),
               ),
               KeyValueRow(
                 label: l10n.loanInstallments,
@@ -183,8 +183,18 @@ class _LoanApplyScreenState extends ConsumerState<LoanApplyScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(formatRupiah(_min), style: text.labelSmall),
-              Text(formatRupiah(ceiling), style: text.labelSmall),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(formatRupiah(_min), style: text.labelSmall),
+                ),
+              ),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(formatRupiah(ceiling), style: text.labelSmall),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.xl),
@@ -236,8 +246,10 @@ class _LoanApplyScreenState extends ConsumerState<LoanApplyScreen> {
                   value: formatRupiah(quote.principalIdr),
                 ),
                 KeyValueRow(
-                  label:
-                      'Jasa ${formatPercent(coop.loanFlatMonthlyRatePct, decimals: 1)}/bulan × $tenor bulan',
+                  label: l10n.loanServiceFeeLine(
+                    formatPercent(coop.loanFlatMonthlyRatePct, decimals: 1),
+                    tenor,
+                  ),
                   value: formatRupiah(quote.totalInterestIdr),
                 ),
                 KeyValueRow(
@@ -292,8 +304,11 @@ class _LoanApplyScreenState extends ConsumerState<LoanApplyScreen> {
     final ok = await confirmDialog(
       context,
       title: l10n.loanApplyConfirm,
-      message:
-          '${formatRupiah(amount)} ($tenor bulan, ${formatRupiah(quote.monthlyInstallmentIdr)}/bulan)',
+      message: l10n.loanConfirmMessage(
+        formatRupiah(amount),
+        tenor,
+        formatRupiah(quote.monthlyInstallmentIdr),
+      ),
       confirmLabel: l10n.actionSubmit,
     );
     if (!ok || !mounted) return;

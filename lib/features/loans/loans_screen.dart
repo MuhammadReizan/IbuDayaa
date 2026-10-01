@@ -100,6 +100,19 @@ class LoansScreen extends ConsumerWidget {
               ],
             ),
           ),
+          if (data.scheduleLoanOf(me.id)?.status == LoanStatus.disbursed) ...[
+            const SizedBox(height: AppSpacing.md),
+            TintedRow(
+              icon: Icons.event_note_rounded,
+              tone: PillTone.solar,
+              title: l10n.scaffoldInstallments,
+              trailing: const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textTertiary,
+              ),
+              onTap: () => context.push(Paths.installments),
+            ),
+          ],
           if (coop != null) ...[
             const SizedBox(height: AppSpacing.md),
             Text(
@@ -154,7 +167,7 @@ class _LoanCard extends StatelessWidget {
               children: [
                 Text(formatRupiah(loan.amountIdr), style: text.titleMedium),
                 Text(
-                  '${loan.purpose.localizedLabel(l10n)} · ${loan.tenorMonths} bulan · ${formatShortDate(loan.createdAt, l10n: l10n)}',
+                  '${loan.purpose.localizedLabel(l10n)} · ${l10n.monthsCount(loan.tenorMonths)} · ${formatShortDate(loan.createdAt, l10n: l10n)}',
                   style: text.bodySmall,
                 ),
               ],

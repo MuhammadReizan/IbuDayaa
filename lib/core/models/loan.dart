@@ -99,21 +99,31 @@ class ScoreFactorSnapshot {
     required this.label,
     required this.points,
     required this.maxPoints,
+    this.labelEn,
   });
 
   final String label;
+
+  /// English label, kept with the snapshot so an old application still reads
+  /// in either language. Null on snapshots saved before it existed.
+  final String? labelEn;
   final int points;
   final int maxPoints;
+
+  String labelFor({required bool english}) =>
+      english ? (labelEn ?? label) : label;
 
   factory ScoreFactorSnapshot.fromJson(Map<String, dynamic> j) =>
       ScoreFactorSnapshot(
         label: rStr(j, 'label'),
+        labelEn: rStrN(j, 'label_en'),
         points: rInt(j, 'points'),
         maxPoints: rInt(j, 'max_points'),
       );
 
   Map<String, dynamic> toJson() => {
     'label': label,
+    if (labelEn != null) 'label_en': labelEn,
     'points': points,
     'max_points': maxPoints,
   };
@@ -228,6 +238,9 @@ class LoanInstallment {
     required this.amountIdr,
     this.paidAt,
     this.confirmedBy,
+    this.submittedAt,
+    this.submitNote,
+    this.reviewNote,
   });
 
   final String id;
@@ -235,14 +248,34 @@ class LoanInstallment {
   final int seq;
   final DateTime dueDate;
   final int amountIdr;
+
+  /// When an admin confirmed (or recorded) the payment.
   final DateTime? paidAt;
   final String? confirmedBy;
 
+  /// When the member told the cooperative she paid, same as an arisan dues
+  /// payment: it waits for an admin to confirm. Cleared when the admin rejects
+  /// it, so the member can send it again.
+  final DateTime? submittedAt;
+  final String? submitNote;
+
+  /// Why the admin rejected the last payment the member sent.
+  final String? reviewNote;
+
   bool get isPaid => paidAt != null;
+
+  /// Sent by the member, not yet confirmed or rejected by an admin.
+  bool get isAwaitingConfirmation => !isPaid && submittedAt != null;
+
+  /// The last payment she sent was rejected and she hasn't sent another.
+  bool get wasRejected => !isPaid && submittedAt == null && reviewNote != null;
 
   bool isOverdue(DateTime now) => !isPaid && dayOf(now).isAfter(dueDate);
 
-  bool get paidOnTime => paidAt != null && !dayOf(paidAt!).isAfter(dueDate);
+  /// Judged on the day the member paid, not on the day an admin got round to
+  /// confirming it — otherwise a slow confirmation would count against her.
+  bool get paidOnTime =>
+      isPaid && !dayOf(submittedAt ?? paidAt!).isAfter(dueDate);
 
   factory LoanInstallment.fromRow(Map<String, dynamic> r) => LoanInstallment(
     id: rStr(r, 'id'),
@@ -252,6 +285,9 @@ class LoanInstallment {
     amountIdr: rInt(r, 'amount_idr'),
     paidAt: rDateN(r, 'paid_at'),
     confirmedBy: rStrN(r, 'confirmed_by'),
+    submittedAt: rDateN(r, 'payment_submitted_at'),
+    submitNote: rStrN(r, 'payment_note'),
+    reviewNote: rStrN(r, 'review_note'),
   );
 
   Map<String, dynamic> toRow() => {
@@ -262,6 +298,9 @@ class LoanInstallment {
     'amount_idr': amountIdr,
     'paid_at': paidAt == null ? null : ts(paidAt!),
     'confirmed_by': confirmedBy,
+    'payment_submitted_at': submittedAt == null ? null : ts(submittedAt!),
+    'payment_note': submitNote,
+    'review_note': reviewNote,
   };
 }
 

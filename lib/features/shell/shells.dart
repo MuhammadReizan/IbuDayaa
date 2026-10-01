@@ -87,7 +87,7 @@ class AdminShell extends ConsumerWidget {
           icon: Icons.grid_view_outlined,
           activeIcon: Icons.grid_view_rounded,
           label: l10n.navOther,
-          badge: data.pendingPayments.length,
+          badge: data.pendingPayments.length + data.installmentsAwaiting.length,
         ),
       ],
     );
