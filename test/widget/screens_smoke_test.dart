@@ -21,6 +21,7 @@ void main() {
     Paths.creditReport,
     Paths.loanApply,
     Paths.loans,
+    Paths.installments,
     Paths.arisan,
     Paths.quota,
     Paths.energyAnalysis,
@@ -53,6 +54,7 @@ void main() {
     Paths.adminMembers,
     Paths.adminMore,
     Paths.adminPayments,
+    Paths.adminInstallments,
     Paths.adminArisan,
     Paths.adminArisanNew,
     Paths.adminHub,
@@ -67,6 +69,18 @@ void main() {
       await pumpApp(
         tester,
         signedInAs: SampleSeeder.adminPhone,
+        size: const Size(360, 780),
+      );
+      routerOf(tester).go(path);
+      await tester.pumpAndSettle();
+    });
+  }
+
+  for (final path in [Paths.installments, Paths.loans, Paths.memberHome]) {
+    testWidgets('borrower $path', (tester) async {
+      await pumpApp(
+        tester,
+        signedInAs: '081200000005',
         size: const Size(360, 780),
       );
       routerOf(tester).go(path);

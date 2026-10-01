@@ -7,6 +7,8 @@ import 'package:ibudaya/core/hub_qr.dart';
 import 'package:ibudaya/app/app.dart';
 import 'package:ibudaya/app/router.dart';
 import 'package:ibudaya/core/db/local_database.dart';
+import 'package:ibudaya/core/db/row.dart';
+import 'package:ibudaya/core/l10n/l10n.dart';
 import 'package:ibudaya/core/models/models.dart';
 import 'package:ibudaya/core/paths.dart';
 import 'package:ibudaya/core/repositories/local/local_auth_repository.dart';
@@ -18,6 +20,15 @@ import 'package:ibudaya/core/state/selectors.dart';
 import 'package:ibudaya/features/credit_score/data/rule_based_credit_scoring_engine.dart';
 import 'package:ibudaya/features/home/member_home_screen.dart';
 
+/// Pins the app language without touching the preferences file.
+class _FixedLocale extends LocaleNotifier {
+  _FixedLocale(this.locale);
+  final Locale locale;
+
+  @override
+  Future<Locale> build() async => locale;
+}
+
 final _now = DateTime(2026, 9, 11, 10);
 DateTime _clock() => _now;
 
@@ -27,6 +38,7 @@ Future<void> pumpApp(
   WidgetTester tester, {
   String? signedInAs,
   Size size = const Size(412, 915),
+  Locale? locale,
 }) async {
   tester.view.physicalSize = size * 3;
   tester.view.devicePixelRatio = 3;
@@ -49,6 +61,8 @@ Future<void> pumpApp(
         localDatabaseProvider.overrideWithValue(db),
         clockProvider.overrideWithValue(_clock),
         initialAppStateProvider.overrideWithValue(initial),
+        if (locale != null)
+          localeProvider.overrideWith(() => _FixedLocale(locale)),
       ],
       child: const IbuDayaApp(),
     ),
@@ -93,6 +107,22 @@ void main() {
 
     expect(find.text('Halo, Ibu Clara'), findsOneWidget);
     expect(find.text('Status Penggunaan Daya'), findsOneWidget);
+    // The month's allowance is not on the home screen; it lives in the energy
+    // analysis.
+    expect(find.textContaining('Jatah energi'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the energy analysis shows what is left of the 35 kWh month', (
+    tester,
+  ) async {
+    await pumpApp(tester, signedInAs: SampleSeeder.memberPhone);
+    routerOf(tester).go(Paths.energyAnalysis);
+    await tester.pumpAndSettle();
+    // 11 Sep: 20 days left in the month, today included.
+    expect(find.text('Jatah energi September 2026'), findsOneWidget);
+    expect(find.text('20 hari lagi'), findsOneWidget);
+    expect(find.textContaining('tersisa dari 35 kWh'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -213,6 +243,23 @@ void main() {
           .firstWhere((m) => m.fullName == 'Ibu Clara');
 
       await actions.login(SampleSeeder.memberPhone, SampleSeeder.pin);
+      // A scan is her arrival at a slot she booked for today.
+      final clock = container.read(clockProvider)();
+      final slot = container
+          .read(appStateProvider)
+          .data
+          .orderedSlots
+          .firstWhere(
+            (x) => x.startHour <= clock.hour && clock.hour < x.endHour,
+            orElse: () =>
+                container.read(appStateProvider).data.orderedSlots.first,
+          );
+      await actions.book(
+        slotId: slot.id,
+        date: dayOf(clock),
+        applianceName: 'Oven',
+        estKwh: 3,
+      );
       final request = await actions.requestConnection(
         scannedCode: kSolarHubQr,
         applianceName: 'Oven',
