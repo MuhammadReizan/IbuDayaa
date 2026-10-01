@@ -92,12 +92,16 @@ extension SnapshotQueries on CoopSnapshot {
     return list.firstOrNull;
   }
 
-  EnergyInsight? insightOf(String userId) => buildEnergyInsight(
-    records: recordsOf(userId),
-    appliances: appliancesOf(userId),
-    completedBookings: bookingsOf(userId),
-    tariff: profile(userId)?.tariffIdrPerKwh ?? 1444.70,
-  );
+  /// [now] lets a month still in progress be compared fairly with the last
+  /// full one instead of looking like a sudden drop.
+  EnergyInsight? insightOf(String userId, [DateTime? now]) =>
+      buildEnergyInsight(
+        records: recordsOf(userId),
+        appliances: appliancesOf(userId),
+        completedBookings: bookingsOf(userId),
+        tariff: profile(userId)?.tariffIdrPerKwh ?? 1444.70,
+        now: now,
+      );
 
   /// Quota someone sent to [userId] specifically, waiting for her to accept.
   List<QuotaOffer> incomingQuotaGifts(String userId) =>
@@ -130,14 +134,14 @@ extension SnapshotQueries on CoopSnapshot {
     DateTime now, [
     AppLocalizations? l10n,
   ]) => buildObservations(
-    insight: insightOf(userId),
+    insight: insightOf(userId, now),
     records: recordsOf(userId),
     appliances: appliancesOf(userId),
     myBookings: bookingsOf(userId),
     tariff: profile(userId)?.tariffIdrPerKwh ?? 1444.70,
     now: now,
     rupiah: formatRupiah,
-    l10n: l10n,
+    l10n: l10n ?? AppLocalizations.current,
   );
 
   // -- Solar hub -------------------------------------------------------------
@@ -174,6 +178,10 @@ extension SnapshotQueries on CoopSnapshot {
     bookings: bookings,
     offers: offers,
   );
+
+  /// Energy [userId] used on [day]: sessions the hub has recorded.
+  double usedOnDayOf(String userId, DateTime day) =>
+      usedOnDay(userId: userId, day: day, bookings: bookings);
 
   List<QuotaOffer> get activeOffers =>
       offers
@@ -395,6 +403,40 @@ extension SnapshotQueries on CoopSnapshot {
       loanEvents.where((e) => e.loanId == loanId).toList()
         ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
+  /// Loans being repaid — the ones with a live installment schedule.
+  List<LoanApplication> get runningLoans =>
+      loans.where((l) => l.status == LoanStatus.disbursed).toList()..sort(
+        (a, b) => (a.disbursedAt ?? a.createdAt).compareTo(
+          b.disbursedAt ?? b.createdAt,
+        ),
+      );
+
+  /// The loan a member's installment schedule shows: the one she is repaying,
+  /// else the most recent one she finished.
+  LoanApplication? scheduleLoanOf(String userId) {
+    final mine = loansOf(userId);
+    return mine.where((l) => l.status == LoanStatus.disbursed).firstOrNull ??
+        mine.where((l) => l.status == LoanStatus.repaid).firstOrNull;
+  }
+
+  /// Installment payments members sent that wait for an admin, oldest first.
+  List<LoanInstallment> get installmentsAwaiting {
+    final running = runningLoans.map((l) => l.id).toSet();
+    return installments
+        .where((i) => i.isAwaitingConfirmation && running.contains(i.loanId))
+        .toList()
+      ..sort((a, b) => a.submittedAt!.compareTo(b.submittedAt!));
+  }
+
+  /// Unpaid installments on running loans, soonest due first.
+  List<LoanInstallment> get openInstallments {
+    final running = runningLoans.map((l) => l.id).toSet();
+    return installments
+        .where((i) => !i.isPaid && running.contains(i.loanId))
+        .toList()
+      ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+  }
+
   /// Applications waiting on an admin, oldest first.
   List<LoanApplication> get loansAwaitingAdmin =>
       loans
@@ -457,6 +499,11 @@ extension SnapshotQueries on CoopSnapshot {
     } else if (t.kind == ThreadKind.support && me.isAdmin) {
       title = nameOf(t.refId);
       avatarName = title;
+    } else if (t.kind == ThreadKind.announcement) {
+      // Stored in Indonesian when the cooperative was created.
+      title = AppLocalizations.current.threadAnnouncementTitle(
+        cooperative?.name ?? '',
+      );
     }
 
     return ThreadSummary(

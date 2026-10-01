@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../l10n/l10n.dart';
 import '../models/models.dart';
 
 /// Everything the signed-in user is allowed to see in their cooperative.
@@ -58,7 +59,8 @@ class CoopSnapshot {
   Profile? profile(String? id) =>
       id == null ? null : members.where((m) => m.id == id).firstOrNull;
 
-  String nameOf(String? id) => profile(id)?.fullName ?? 'Anggota';
+  String nameOf(String? id) =>
+      profile(id)?.fullName ?? AppLocalizations.current.roleMember;
 
   SolarHub? get hub => hubs.firstOrNull;
 }

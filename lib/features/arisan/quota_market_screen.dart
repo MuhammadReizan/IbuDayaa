@@ -109,40 +109,41 @@ class QuotaMarketScreen extends ConsumerWidget {
                   style: AppTypography.numeric(30, color: Colors.white),
                 ),
                 const SizedBox(height: AppSpacing.md),
+                // Her month: the allowance, what she used and has booked,
+                // and what she gave to or received from other members.
                 Row(
                   children: [
-                    Expanded(
-                      child: StatTile(
-                        label: l10n.solarQuotaThisMonth,
-                        value: formatKwh(quota.allocationKwh),
-                        onDark: true,
-                        valueSize: 15,
+                    for (final (label, kwh) in [
+                      (l10n.quotaStatAllowance, quota.allocationKwh),
+                      (l10n.quotaCardUsed, quota.usedKwh),
+                      (l10n.quotaCardReserved, quota.reservedKwh),
+                    ])
+                      Expanded(
+                        child: StatTile(
+                          label: label,
+                          value: formatKwh(kwh),
+                          onDark: true,
+                          valueSize: 15,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: StatTile(
-                        label: l10n.scaffoldBookings,
-                        value: formatKwh(quota.bookedKwh),
-                        onDark: true,
-                        valueSize: 15,
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: [
+                    for (final (label, kwh) in [
+                      (l10n.quotaStatShared, quota.givenKwh),
+                      (l10n.quotaStatReceived, quota.receivedKwh),
+                    ])
+                      Expanded(
+                        child: StatTile(
+                          label: label,
+                          value: formatKwh(kwh),
+                          onDark: true,
+                          valueSize: 15,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: StatTile(
-                        label: l10n.arisanQuotaShare,
-                        value: formatKwh(quota.givenKwh),
-                        onDark: true,
-                        valueSize: 15,
-                      ),
-                    ),
-                    Expanded(
-                      child: StatTile(
-                        label: l10n.arisanQuotaNeed,
-                        value: formatKwh(quota.receivedKwh),
-                        onDark: true,
-                        valueSize: 15,
-                      ),
-                    ),
+                    const Expanded(child: SizedBox.shrink()),
                   ],
                 ),
               ],

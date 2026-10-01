@@ -90,7 +90,7 @@ class _RecordTile extends StatelessWidget {
     // the source already says where it came from.
     final title = isHub
         ? (b != null && b.applianceName.isNotEmpty
-              ? '${l10n.energySourceHub} · ${b.applianceName}'
+              ? b.applianceName
               : l10n.energySourceHub)
         : r.kind.localizedLabel(l10n);
     final when = b != null
@@ -123,10 +123,7 @@ class _RecordTile extends StatelessWidget {
               children: [
                 Text(title, style: text.titleSmall),
                 const SizedBox(height: 2),
-                Text(
-                  '$when · ${formatKwh(r.kwh)} · ${formatRupiah(r.idrPerKwh)}/kWh',
-                  style: text.bodySmall,
-                ),
+                Text('$when · ${formatKwh(r.kwh)}', style: text.bodySmall),
               ],
             ),
           ),

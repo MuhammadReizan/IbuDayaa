@@ -13,6 +13,9 @@ import '../models/solar.dart';
 /// Jawa–Bali grid. Not measured by the app; always shown as an estimate.
 const double kGridEmissionFactorKgPerKwh = 0.87;
 
+/// Days into a month before it is compared with the month before.
+const int kMinDaysForMonthComparison = 10;
+
 @immutable
 class MonthlyUsage {
   const MonthlyUsage({
@@ -127,6 +130,7 @@ EnergyInsight? buildEnergyInsight({
   required Iterable<Appliance> appliances,
   required Iterable<HubBooking> completedBookings,
   required double tariff,
+  DateTime? now,
 }) {
   final months = monthlyUsage(records);
   if (months.isEmpty) return null;
@@ -177,9 +181,21 @@ EnergyInsight? buildEnergyInsight({
       ),
   ]..sort((a, b) => b.monthlyKwh.compareTo(a.monthlyKwh));
 
-  final double? change = (previous == null || previous.kwh <= 0)
+  // A month still in progress is judged against the same share of the earlier
+  // months (day 12 of 30 against 40% of last month), not against all of it —
+  // otherwise the first days of every month read as a big drop. Before day 10
+  // there is too little to say anything.
+  var share = 1.0;
+  var comparable = true;
+  if (now != null && sameMonth(latest.month, now)) {
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    share = now.day / daysInMonth;
+    comparable = now.day >= kMinDaysForMonthComparison;
+  }
+
+  final double? change = (!comparable || previous == null || previous.kwh <= 0)
       ? null
-      : (latest.kwh - previous.kwh) / previous.kwh * 100;
+      : (latest.kwh - previous.kwh * share) / (previous.kwh * share) * 100;
 
   final earlier = months.skip(1).take(3).toList();
   final avg = earlier.isEmpty
@@ -191,7 +207,7 @@ EnergyInsight? buildEnergyInsight({
     previous: previous,
     contributors: contributors,
     changePct: change,
-    spikeDetected: avg > 0 && latest.kwh > avg * 1.15,
+    spikeDetected: comparable && avg > 0 && latest.kwh > avg * share * 1.15,
   );
 }
 
@@ -281,7 +297,11 @@ List<PowerObservation> buildObservations({
   final out = <PowerObservation>[];
 
   if (insight != null) {
-    final change = insight.changePct;
+    // Month-on-month remarks are about the month in progress; before her first
+    // session of a new month they would describe last month as if it were now.
+    final change = sameMonth(insight.latest.month, now)
+        ? insight.changePct
+        : null;
     if (insight.spikeDetected && change != null && change > 0) {
       final extra = insight.extraCostIdr(tariff);
       out.add(
@@ -344,10 +364,10 @@ List<PowerObservation> buildObservations({
       PowerObservation(
         id: 'confirm-booking',
         tone: ObservationTone.info,
-        title: l10n?.obsConfirmBookingTitle ?? 'Konfirmasi pemakaian hub',
+        title: l10n?.obsConfirmBookingTitle ?? 'Jadwal tanpa scan QR',
         body: l10n != null
             ? l10n.obsConfirmBookingBody(unconfirmed.length)
-            : '${unconfirmed.length} jadwal sudah lewat. Tandai sudah dipakai agar penghematan tercatat.',
+            : '${unconfirmed.length} jadwal sudah lewat tanpa scan QR, jadi belum tercatat.',
         action: ObservationAction.confirmBooking,
       ),
     );

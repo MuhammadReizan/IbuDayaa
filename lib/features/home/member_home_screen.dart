@@ -6,6 +6,7 @@ import '../../core/brand/brand.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/typography.dart';
+import '../../core/db/row.dart';
 import '../../core/format/format.dart';
 import '../../core/l10n/l10n.dart';
 import '../../core/logic/energy_insights.dart';
@@ -30,7 +31,7 @@ class MemberHomeScreen extends ConsumerWidget {
     final text = Theme.of(context).textTheme;
 
     final l10n = AppLocalizations.of(context);
-    final insight = data.insightOf(me.id);
+    final insight = data.insightOf(me.id, now);
     final observations = data.observationsOf(me.id, now, l10n);
     final impact = data.impactOf(me.id, now);
     final unread = data.unreadNotificationsOf(me.id);
@@ -83,7 +84,24 @@ class MemberHomeScreen extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
-              _BillHero(insight: insight, tariff: me.tariffIdrPerKwh),
+              _BillHero(
+                hasHistory: insight != null,
+                current: monthlyUsage(
+                  data.recordsOf(me.id),
+                ).where((m) => sameMonth(m.month, now)).firstOrNull,
+                change: insight != null && sameMonth(insight.latest.month, now)
+                    ? insight.changePct
+                    : null,
+                tariff: me.tariffIdrPerKwh,
+                now: now,
+              ),
+              if (insight != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  l10n.homeBillTariffNote(formatRupiah(me.tariffIdrPerKwh)),
+                  style: text.bodySmall,
+                ),
+              ],
               const SizedBox(height: AppSpacing.xl),
               _QuickActions(
                 pendingQuota: data.incomingQuotaGifts(me.id).length,
@@ -145,17 +163,32 @@ class MemberHomeScreen extends ConsumerWidget {
 }
 
 class _BillHero extends StatelessWidget {
-  const _BillHero({required this.insight, required this.tariff});
+  const _BillHero({
+    required this.hasHistory,
+    required this.current,
+    required this.change,
+    required this.tariff,
+    required this.now,
+  });
 
-  final EnergyInsight? insight;
+  /// She has any hub usage recorded at all.
+  final bool hasHistory;
+
+  /// This month so far, from the sessions the hub recorded; null before the
+  /// first one.
+  final MonthlyUsage? current;
+
+  /// This month against the same share of last month, once it can be said.
+  final double? change;
   final double tariff;
+  final DateTime now;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context);
-    final i = insight;
-    final change = i?.changePct;
+    final cur = current;
+    final change = this.change;
 
     return HeroCard(
       child: Stack(
@@ -168,10 +201,10 @@ class _BillHero extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      i == null
+                      !hasHistory
                           ? l10n.homeBillLabel
                           : l10n.billMonthLabel(
-                              monthYearLabel(i.latest.month, l10n: l10n),
+                              monthYearLabel(now, l10n: l10n),
                             ),
                       style: text.labelLarge?.copyWith(
                         color: AppColors.textOnDarkDim,
@@ -191,14 +224,16 @@ class _BillHero extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            change > 0
-                                ? Icons.arrow_upward_rounded
-                                : Icons.arrow_downward_rounded,
-                            size: 14,
-                            color: Colors.white,
-                          ),
-                          const SizedBox(width: 2),
+                          if (change.abs().round() > 0) ...[
+                            Icon(
+                              change > 0
+                                  ? Icons.arrow_upward_rounded
+                                  : Icons.arrow_downward_rounded,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 2),
+                          ],
                           Text(
                             '${change.abs().round()}% ${l10n.homeChangePctSuffix}',
                             style: text.labelSmall?.copyWith(
@@ -212,11 +247,11 @@ class _BillHero extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.sm),
               Padding(
-                padding: const EdgeInsets.only(right: 120),
+                padding: const EdgeInsets.only(right: 150),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (i == null) ...[
+                    if (!hasHistory) ...[
                       Text(
                         l10n.homeBillNoData,
                         style: text.headlineSmall?.copyWith(
@@ -235,14 +270,16 @@ class _BillHero extends StatelessWidget {
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          formatRupiah(i.latest.totalIdr),
+                          formatRupiah(cur?.totalIdr ?? 0),
                           style: AppTypography.numeric(34, color: Colors.white),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        '${formatKwh(i.latest.kwh)}'
-                        '${i.latest.fromTokens ? ' · ${l10n.homeFromTokens(i.latest.recordCount)}' : ''}',
+                        cur == null
+                            ? l10n.homeBillNoSessions
+                            : '${formatKwh(cur.kwh)} · '
+                                  '${l10n.homeFromTokens(cur.recordCount)}',
                         style: text.bodyMedium?.copyWith(
                           color: AppColors.textOnDarkDim,
                         ),
@@ -252,7 +289,7 @@ class _BillHero extends StatelessWidget {
                     _HeroButton(
                       icon: Icons.insights_rounded,
                       label: l10n.homeAnalysis,
-                      onTap: () => i == null
+                      onTap: () => !hasHistory
                           ? context.go(Paths.memberRecords)
                           : context.push(Paths.energyAnalysis),
                     ),
@@ -526,7 +563,11 @@ class _LoanTeaser extends ConsumerWidget {
         .firstOrNull;
 
     return SectionCard(
-      onTap: () => context.push(Paths.loan(loan.id)),
+      onTap: () => context.push(
+        loan.status == LoanStatus.disbursed
+            ? Paths.installments
+            : Paths.loan(loan.id),
+      ),
       child: Row(
         children: [
           const FeatureBadge(
@@ -550,11 +591,15 @@ class _LoanTeaser extends ConsumerWidget {
                           formatRupiah(next.amountIdr),
                           formatShortDate(next.dueDate, l10n: l10n),
                         ) +
-                        (next.isOverdue(now)
+                        (next.isAwaitingConfirmation
+                            ? ' · ${l10n.instStatusAwaiting}'
+                            : next.isOverdue(now)
                             ? ' · ${l10n.homeLoanOverdue}'
                             : ' · ${l10n.homeLoanDue}'),
                     style: text.bodySmall?.copyWith(
-                      color: next.isOverdue(now) ? AppColors.dangerText : null,
+                      color: next.isOverdue(now) && !next.isAwaitingConfirmation
+                          ? AppColors.dangerText
+                          : null,
                     ),
                   )
                 else

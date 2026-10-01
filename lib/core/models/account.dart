@@ -129,6 +129,12 @@ class Profile {
   };
 }
 
+/// What each member is promised from the Communal Solar Hub: 35 kWh a month,
+/// counted per calendar month (see `quotaBalance`). The admin can change it for
+/// the whole cooperative or, from her limiter rating, for one member.
+const double kMemberMonthlyKwh = 35;
+const double kDefaultMemberMonthlyQuotaKwh = kMemberMonthlyKwh;
+
 /// A cooperative and the policy its admins set. The loan and quota numbers are
 /// the cooperative's own decisions — the app enforces them, it does not pick
 /// them.
@@ -144,7 +150,7 @@ class Cooperative {
     this.loanMaxAmountIdr = 5000000,
     this.loanMinScore = 60,
     this.loanTenors = const [3, 6, 12],
-    this.memberMonthlyQuotaKwh = 30,
+    this.memberMonthlyQuotaKwh = kDefaultMemberMonthlyQuotaKwh,
     this.solarCostPerKwpIdr = 15000000,
     this.arisanBankAccount,
     required this.createdAt,
@@ -217,7 +223,11 @@ class Cooperative {
             .map((n) => n.toInt())
             .toList() ??
         const [3, 6, 12],
-    memberMonthlyQuotaKwh: rDbl(r, 'member_monthly_quota_kwh', 30),
+    memberMonthlyQuotaKwh: rDbl(
+      r,
+      'member_monthly_quota_kwh',
+      kDefaultMemberMonthlyQuotaKwh,
+    ),
     solarCostPerKwpIdr: rInt(r, 'solar_cost_per_kwp_idr', 15000000),
     arisanBankAccount: rStrN(r, 'arisan_bank_account'),
     createdAt: rDate(r, 'created_at'),

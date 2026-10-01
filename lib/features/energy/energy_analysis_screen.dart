@@ -13,6 +13,7 @@ import '../../core/state/app_state.dart';
 import '../../core/state/selectors.dart';
 import '../shared/labels.dart';
 import 'energy_analysis_copy.dart';
+import 'quota_card.dart';
 
 /// Redesigned Energy Analysis screen matching the reference visual design.
 /// This is a rule-based lookup/computation, never a trained model — copy
@@ -92,22 +93,35 @@ class EnergyAnalysisScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final tariff = me.tariffIdrPerKwh;
 
-    final insight = s.data.insightOf(me.id);
+    final now = ref.read(clockProvider)();
+    final insight = s.data.insightOf(me.id, now);
+    // The month's allowance sits here, with the rest of the energy figures.
+    final quotaCard = QuotaCard(
+      quota: s.data.quotaOf(me.id, now),
+      usedToday: s.data.usedOnDayOf(me.id, now),
+      now: now,
+    );
 
     if (insight == null) {
       return AppScaffold(
         title: l10n.energyAnalysisTitle,
         onBack: () => context.pop(),
-        scrollable: false,
-        body: EmptyState(
-          motif: BrandArtMotif.scan,
-          title: l10n.energyAnalysisEmpty,
-          message: l10n.scanAnalysisEmptyMessage,
-          action: PrimaryButton(
-            label: l10n.energyAnalysisUseSolarHub,
-            expand: false,
-            onPressed: () => context.pushReplacement(Paths.memberSolar),
-          ),
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            quotaCard,
+            const SizedBox(height: 16),
+            EmptyState(
+              motif: BrandArtMotif.scan,
+              title: l10n.energyAnalysisEmpty,
+              message: l10n.scanAnalysisEmptyMessage,
+              action: PrimaryButton(
+                label: l10n.energyAnalysisUseSolarHub,
+                expand: false,
+                onPressed: () => context.pushReplacement(Paths.memberSolar),
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -216,6 +230,10 @@ class EnergyAnalysisScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+
+              // Jatah energi bulan ini
+              quotaCard,
+              const SizedBox(height: 14),
 
               // A. ALERT / HASIL ANALISIS UTAMA
               _buildAlertCard(
@@ -533,14 +551,16 @@ class EnergyAnalysisScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                '+${formatRupiah(item.costIdr)}$perMonthSuffix',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: _brandGreen,
+              Flexible(
+                child: Text(
+                  '+${formatRupiah(item.costIdr)}$perMonthSuffix',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: _brandGreen,
+                  ),
                 ),
               ),
             ],

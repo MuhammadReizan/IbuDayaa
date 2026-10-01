@@ -95,6 +95,40 @@ void main() {
     expect(insight.extraCostIdr(1000), 50000);
   });
 
+  group('a month still in progress is compared fairly', () {
+    EnergyInsight? at(DateTime now, double thisMonth, double lastMonth) =>
+        buildEnergyInsight(
+          records: [
+            _rec(id: 'a', month: DateTime(2026, 10), kwh: thisMonth),
+            _rec(id: 'b', month: DateTime(2026, 9), kwh: lastMonth),
+          ],
+          appliances: const [],
+          completedBookings: const [],
+          tariff: 1000,
+          now: now,
+        );
+
+    test('the first days say nothing, not "86% lower"', () {
+      final i = at(DateTime(2026, 10, 1), 3, 21.5)!;
+      expect(i.changePct, isNull);
+      expect(i.spikeDetected, isFalse);
+    });
+
+    test('later it is judged against the same share of last month', () {
+      // Day 15 of 31: last month\'s pace would be 21.5 × 15/31 ≈ 10.4 kWh.
+      final steady = at(DateTime(2026, 10, 15), 10.4, 21.5)!;
+      expect(steady.changePct!.abs(), lessThan(1));
+      final heavy = at(DateTime(2026, 10, 15), 15, 21.5)!;
+      expect(heavy.changePct, greaterThan(40));
+      expect(heavy.spikeDetected, isTrue);
+    });
+
+    test('a finished month is compared in full, as before', () {
+      final i = at(DateTime(2026, 11, 3), 30, 20)!;
+      expect(i.changePct, closeTo(50, 1e-9));
+    });
+  });
+
   group('credit signals', () {
     test('no score before three recorded months', () {
       final c = _ctx(
