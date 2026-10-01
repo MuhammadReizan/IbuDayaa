@@ -271,6 +271,7 @@ class _ArisanCreateScreenState extends ConsumerState<ArisanCreateScreen> {
             Text(l10n.arisanAdminStartMonthLabel, style: text.titleSmall),
             const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<DateTime>(
+              isExpanded: true,
               value: _start,
               items: [
                 for (int i = 0; i < 3; i++)

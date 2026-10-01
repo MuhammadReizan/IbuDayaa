@@ -17,6 +17,9 @@ import '../../core/state/selectors.dart';
 import '../credit_score/application/credit_score_provider.dart';
 import '../shared/labels.dart';
 
+/// The admin's start page: the numbers an admin acts on as icon tiles (red when
+/// something is waiting), then the cooperative summary. Tiles that would only
+/// repeat a bottom tab as a menu are left out.
 class AdminHomeScreen extends ConsumerWidget {
   const AdminHomeScreen({super.key});
 
@@ -34,28 +37,40 @@ class AdminHomeScreen extends ConsumerWidget {
     final members = data.memberProfiles;
     final waitingLoans = data.loansAwaitingAdmin;
     final pendingPayments = data.pendingPayments;
+    final awaitingInstallments = data.installmentsAwaiting;
     final hubRequests = data.hubRequests;
     final kpis = data.coopKpisOf(now, ref.read(creditScoringEngineProvider));
-    final running = data.loans
-        .where((l) => l.status == LoanStatus.disbursed)
-        .toList();
-    final outstanding = running.fold<int>(
-      0,
-      (sum, l) =>
-          sum +
-          data
-              .installmentsOf(l.id)
-              .where((i) => !i.isPaid)
-              .fold<int>(0, (a, i) => a + i.amountIdr),
-    );
-    final overdue = running
-        .expand((l) => data.installmentsOf(l.id))
-        .where((i) => i.isOverdue(now))
+    final open = data.openInstallments;
+    final outstanding = open.fold<int>(0, (a, i) => a + i.amountIdr);
+    final overdue = open
+        .where((i) => !i.isAwaitingConfirmation && i.isOverdue(now))
         .length;
     final hub = data.hub;
+    final hubReady = hub != null && hub.isConfigured;
     final today = dayCapacity(data.availabilityOn(dayOf(now)));
+    final usedPct = today.capacityKwh <= 0
+        ? 0
+        : (today.bookedKwh / today.capacityKwh * 100).round();
     final unreadNotif = data.unreadNotificationsOf(me.id);
     final unreadMsg = data.unreadMessagesOf(me);
+
+    Widget setup({
+      required PillTone tone,
+      required IconData icon,
+      required String title,
+      required String subtitle,
+      required String path,
+    }) => Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: TintedRow(
+        filled: true,
+        tone: tone,
+        icon: icon,
+        title: title,
+        subtitle: subtitle,
+        onTap: () => context.push(path),
+      ),
+    );
 
     return Scaffold(
       body: SafeArea(
@@ -110,70 +125,101 @@ class AdminHomeScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.md),
               if (coop != null)
-                InviteCodeCard(coop: coop, memberCount: members.length),
+                InviteCodeCard(
+                  coop: coop,
+                  memberCount: members.length,
+                  compact: members.isNotEmpty,
+                ),
               const SizedBox(height: AppSpacing.lg),
-              LayoutBuilder(
-                builder: (context, c) {
-                  final w = (c.maxWidth - AppSpacing.md) / 2;
-                  return Wrap(
-                    spacing: AppSpacing.md,
-                    runSpacing: AppSpacing.md,
-                    children: [
-                      _Stat(
-                        width: w,
-                        icon: Icons.groups_rounded,
-                        label: l10n.navMembers,
-                        value: '${members.length}',
-                        onTap: () => context.go(Paths.adminMembers),
-                      ),
-                      _Stat(
-                        width: w,
-                        icon: Icons.request_page_rounded,
-                        label: l10n.labelPending,
-                        value: '${waitingLoans.length}',
-                        alert: waitingLoans.isNotEmpty,
-                        onTap: () => context.go(Paths.adminLoans),
-                      ),
-                      _Stat(
-                        width: w,
-                        icon: Icons.payments_rounded,
-                        label: l10n.labelPending,
-                        value: '${pendingPayments.length}',
-                        alert: pendingPayments.isNotEmpty,
-                        onTap: () => context.push(Paths.adminPayments),
-                      ),
-                      _Stat(
-                        width: w,
-                        icon: Icons.account_balance_rounded,
-                        label: l10n.loanInstallments,
-                        value: formatRupiah(outstanding),
-                        small: true,
-                        onTap: () => context.go(Paths.adminLoans),
-                      ),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: AppSpacing.md),
-              TintedRow(
-                filled: hubRequests.isNotEmpty,
-                tone: hubRequests.isNotEmpty ? PillTone.warning : PillTone.info,
-                icon: Icons.qr_code_scanner_rounded,
-                title: l10n.adminRequestsCardTitle,
-                subtitle: hubRequests.isEmpty
-                    ? l10n.adminRequestsEmpty
-                    : '${hubRequests.length} · ${data.nameOf(hubRequests.first.userId)}',
-                onTap: () => context.push(Paths.adminHubRequests),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              TintedRow(
-                icon: Icons.solar_power_rounded,
-                tone: PillTone.solar,
-                title: l10n.adminBoardTitle,
-                subtitle: l10n.adminBoardSubtitle,
-                onTap: () => context.push(Paths.adminHubBoard),
+              if (!hubReady)
+                setup(
+                  tone: PillTone.warning,
+                  icon: Icons.solar_power_rounded,
+                  title: l10n.adminHubTitle,
+                  subtitle: l10n.solarNoHubMessage,
+                  path: Paths.adminHub,
+                ),
+              if (data.groups.isEmpty)
+                setup(
+                  tone: PillTone.info,
+                  icon: Icons.groups_rounded,
+                  title: l10n.adminArisanNewGroup,
+                  subtitle: members.length < 2
+                      ? l10n.arisanNotJoinedMsg
+                      : l10n.arisanGroupName,
+                  path: Paths.adminArisanNew,
+                ),
+              // Numbers an admin acts on, each a tap into the place to act.
+              // Red = something is waiting. The tabs already cover the member
+              // list and the application list, so these are counts and
+              // amounts, not menus.
+              _StatGrid(
+                children: [
+                  _Stat(
+                    icon: Icons.request_page_rounded,
+                    label: l10n.adminTodoLoans,
+                    value: '${waitingLoans.length}',
+                    alert: waitingLoans.isNotEmpty,
+                    onTap: () => context.go(Paths.adminLoans),
+                  ),
+                  _Stat(
+                    icon: Icons.payments_rounded,
+                    label: l10n.adminPaymentsMenu,
+                    value: '${pendingPayments.length}',
+                    alert: pendingPayments.isNotEmpty,
+                    onTap: () => context.push(Paths.adminPayments),
+                  ),
+                  _Stat(
+                    icon: Icons.fact_check_rounded,
+                    label: l10n.adminTodoInstallments,
+                    value: '${awaitingInstallments.length}',
+                    alert: awaitingInstallments.isNotEmpty,
+                    onTap: () => context.push(Paths.adminInstallments),
+                  ),
+                  _Stat(
+                    icon: Icons.qr_code_scanner_rounded,
+                    label: l10n.adminRequestsCardTitle,
+                    value: '${hubRequests.length}',
+                    alert: hubRequests.isNotEmpty,
+                    onTap: () => context.push(Paths.adminHubRequests),
+                  ),
+                  _Stat(
+                    icon: Icons.account_balance_rounded,
+                    label: l10n.loanInstallments,
+                    value: formatRupiah(outstanding),
+                    caption: overdue > 0
+                        ? '${l10n.adminInstOverdueLabel}: $overdue'
+                        : l10n.adminInstOutstanding,
+                    small: true,
+                    alert: overdue > 0,
+                    onTap: () => context.push(Paths.adminInstallments),
+                  ),
+                  _Stat(
+                    icon: Icons.solar_power_rounded,
+                    label: l10n.solarCapacityToday,
+                    value: hubReady ? '$usedPct%' : '-',
+                    caption: hubReady
+                        ? '${formatKwh(today.bookedKwh)} / ${formatKwh(today.capacityKwh)}'
+                        : null,
+                    onTap: () => context.push(
+                      hubReady ? Paths.adminHubBoard : Paths.adminHub,
+                    ),
+                  ),
+                  _Stat(
+                    icon: Icons.groups_rounded,
+                    label: l10n.adminSummaryActive,
+                    value: '${kpis.activeMembers}/${kpis.members}',
+                    onTap: () => context.go(Paths.adminMembers),
+                  ),
+                  _Stat(
+                    icon: Icons.verified_rounded,
+                    label: l10n.adminSummaryLoanReady,
+                    value: '${kpis.loanReady}',
+                    onTap: () => context.push(Paths.adminSummary),
+                  ),
+                ],
               ),
               const SizedBox(height: AppSpacing.md),
               TintedRow(
@@ -186,120 +232,105 @@ class AdminHomeScreen extends ConsumerWidget {
                   kpis.loanReady,
                   kpis.quotaTrades,
                 ),
+                trailing: const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.textTertiary,
+                ),
                 onTap: () => context.push(Paths.adminSummary),
               ),
-              if (overdue > 0) ...[
-                const SizedBox(height: AppSpacing.md),
-                InfoBanner(
-                  tone: InfoTone.danger,
-                  message: '$overdue ${l10n.homeLoanOverdue}.',
-                ),
-              ],
-              const SizedBox(height: AppSpacing.xl),
-              if (hub == null || !hub.isConfigured || data.groups.isEmpty) ...[
-                SectionHeader(title: l10n.adminDashTitle),
-                if (hub == null || !hub.isConfigured) ...[
-                  TintedRow(
-                    filled: true,
-                    tone: PillTone.warning,
-                    icon: Icons.solar_power_rounded,
-                    title: l10n.adminHubTitle,
-                    subtitle: l10n.solarNoHubMessage,
-                    onTap: () => context.push(Paths.adminHub),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                ],
-                if (data.groups.isEmpty) ...[
-                  TintedRow(
-                    filled: true,
-                    tone: PillTone.info,
-                    icon: Icons.groups_rounded,
-                    title: l10n.adminArisanNewGroup,
-                    subtitle: members.length < 2
-                        ? l10n.arisanNotJoinedMsg
-                        : l10n.arisanGroupName,
-                    onTap: () => context.push(Paths.adminArisanNew),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                ],
-                const SizedBox(height: AppSpacing.lg),
-              ],
-              if (hub != null && hub.isConfigured) ...[
-                SectionCard(
-                  onTap: () => context.push(Paths.adminHub),
-                  child: Row(
-                    children: [
-                      const FeatureBadge(
-                        icon: Icons.solar_power_rounded,
-                        tone: BadgeTone.solar,
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.solarCapacityToday,
-                              style: text.bodySmall,
-                            ),
-                            Text(
-                              '${formatKwh(today.bookedKwh)} / ${formatKwh(today.capacityKwh)}',
-                              style: text.titleSmall,
-                            ),
-                            const SizedBox(height: AppSpacing.xs),
-                            AppProgressBar(
-                              value: today.capacityKwh <= 0
-                                  ? 0
-                                  : today.bookedKwh / today.capacityKwh,
-                              color: AppColors.secondaryDark,
-                              track: AppColors.secondaryContainer,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xl),
-              ],
-              SectionHeader(
-                title: l10n.labelPending,
-                actionLabel: waitingLoans.isEmpty ? null : l10n.actionViewAll,
-                onAction: () => context.go(Paths.adminLoans),
-              ),
-              if (waitingLoans.isEmpty)
-                Text(l10n.adminLoansEmptyMessage, style: text.bodyMedium)
-              else
-                for (final l in waitingLoans.take(3)) ...[
-                  AdminLoanRow(loan: l, name: data.nameOf(l.userId)),
-                  const SizedBox(height: AppSpacing.sm),
-                ],
-              const SizedBox(height: AppSpacing.xl),
-              SectionHeader(
-                title: l10n.adminPaymentsTitle,
-                actionLabel: pendingPayments.isEmpty
-                    ? null
-                    : l10n.actionViewAll,
-                onAction: () => context.push(Paths.adminPayments),
-              ),
-              if (pendingPayments.isEmpty)
-                Text(l10n.adminPaymentsEmpty, style: text.bodyMedium)
-              else
-                for (final p in pendingPayments.take(3)) ...[
-                  TintedRow(
-                    icon: Icons.payments_rounded,
-                    tone: PillTone.warning,
-                    title:
-                        '${data.nameOf(p.userId)} · ${formatRupiah(p.amountIdr)}',
-                    subtitle:
-                        '${data.group(p.groupId)?.name ?? ''} · ${monthYearLabel(p.periodMonth, l10n: l10n)}',
-                    onTap: () => context.push(Paths.adminPayments),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                ],
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Two tiles to a row, each row as tall as its tallest tile.
+class _StatGrid extends StatelessWidget {
+  const _StatGrid({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      for (int i = 0; i < children.length; i += 2)
+        Padding(
+          padding: EdgeInsets.only(
+            bottom: i + 2 < children.length ? AppSpacing.md : 0,
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: children[i]),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: i + 1 < children.length
+                      ? children[i + 1]
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ),
+          ),
+        ),
+    ],
+  );
+}
+
+class _Stat extends StatelessWidget {
+  const _Stat({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onTap,
+    this.caption,
+    this.alert = false,
+    this.small = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+
+  /// A second, quieter line under the label (an amount, a ratio).
+  final String? caption;
+  final bool alert;
+  final bool small;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return SectionCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FeatureBadge(
+            icon: icon,
+            size: 36,
+            tone: alert ? BadgeTone.alert : BadgeTone.mint,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(value, style: AppTypography.numeric(small ? 18 : 26)),
+          ),
+          Text(label, style: text.bodySmall, maxLines: 2),
+          if (caption != null)
+            Text(
+              caption!,
+              style: text.labelSmall?.copyWith(
+                color: alert ? AppColors.dangerText : AppColors.textTertiary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+        ],
       ),
     );
   }
@@ -310,15 +341,62 @@ class InviteCodeCard extends StatelessWidget {
     super.key,
     required this.coop,
     required this.memberCount,
+    this.compact = false,
   });
 
   final Cooperative coop;
   final int memberCount;
 
+  /// One slim row once members have joined: the code is still there to copy,
+  /// but it no longer takes the top of the dashboard.
+  final bool compact;
+
+  Future<void> _copy(BuildContext context, AppLocalizations l10n) async {
+    await Clipboard.setData(
+      ClipboardData(
+        text: l10n.inviteCardShareMessage(coop.name, coop.inviteCode),
+      ),
+    );
+    if (context.mounted) showAppSnack(context, l10n.inviteCardCopiedToast);
+  }
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context);
+
+    if (compact) {
+      return SectionCard(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        child: Row(
+          children: [
+            const FeatureBadge(icon: Icons.vpn_key_rounded, size: 36),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.inviteCardTitle, style: text.bodySmall),
+                  Text(
+                    coop.inviteCode,
+                    style: AppTypography.numeric(20).copyWith(letterSpacing: 3),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: l10n.inviteCardCopyTooltip,
+              onPressed: () => _copy(context, l10n),
+              icon: const Icon(Icons.copy_rounded),
+            ),
+          ],
+        ),
+      );
+    }
+
     return HeroCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -347,19 +425,7 @@ class InviteCodeCard extends StatelessWidget {
               ),
               IconButton.filledTonal(
                 tooltip: l10n.inviteCardCopyTooltip,
-                onPressed: () async {
-                  await Clipboard.setData(
-                    ClipboardData(
-                      text: l10n.inviteCardShareMessage(
-                        coop.name,
-                        coop.inviteCode,
-                      ),
-                    ),
-                  );
-                  if (context.mounted) {
-                    showAppSnack(context, l10n.inviteCardCopiedToast);
-                  }
-                },
+                onPressed: () => _copy(context, l10n),
                 icon: const Icon(Icons.copy_rounded),
               ),
             ],
@@ -370,55 +436,6 @@ class InviteCodeCard extends StatelessWidget {
             style: text.bodySmall?.copyWith(color: AppColors.textOnDarkDim),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  const _Stat({
-    required this.width,
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.onTap,
-    this.alert = false,
-    this.small = false,
-  });
-
-  final double width;
-  final IconData icon;
-  final String label;
-  final String value;
-  final VoidCallback onTap;
-  final bool alert;
-  final bool small;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return SizedBox(
-      width: width,
-      child: SectionCard(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            FeatureBadge(
-              icon: icon,
-              size: 36,
-              tone: alert ? BadgeTone.alert : BadgeTone.mint,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(value, style: AppTypography.numeric(small ? 18 : 26)),
-            ),
-            Text(label, style: text.bodySmall, maxLines: 2),
-          ],
-        ),
       ),
     );
   }
@@ -440,14 +457,18 @@ class AdminLoanRow extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 46,
-            height: 46,
+            constraints: const BoxConstraints(minWidth: 46, minHeight: 46),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xs,
+              vertical: AppSpacing.xs,
+            ),
             alignment: Alignment.center,
             decoration: const BoxDecoration(
               color: AppColors.infoContainer,
               borderRadius: AppRadius.xsBr,
             ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(

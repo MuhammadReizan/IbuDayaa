@@ -82,7 +82,7 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
                             children: [
                               Text(m.fullName, style: text.titleSmall),
                               Text(
-                                '${m.businessName} · $months',
+                                '${m.businessName} · ${l10n.adminMemberMonthsRecorded(months)}',
                                 style: text.bodySmall,
                               ),
                             ],
