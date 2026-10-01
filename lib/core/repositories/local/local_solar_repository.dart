@@ -17,7 +17,12 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
 
   SolarHub _hub(String id) {
     final row = db.find(Tbl.solarHubs, id);
-    if (row == null) throw const AppException('Solar Hub tidak ditemukan.');
+    if (row == null) {
+      throw const AppException(
+        'Solar Hub tidak ditemukan.',
+        en: 'Solar Hub not found.',
+      );
+    }
     return SolarHub.fromRow(row);
   }
 
@@ -26,7 +31,12 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
       Tbl.solarHubs,
       (r) => r['cooperative_id'] == cooperativeId,
     );
-    if (row == null) throw const AppException('Solar Hub tidak ditemukan.');
+    if (row == null) {
+      throw const AppException(
+        'Solar Hub tidak ditemukan.',
+        en: 'Solar Hub not found.',
+      );
+    }
     return SolarHub.fromRow(row);
   }
 
@@ -35,19 +45,35 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
     final current = _hub(hub.id);
     requireAdmin(admin, current.cooperativeId);
     if (hub.name.trim().isEmpty) {
-      throw const AppException('Nama hub wajib diisi.');
+      throw const AppException(
+        'Nama hub wajib diisi.',
+        en: 'Enter the hub name.',
+      );
     }
     if (hub.dailyCapacityKwh < 0 || hub.dailyCapacityKwh > 100000) {
-      throw const AppException('Kapasitas harian tidak masuk akal.');
+      throw const AppException(
+        'Kapasitas harian tidak masuk akal.',
+        en: 'The daily capacity isn\'t realistic.',
+      );
     }
     if (hub.maxLoadKw < 0 || hub.maxLoadKw > 1000) {
-      throw const AppException('Batas daya inverter tidak masuk akal.');
+      throw const AppException(
+        'Batas daya inverter tidak masuk akal.',
+        en: 'The inverter power limit isn\'t realistic.',
+      );
+    }
+    if (hub.maxMembersPerSlot < 0 || hub.maxMembersPerSlot > 100) {
+      throw const AppException(
+        'Jumlah anggota per slot harus antara 0 dan 100 (0 = tanpa batas).',
+        en: 'Members per slot must be between 0 and 100 (0 = no limit).',
+      );
     }
     await db.update(Tbl.solarHubs, hub.id, {
       'name': hub.name.trim(),
       'location': hub.location.trim(),
       'daily_capacity_kwh': hub.dailyCapacityKwh,
       'max_load_kw': hub.maxLoadKw,
+      'max_members_per_slot': hub.maxMembersPerSlot,
       'weather_adm4_code': hub.weatherAdm4Code?.trim().isEmpty ?? true
           ? null
           : hub.weatherAdm4Code!.trim(),
@@ -63,8 +89,13 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
     int endHour,
   ) async {
     requireAdmin(admin, _hub(hubId).cooperativeId);
-    if (startHour < 5 || endHour > 19 || endHour <= startHour) {
-      throw const AppException('Jam slot harus di antara 05.00 dan 19.00.');
+    if (startHour < 6 || endHour > 18 || endHour <= startHour) {
+      // Slots stay within the daylight hours the hub is open for;
+      // the weather window and the capacity figure are daytime figures.
+      throw const AppException(
+        'Jam slot harus di antara 06.00 dan 18.00.',
+        en: 'Slot hours must be between 06.00 and 18.00.',
+      );
     }
     final slots = db
         .select(Tbl.hubSlots, (r) => r['hub_id'] == hubId)
@@ -74,7 +105,10 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
       (s) => startHour < s.endHour && endHour > s.startHour,
     );
     if (overlaps) {
-      throw const AppException('Slot ini bertabrakan dengan slot lain.');
+      throw const AppException(
+        'Slot ini bertabrakan dengan slot lain.',
+        en: 'This slot overlaps another slot.',
+      );
     }
     final slot = HubSlot(
       id: newId(),
@@ -90,7 +124,9 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
   @override
   Future<void> removeSlot(Profile admin, String slotId) async {
     final row = db.find(Tbl.hubSlots, slotId);
-    if (row == null) throw const AppException('Slot tidak ditemukan.');
+    if (row == null) {
+      throw const AppException('Slot tidak ditemukan.', en: 'Slot not found.');
+    }
     final slot = HubSlot.fromRow(row);
     requireAdmin(admin, _hub(slot.hubId).cooperativeId);
     final today = dayOf(now());
@@ -104,6 +140,7 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
     if (upcoming != null) {
       throw const AppException(
         'Masih ada booking di slot ini. Batalkan atau tunggu sampai selesai.',
+        en: 'This slot still has bookings. Cancel them or wait until they are done.',
       );
     }
     await db.delete(Tbl.hubSlots, slotId);
@@ -112,7 +149,9 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
   @override
   Future<void> setSlotOpen(Profile admin, String slotId, bool open) async {
     final row = db.find(Tbl.hubSlots, slotId);
-    if (row == null) throw const AppException('Slot tidak ditemukan.');
+    if (row == null) {
+      throw const AppException('Slot tidak ditemukan.', en: 'Slot not found.');
+    }
     requireAdmin(admin, _hub(HubSlot.fromRow(row).hubId).cooperativeId);
     await db.update(Tbl.hubSlots, slotId, {'is_open': open});
   }
@@ -130,23 +169,42 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
     required BookingStatus status,
     double loadKw = 0,
     DateTime? requestedAt,
+    bool enforceLimits = true,
   }) async {
     final slotRow = db.find(Tbl.hubSlots, slotId);
-    if (slotRow == null) throw const AppException('Slot tidak ditemukan.');
+    if (slotRow == null) {
+      throw const AppException('Slot tidak ditemukan.', en: 'Slot not found.');
+    }
     final slot = HubSlot.fromRow(slotRow);
     final hub = _hub(slot.hubId);
     if (hub.cooperativeId != me.cooperativeId) {
-      throw const AppException('Slot ini bukan milik koperasi Anda.');
+      throw const AppException(
+        'Slot ini bukan milik koperasi Anda.',
+        en: 'This slot doesn\'t belong to your cooperative.',
+      );
     }
     if (!hub.isConfigured) {
       throw const AppException(
         'Kapasitas Solar Hub belum diatur admin. Booking belum bisa dibuka.',
+        en: 'The admin hasn\'t set the Solar Hub capacity yet. Booking isn\'t open.',
       );
     }
-    if (estKwh <= 0) throw const AppException('Pilih alat yang akan dipakai.');
-    if (!slot.isOpen) {
+    if (estKwh <= 0) {
+      throw const AppException(
+        'Pilih alat yang akan dipakai.',
+        en: 'Choose the appliance to use.',
+      );
+    }
+    if (loadKw < 0) {
+      throw const AppException(
+        'Daya alat tidak valid.',
+        en: 'Invalid appliance power.',
+      );
+    }
+    if (enforceLimits && !slot.isOpen) {
       throw AppException(
         'Slot ${slot.label} ditutup admin sementara. Pilih slot lain.',
+        en: 'Slot ${slot.label} is temporarily closed by the admin. Choose another slot.',
       );
     }
 
@@ -164,18 +222,45 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
       bookings: bookings,
       date: date,
     ).firstWhere((a) => a.slot.id == slotId);
-    if (availability.remainingKwh + 1e-9 < estKwh) {
+    // One member, one seat: more appliances go into the same booking.
+    final alreadyHere = bookings.any(
+      (b) =>
+          b.userId == me.id &&
+          b.slotId == slotId &&
+          b.countsAgainstCapacity &&
+          sameDay(b.bookingDate, date),
+    );
+    if (alreadyHere) {
       throw AppException(
-        'Kapasitas slot ${slot.label} tinggal '
-        '${availability.remainingKwh.toStringAsFixed(1)} kWh. Pilih slot lain.',
+        'Anda sudah punya booking di slot ${slot.label} pada hari itu. '
+        'Batalkan dulu atau pilih slot lain.',
+        en: 'You already have a booking in slot ${slot.label} that day. Cancel it first or choose another slot.',
       );
     }
-    if (!availability.fitsLoad(loadKw)) {
+    if (enforceLimits && !availability.hasSeat) {
+      throw AppException(
+        'Slot ${slot.label} sudah penuh '
+        '(${availability.bookedMembers} dari ${availability.seatLimit} '
+        'anggota). Pilih slot lain.',
+        en: 'Slot ${slot.label} is full (${availability.bookedMembers} of ${availability.seatLimit} members). Choose another slot.',
+      );
+    }
+    if (enforceLimits && !availability.fitsKwh(estKwh)) {
+      throw AppException(
+        'Energi hub hari itu tinggal '
+        '${kwhId(availability.dayRemainingKwh)} kWh dari '
+        '${kwhId(availability.dayCapacityKwh)} kWh. '
+        'Pilih alat yang lebih sedikit atau hari lain.',
+        en: 'The hub only has ${availability.dayRemainingKwh.toStringAsFixed(1)} kWh of ${availability.dayCapacityKwh.toStringAsFixed(1)} kWh left that day. Choose fewer appliances or another day.',
+      );
+    }
+    if (enforceLimits && !availability.fitsLoad(loadKw)) {
       throw AppException(
         'Beban serentak slot ${slot.label} akan menjadi '
-        '${(availability.loadKw + loadKw).toStringAsFixed(1)} kW, melebihi '
-        'batas inverter hub ${availability.maxLoadKw.toStringAsFixed(1)} kW. '
+        '${kwhId(availability.loadKw + loadKw)} kW, melebihi '
+        'batas inverter hub ${kwhId(availability.maxLoadKw)} kW. '
         'Pilih slot lain.',
+        en: 'The simultaneous load of slot ${slot.label} would become ${(availability.loadKw + loadKw).toStringAsFixed(1)} kW, above the hub inverter limit of ${availability.maxLoadKw.toStringAsFixed(1)} kW. Choose another slot.',
       );
     }
 
@@ -190,11 +275,12 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
           .select(Tbl.quotaOffers, (r) => r['cooperative_id'] == coop.id)
           .map(QuotaOffer.fromRow),
     );
-    if (balance.availableKwh + 1e-9 < estKwh) {
+    if (enforceLimits && balance.availableKwh + 1e-9 < estKwh) {
       throw AppException(
         'Kuota energi Anda bulan ini tinggal '
-        '${balance.availableKwh.toStringAsFixed(1)} kWh. Minta kuota ke '
+        '${kwhId(balance.availableKwh)} kWh. Minta kuota ke '
         'anggota lain di menu Tukar Kuota.',
+        en: 'Your energy quota this month is down to ${balance.availableKwh.toStringAsFixed(1)} kWh. Ask other members for quota in Quota Swap.',
       );
     }
 
@@ -226,7 +312,9 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
   }) async {
     requireMember(me);
     final slotRow = db.find(Tbl.hubSlots, slotId);
-    if (slotRow == null) throw const AppException('Slot tidak ditemukan.');
+    if (slotRow == null) {
+      throw const AppException('Slot tidak ditemukan.', en: 'Slot not found.');
+    }
     final slot = HubSlot.fromRow(slotRow);
 
     final today = dayOf(now());
@@ -235,10 +323,14 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
         day.isAfter(today.add(const Duration(days: bookingWindowDays)))) {
       throw const AppException(
         'Booking hanya bisa untuk hari ini sampai 14 hari ke depan.',
+        en: 'You can only book from today up to 14 days ahead.',
       );
     }
     if (sameDay(day, today) && now().hour >= slot.endHour) {
-      throw const AppException('Slot ini sudah lewat untuk hari ini.');
+      throw const AppException(
+        'Slot ini sudah lewat untuk hari ini.',
+        en: 'This slot has already passed for today.',
+      );
     }
 
     return _createBooking(
@@ -263,7 +355,10 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
     requireMember(me);
     final hub = _hubOfCooperative(me.cooperativeId);
     if (scannedCode.trim().toUpperCase() != kSolarHubQr.toUpperCase()) {
-      throw const AppException('QR ini bukan QR Solar Hub koperasi Anda.');
+      throw const AppException(
+        'QR ini bukan QR Solar Hub koperasi Anda.',
+        en: 'This QR isn\'t your cooperative\'s Solar Hub QR.',
+      );
     }
 
     final slots =
@@ -273,6 +368,59 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
             .toList()
           ..sort((a, b) => a.sort.compareTo(b.sort));
     final nowHour = now().hour;
+
+    if (kQrRequiresBooking) {
+      // Arriving is the scan: it attaches to a slot she booked for today,
+      // preferring the one running now, else the next one she booked.
+      final today = dayOf(now());
+      final mine = db
+          .select(
+            Tbl.hubBookings,
+            (r) =>
+                r['user_id'] == me.id &&
+                r['hub_id'] == hub.id &&
+                r['status'] == 'booked' &&
+                sameDay(rDate(r, 'booking_date'), today),
+          )
+          .map(HubBooking.fromRow)
+          .toList();
+      HubSlot? slotOf(HubBooking b) =>
+          slots.where((s) => s.id == b.slotId).firstOrNull;
+      mine.sort(
+        (a, b) => (slotOf(a)?.sort ?? 0).compareTo(slotOf(b)?.sort ?? 0),
+      );
+      final running = mine.where((b) {
+        final s = slotOf(b);
+        return s != null && nowHour >= s.startHour && nowHour < s.endHour;
+      });
+      final booked = running.firstOrNull ?? mine.firstOrNull;
+      if (booked == null) {
+        throw const AppException(
+          'Booking slot dulu sebelum scan QR. Buka menu Booking, pilih slot '
+          'jam Anda, lalu scan saat tiba di Solar Hub.',
+          en: 'Book a slot first before scanning the QR. Open Booking, pick your time slot, then scan when you arrive at the Solar Hub.',
+        );
+      }
+      await db.update(Tbl.hubBookings, booked.id, {
+        'status': BookingStatus.pendingVerification.db,
+        'requested_at': ts(now()),
+      });
+      await notifyAdmins(
+        cooperativeId: me.cooperativeId,
+        type: 'hub_connection_requested',
+        title: 'Permintaan verifikasi hub',
+        titleEn: 'Hub verification request',
+        bodyEn:
+            '${me.fullName} arrived for the booked slot '
+            '(${slotOf(booked)?.label ?? 'today'}).',
+        body:
+            '${me.fullName} tiba untuk slot yang sudah dipesan '
+            '(${slotOf(booked)?.label ?? 'hari ini'}).',
+        route: Paths.adminHubRequests,
+      );
+      return HubBooking.fromRow(db.find(Tbl.hubBookings, booked.id)!);
+    }
+
     var slot = slots
         .where((s) => nowHour >= s.startHour && nowHour < s.endHour)
         .firstOrNull;
@@ -288,6 +436,7 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
       if (slots.isEmpty) {
         throw const AppException(
           'Solar Hub belum punya jam operasional. Hubungi admin koperasi.',
+          en: 'The Solar Hub has no operating hours yet. Contact the cooperative admin.',
         );
       }
       final earliest = slots
@@ -298,15 +447,17 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
           .reduce((a, b) => a > b ? a : b);
       throw AppException(
         'Solar Hub hanya melayani pukul '
-        '${earliest.toString().padLeft(2, '0')}.00–'
-        '${latest.toString().padLeft(2, '0')}.00. '
+        '${earliest.toString().padLeft(2, "0")}.00–'
+        '${latest.toString().padLeft(2, "0")}.00. '
         'Coba lagi di jam operasional.',
+        en: 'The Solar Hub only operates from ${earliest.toString().padLeft(2, "0")}.00 to ${latest.toString().padLeft(2, "0")}.00. Try again during operating hours.',
       );
     }
 
-    if (!slot.isOpen) {
+    if (!kQrIgnoresHubLimits && !slot.isOpen) {
       throw AppException(
         'Slot ${slot.label} ditutup admin sementara. Hubungi admin koperasi.',
+        en: 'Slot ${slot.label} is temporarily closed by the admin. Contact the cooperative admin.',
       );
     }
 
@@ -340,6 +491,7 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
         status: BookingStatus.pendingVerification,
         loadKw: loadKw,
         requestedAt: now(),
+        enforceLimits: !kQrIgnoresHubLimits,
       );
     }
 
@@ -347,6 +499,10 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
       cooperativeId: me.cooperativeId,
       type: 'hub_connection_requested',
       title: 'Permintaan verifikasi hub',
+      titleEn: 'Hub verification request',
+      bodyEn: booked != null
+          ? '${me.fullName} arrived for the booked slot (${slot.label}).'
+          : '${me.fullName} wants to use the Solar Hub now.',
       body: booked != null
           ? '${me.fullName} tiba untuk slot yang sudah dipesan (${slot.label}).'
           : '${me.fullName} minta memakai Solar Hub sekarang.',
@@ -363,25 +519,67 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
     required bool approve,
   }) async {
     final row = db.find(Tbl.hubBookings, bookingId);
-    if (row == null) throw const AppException('Permintaan tidak ditemukan.');
+    if (row == null) {
+      throw const AppException(
+        'Permintaan tidak ditemukan.',
+        en: 'Request not found.',
+      );
+    }
     final booking = HubBooking.fromRow(row);
     final hub = _hub(booking.hubId);
     requireAdmin(admin, hub.cooperativeId);
     if (booking.status != BookingStatus.pendingVerification) {
-      throw const AppException('Permintaan ini sudah diproses sebelumnya.');
+      throw const AppException(
+        'Permintaan ini sudah diproses sebelumnya.',
+        en: 'This request has already been processed.',
+      );
     }
     final status = approve ? BookingStatus.booked : BookingStatus.cancelled;
     await db.update(Tbl.hubBookings, bookingId, {'status': status.db});
 
+    // What she has left this month, after this session (it is already counted
+    // while booked; a rejection gives it back).
+    final left = _quotaLeft(
+      booking.userId,
+      booking.bookingDate,
+    ).toStringAsFixed(1);
+    final kwh = booking.estKwh.toStringAsFixed(1);
+    final leftComma = left.replaceAll('.', ',');
+    final kwhComma = kwh.replaceAll('.', ',');
     await notify(
       userId: booking.userId,
       type: approve ? 'hub_connection_approved' : 'hub_connection_rejected',
       title: approve ? 'Permintaan hub disetujui' : 'Permintaan hub ditolak',
+      titleEn: approve ? 'Hub request approved' : 'Hub request rejected',
+      bodyEn: approve
+          ? 'The admin approved your Solar Hub use: $kwh kWh recorded. '
+                '$left kWh of your quota is left this month.'
+          : 'The admin rejected your Solar Hub use request. '
+                '$left kWh of your quota is left this month.',
       body: approve
-          ? 'Admin menyetujui pemakaian Solar Hub Anda. Selamat memakai!'
-          : 'Admin menolak permintaan pemakaian Solar Hub Anda.',
+          ? 'Admin menyetujui pemakaian Solar Hub Anda: $kwhComma kWh tercatat. '
+                'Sisa kuota bulan ini $leftComma kWh.'
+          : 'Admin menolak permintaan pemakaian Solar Hub Anda. '
+                'Sisa kuota bulan ini $leftComma kWh.',
       route: Paths.memberSolar,
     );
+  }
+
+  /// A member's remaining quota in the month of [date], from stored rows.
+  double _quotaLeft(String userId, DateTime date) {
+    final member = profileById(userId);
+    final coop = cooperativeById(member.cooperativeId);
+    return quotaBalance(
+      userId: userId,
+      month: date,
+      allocationKwh: member.hubAllocationKwh ?? coop.memberMonthlyQuotaKwh,
+      bookings: db
+          .select(Tbl.hubBookings, (r) => r['user_id'] == userId)
+          .map(HubBooking.fromRow),
+      offers: db
+          .select(Tbl.quotaOffers, (r) => r['cooperative_id'] == coop.id)
+          .map(QuotaOffer.fromRow),
+    ).availableKwh;
   }
 
   @override
@@ -391,13 +589,21 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
     BookingStatus status,
   ) async {
     final row = db.find(Tbl.hubBookings, bookingId);
-    if (row == null) throw const AppException('Booking tidak ditemukan.');
+    if (row == null) {
+      throw const AppException(
+        'Booking tidak ditemukan.',
+        en: 'Booking not found.',
+      );
+    }
     final booking = HubBooking.fromRow(row);
     final hub = _hub(booking.hubId);
     final isOwner = booking.userId == actor.id;
     final isAdmin = actor.isAdmin && actor.cooperativeId == hub.cooperativeId;
     if (!isOwner && !isAdmin) {
-      throw const AppException('Anda tidak bisa mengubah booking ini.');
+      throw const AppException(
+        'Anda tidak bisa mengubah booking ini.',
+        en: 'You can\'t change this booking.',
+      );
     }
     if (booking.status == BookingStatus.pendingVerification) {
       // The owner may withdraw her own pending request, but only an admin
@@ -405,20 +611,41 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
       if (status == BookingStatus.booked && !isAdmin) {
         throw const AppException(
           'Hanya admin yang bisa memverifikasi permintaan ini.',
+          en: 'Only an admin can verify this request.',
         );
       }
       if (status != BookingStatus.booked && status != BookingStatus.cancelled) {
         throw const AppException(
           'Status tidak valid untuk permintaan yang menunggu verifikasi.',
+          en: 'Invalid status for a request awaiting verification.',
         );
       }
     } else if (booking.status != BookingStatus.booked) {
-      throw const AppException('Booking ini sudah selesai atau dibatalkan.');
+      throw const AppException(
+        'Booking ini sudah selesai atau dibatalkan.',
+        en: 'This booking is already completed or cancelled.',
+      );
+    } else if (status != BookingStatus.completed &&
+        status != BookingStatus.cancelled) {
+      throw const AppException(
+        'Status tidak valid untuk booking yang sudah diverifikasi.',
+        en: 'Invalid status for a verified booking.',
+      );
+    }
+    // Usage is recorded only by an admin, from the scan she approved or from a
+    // session she confirms. A member cannot mark her own session used: that
+    // would let her write her own energy history and credit score.
+    if (status == BookingStatus.completed && !isAdmin) {
+      throw const AppException(
+        'Hanya admin yang bisa mengonfirmasi pemakaian. Scan QR Solar Hub saat tiba.',
+        en: 'Only an admin can confirm usage. Scan the Solar Hub QR when you arrive.',
+      );
     }
     if (status == BookingStatus.completed &&
         booking.bookingDate.isAfter(dayOf(now()))) {
       throw const AppException(
         'Pemakaian baru bisa dikonfirmasi pada atau setelah hari booking.',
+        en: 'Usage can only be confirmed on or after the booking day.',
       );
     }
     await db.update(Tbl.hubBookings, bookingId, {'status': status.db});
@@ -434,7 +661,10 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
     requireAdmin(admin, member.cooperativeId);
     if (allocationKwh != null &&
         (allocationKwh < 0 || allocationKwh > 100000)) {
-      throw const AppException('Alokasi kapasitas tidak masuk akal.');
+      throw const AppException(
+        'Alokasi kapasitas tidak masuk akal.',
+        en: 'The capacity allocation isn\'t realistic.',
+      );
     }
     await db.update(Tbl.profiles, memberId, {
       'hub_allocation_kwh': allocationKwh,

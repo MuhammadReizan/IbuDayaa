@@ -43,15 +43,21 @@ class BookingsScreen extends ConsumerWidget {
     final text = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context);
 
-    Widget list(List<HubBooking> items, String empty) => items.isEmpty
+    Widget list(
+      List<HubBooking> items,
+      String empty, {
+      bool offerBooking = true,
+    }) => items.isEmpty
         ? EmptyState(
             motif: BrandArtMotif.solar,
             title: empty,
-            action: SecondaryButton(
-              label: l10n.solarBook,
-              expand: false,
-              onPressed: () => context.push(Paths.booking),
-            ),
+            action: offerBooking
+                ? SecondaryButton(
+                    label: l10n.solarBook,
+                    expand: false,
+                    onPressed: () => context.push(Paths.booking),
+                  )
+                : null,
           )
         : ListView.separated(
             padding: const EdgeInsets.all(AppSpacing.gutter),
@@ -83,14 +89,14 @@ class BookingsScreen extends ConsumerWidget {
             unselectedLabelColor: AppColors.textTertiary,
             tabs: [
               Tab(text: '${l10n.solarMyBookings} (${upcoming.length})'),
-              Tab(text: l10n.arisanHistory),
+              Tab(text: l10n.bookingHistoryTab),
             ],
           ),
         ),
         body: TabBarView(
           children: [
             list(upcoming, l10n.solarNoUpcoming),
-            list(history, l10n.solarNoUpcoming),
+            list(history, l10n.bookingNoHistory, offerBooking: false),
           ],
         ),
       ),
@@ -111,8 +117,10 @@ class _BookingCard extends ConsumerWidget {
     final text = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context);
     final b = booking;
-    final canConfirm =
-        b.status == BookingStatus.booked && !b.bookingDate.isAfter(today);
+    // Her session is recorded when she scans the hub QR and an admin approves
+    // it, never by her own tap, so the button is for today's booking only.
+    final canScan =
+        b.status == BookingStatus.booked && sameDay(b.bookingDate, today);
     final overdue =
         b.status == BookingStatus.booked && b.bookingDate.isBefore(today);
 
@@ -145,7 +153,7 @@ class _BookingCard extends ConsumerWidget {
               ),
               StatusPill(
                 label: overdue
-                    ? l10n.labelPending
+                    ? l10n.bookingNoScanYet
                     : b.status.localizedLabel(l10n),
                 tone: overdue ? PillTone.warning : bookingTone(b.status),
               ),
@@ -178,23 +186,13 @@ class _BookingCard extends ConsumerWidget {
                     },
                   ),
                 ),
-                if (b.status == BookingStatus.booked) ...[
+                if (canScan) ...[
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: PrimaryButton(
-                      label: l10n.labelCompleted,
-                      onPressed: canConfirm
-                          ? () => runAction(
-                              context,
-                              () => ref
-                                  .read(actionsProvider)
-                                  .setBookingStatus(
-                                    b.id,
-                                    BookingStatus.completed,
-                                  ),
-                              success: l10n.bookingRecordedToast,
-                            )
-                          : null,
+                      label: l10n.bookingScanBtn,
+                      icon: Icons.qr_code_scanner_rounded,
+                      onPressed: () => context.push(Paths.hubConnect),
                     ),
                   ),
                 ],

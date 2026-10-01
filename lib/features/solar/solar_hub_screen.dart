@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +11,7 @@ import '../../core/design/typography.dart';
 import '../../core/format/format.dart';
 import '../../core/l10n/l10n.dart';
 import '../../core/logic/hub_capacity.dart';
+import '../../core/logic/quota_ledger.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
 import '../../core/state/app_state.dart';
@@ -35,6 +38,7 @@ class SolarHubScreen extends ConsumerWidget {
     final slots = data.availabilityOn(today);
     final day = dayCapacity(slots);
     final quota = data.quotaOf(me.id, now);
+    final pace = quotaPace(now: now, availableKwh: quota.availableKwh);
     final request = data.latestHubRequestOf(me.id, now);
     final upcoming =
         data
@@ -159,7 +163,7 @@ class SolarHubScreen extends ConsumerWidget {
             children: [
               Expanded(
                 child: PrimaryButton(
-                  label: l10n.solarBookingScheduleBtn,
+                  label: l10n.solarBook,
                   icon: Icons.event_available_rounded,
                   onPressed: hub?.isConfigured ?? false
                       ? () => context.push(Paths.booking)
@@ -169,7 +173,7 @@ class SolarHubScreen extends ConsumerWidget {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: SecondaryButton(
-                  label: l10n.hubConnectCta,
+                  label: l10n.bookingScanBtn,
                   icon: Icons.qr_code_scanner_rounded,
                   onPressed: hub?.isConfigured ?? false
                       ? () => context.push(Paths.hubConnect)
@@ -193,16 +197,27 @@ class SolarHubScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(l10n.solarQuotaThisMonth, style: text.bodySmall),
-                      Text(
-                        l10n.solarQuotaRemaining(formatKwh(quota.availableKwh)),
-                        style: text.titleMedium,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          l10n.quotaCardRemaining(
+                            formatKwh(math.max(0, quota.availableKwh)),
+                            formatKwh(quota.allocationKwh),
+                          ),
+                          style: text.titleMedium,
+                        ),
                       ),
                       Text(
-                        l10n.solarQuotaAllocationUsed(
-                          formatKwh(quota.allocationKwh),
-                          formatKwh(quota.bookedKwh),
+                        l10n.solarQuotaBreakdown(
+                          formatKwh(quota.usedKwh),
+                          formatKwh(quota.reservedKwh),
                         ),
                         style: text.bodySmall,
+                      ),
+                      Text(
+                        l10n.quotaDaysLeft(pace.daysLeft),
+                        style: text.labelSmall,
                       ),
                     ],
                   ),
@@ -278,7 +293,7 @@ class _SlotRow extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context);
     final a = availability;
-    final free = 1 - a.usedFraction;
+    final seatsFull = a.isFull;
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -294,13 +309,15 @@ class _SlotRow extends StatelessWidget {
           ),
           Expanded(
             child: AppProgressBar(
-              value: passed ? 0 : free,
-              color: free < 0.2 ? AppColors.warning : AppColors.primary,
+              value: passed ? 0 : a.seatFraction,
+              color: seatsFull || a.seatFraction >= 0.8
+                  ? AppColors.warning
+                  : AppColors.primary,
             ),
           ),
           const SizedBox(width: AppSpacing.md),
           SizedBox(
-            width: 84,
+            width: 96,
             child: Align(
               alignment: Alignment.centerRight,
               child: passed
@@ -310,9 +327,14 @@ class _SlotRow extends StatelessWidget {
                       label: l10n.solarSlotClosed,
                       tone: PillTone.neutral,
                     )
-                  : a.isFull
+                  : seatsFull
                   ? StatusPill(label: l10n.solarSlotFull, tone: PillTone.danger)
-                  : Text(formatKwh(a.remainingKwh), style: text.labelMedium),
+                  : Text(
+                      a.hasSeatLimit
+                          ? l10n.solarSlotSeats(a.bookedMembers, a.seatLimit)
+                          : '${a.bookedMembers}',
+                      style: text.labelMedium,
+                    ),
             ),
           ),
         ],
@@ -395,7 +417,7 @@ class _WeatherOutlookCard extends ConsumerWidget {
             Text(
               l10n.solarWeatherReason(
                 highlight.cloudCoverPct,
-                highlight.condition,
+                conditionLabel(highlight.condition, english: l10n.isEn),
               ),
               style: text.bodySmall?.copyWith(color: AppColors.onSolar),
             ),

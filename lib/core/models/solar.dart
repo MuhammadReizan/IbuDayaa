@@ -3,6 +3,9 @@ import 'package:flutter/foundation.dart';
 import '../db/row.dart';
 import '../l10n/l10n.dart';
 
+/// Members per slot until the admin changes it.
+const int kDefaultMembersPerSlot = 5;
+
 @immutable
 class SolarHub {
   const SolarHub({
@@ -14,6 +17,7 @@ class SolarHub {
     required this.createdAt,
     this.weatherAdm4Code,
     this.maxLoadKw = 0,
+    this.maxMembersPerSlot = kDefaultMembersPerSlot,
   });
 
   final String id;
@@ -26,6 +30,12 @@ class SolarHub {
   /// checked. Energy (kWh) says how much the hub can give in a day; this says
   /// how many heavy appliances can run together without tripping it.
   final double maxLoadKw;
+
+  /// How many members may hold a booking in the same slot on the same day
+  /// (every slot alike, set by the admin). Zero means no limit. Seats are what
+  /// makes a slot "full" — one booking does not, however much energy it takes;
+  /// the day's energy and the inverter are checked separately.
+  final int maxMembersPerSlot;
 
   /// Set by the admin from the installation's rating. Zero means the admin
   /// has not configured the hub yet — bookings stay closed until they do.
@@ -47,6 +57,7 @@ class SolarHub {
     double? dailyCapacityKwh,
     String? weatherAdm4Code,
     double? maxLoadKw,
+    int? maxMembersPerSlot,
   }) => SolarHub(
     id: id,
     cooperativeId: cooperativeId,
@@ -56,6 +67,7 @@ class SolarHub {
     createdAt: createdAt,
     weatherAdm4Code: weatherAdm4Code ?? this.weatherAdm4Code,
     maxLoadKw: maxLoadKw ?? this.maxLoadKw,
+    maxMembersPerSlot: maxMembersPerSlot ?? this.maxMembersPerSlot,
   );
 
   factory SolarHub.fromRow(Map<String, dynamic> r) => SolarHub(
@@ -67,6 +79,7 @@ class SolarHub {
     createdAt: rDate(r, 'created_at'),
     weatherAdm4Code: rStrN(r, 'weather_adm4_code'),
     maxLoadKw: rDbl(r, 'max_load_kw'),
+    maxMembersPerSlot: rInt(r, 'max_members_per_slot', kDefaultMembersPerSlot),
   );
 
   Map<String, dynamic> toRow() => {
@@ -78,6 +91,7 @@ class SolarHub {
     'created_at': ts(createdAt),
     'weather_adm4_code': weatherAdm4Code,
     'max_load_kw': maxLoadKw,
+    'max_members_per_slot': maxMembersPerSlot,
   };
 }
 

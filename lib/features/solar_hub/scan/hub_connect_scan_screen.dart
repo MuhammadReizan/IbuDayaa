@@ -38,6 +38,11 @@ class _HubConnectScanScreenState extends ConsumerState<HubConnectScanScreen> {
   StreamSubscription<BarcodeCapture>? _subscription;
   bool _sending = false;
 
+  /// The camera re-reads the same QR every few hundred ms; after a refusal
+  /// (e.g. "book a slot first") wait before trying again instead of stacking
+  /// the same error over and over.
+  DateTime _retryAfter = DateTime.fromMillisecondsSinceEpoch(0);
+
   /// After a finished request the member can start a new one; until then the
   /// latest recent request is shown instead of the scanner, so its status
   /// survives leaving the screen or signing out and back in.
@@ -63,7 +68,7 @@ class _HubConnectScanScreenState extends ConsumerState<HubConnectScanScreen> {
   }
 
   void _handleCapture(BarcodeCapture capture) {
-    if (_sending || !mounted) return;
+    if (_sending || !mounted || DateTime.now().isBefore(_retryAfter)) return;
     final s = ref.read(appStateProvider);
     final open = s.data.latestHubRequestOf(s.me!.id, ref.read(clockProvider)());
     if (open != null && !_scanAgain) return;
@@ -72,6 +77,7 @@ class _HubConnectScanScreenState extends ConsumerState<HubConnectScanScreen> {
       final raw = (barcode.rawValue ?? barcode.displayValue)?.trim();
       if (raw == null || raw.isEmpty) continue;
       if (raw.toUpperCase() != kSolarHubQr.toUpperCase()) {
+        _retryAfter = DateTime.now().add(const Duration(seconds: 3));
         showAppSnack(
           context,
           AppLocalizations.of(context).hubConnectWrongCode,
@@ -115,6 +121,7 @@ class _HubConnectScanScreenState extends ConsumerState<HubConnectScanScreen> {
     setState(() {
       _sending = false;
       if (ok) _scanAgain = false;
+      if (!ok) _retryAfter = DateTime.now().add(const Duration(seconds: 3));
     });
     if (ok) _controller?.stop();
   }
@@ -193,6 +200,42 @@ class _HubConnectScanScreenState extends ConsumerState<HubConnectScanScreen> {
     );
   }
 
+  /// Shown instead of a black screen when the camera cannot start, most often
+  /// because she denied the permission.
+  Widget _cameraProblem(AppLocalizations l10n, MobileScannerException error) {
+    final denied = error.errorCode == MobileScannerErrorCode.permissionDenied;
+    final text = Theme.of(context).textTheme;
+    return Container(
+      color: AppColors.scannerDark,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.videocam_off_rounded, color: Colors.white, size: 48),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            denied ? l10n.hubCameraDeniedTitle : l10n.hubCameraErrorTitle,
+            textAlign: TextAlign.center,
+            style: text.titleMedium?.copyWith(color: Colors.white),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            denied ? l10n.hubCameraDeniedMsg : l10n.hubCameraErrorMsg,
+            textAlign: TextAlign.center,
+            style: text.bodyMedium?.copyWith(color: Colors.white70),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          PrimaryButton(
+            label: l10n.actionRetry,
+            expand: false,
+            onPressed: () => _controller?.start(),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _scanner(AppLocalizations l10n) {
     final controller = _controller;
     final text = Theme.of(context).textTheme;
@@ -209,6 +252,9 @@ class _HubConnectScanScreenState extends ConsumerState<HubConnectScanScreen> {
         leading: IconButton(
           tooltip: l10n.actionBack,
           icon: const Icon(Icons.close_rounded),
+          // The app theme paints icon buttons dark; on this dark screen the
+          // close button was invisible.
+          style: IconButton.styleFrom(foregroundColor: Colors.white),
           onPressed: () => context.pop(),
         ),
       ),
@@ -218,7 +264,12 @@ class _HubConnectScanScreenState extends ConsumerState<HubConnectScanScreen> {
           fit: StackFit.expand,
           children: [
             if (controller != null)
-              MobileScanner(controller: controller, onDetect: _handleCapture),
+              MobileScanner(
+                controller: controller,
+                onDetect: _handleCapture,
+                errorBuilder: (context, error, _) =>
+                    _cameraProblem(l10n, error),
+              ),
             Positioned(
               left: AppSpacing.gutter,
               right: AppSpacing.gutter,

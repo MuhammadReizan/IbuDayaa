@@ -260,7 +260,7 @@ class _RoofScanScreenState extends ConsumerState<RoofScanScreen> {
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        '${e.kwp.toStringAsFixed(1).replaceAll('.', ',')} kWp',
+                        '${formatKwhValue(e.kwp)} kWp',
                         style: AppTypography.numeric(34, color: Colors.white),
                       ),
                       const SizedBox(height: AppSpacing.sm),
@@ -334,9 +334,7 @@ class _RoofScanScreenState extends ConsumerState<RoofScanScreen> {
                     label: l10n.roofPayback,
                     value: payback == null
                         ? '-'
-                        : l10n.roofPaybackYears(
-                            payback.toStringAsFixed(1).replaceAll('.', ','),
-                          ),
+                        : l10n.roofPaybackYears(formatKwhValue(payback)),
                     emphasize: true,
                   ),
                 ],

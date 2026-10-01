@@ -79,8 +79,9 @@ void main() {
       cooperativeId: 'c',
       name: 'Hub',
       location: 'Balai',
-      dailyCapacityKwh: 100,
+      dailyCapacityKwh: 17.5,
       createdAt: DateTime(2026),
+      maxMembersPerSlot: 5,
     );
     final slots = [
       _slot('s1', 8, 10, 1),
@@ -90,50 +91,141 @@ void main() {
     ];
     final day = DateTime(2026, 9, 12);
 
-    test('midday slots get more of the day than morning or late slots', () {
-      expect(solarWeight(10, 12), greaterThan(solarWeight(8, 10)));
-      expect(solarWeight(10, 12), greaterThan(solarWeight(15, 17)));
+    test('the hub plans for members × quota ÷ 30 days', () {
+      expect(
+        dailyCapacityForQuota(members: 15, monthlyQuotaKwh: 35),
+        closeTo(17.5, 1e-9),
+      );
+      expect(
+        dailyCapacityForQuota(members: 5, monthlyQuotaKwh: 35),
+        closeTo(5.83, 0.01),
+      );
     });
 
-    test('slot capacities add up to the daily capacity', () {
+    test('one booking, however big, does not fill a slot', () {
       final a = slotAvailability(
         hub: hub,
         slots: slots,
-        bookings: const [],
+        bookings: [_booking(slotId: 's2', date: day, kwh: 4.5)],
         date: day,
       );
-      expect(
-        a.fold<double>(0, (s, x) => s + x.capacityKwh),
-        closeTo(100, 1e-6),
-      );
+      final s2 = a.firstWhere((x) => x.slot.id == 's2');
+      expect(s2.bookedMembers, 1);
+      expect(s2.isFull, isFalse);
+      expect(s2.remainingSeats, 4);
+      // Energy is the day's, shared by every slot.
+      expect(s2.dayRemainingKwh, closeTo(13, 1e-9));
+      expect(a.every((x) => x.dayRemainingKwh == s2.dayRemainingKwh), isTrue);
     });
 
-    test('only live bookings on that day consume capacity', () {
+    test('a slot is full when its seats are taken, by different members', () {
+      final bookings = [
+        for (int i = 0; i < 5; i++)
+          _booking(slotId: 's2', userId: 'u$i', date: day, kwh: 0.5),
+      ];
+      final a = slotAvailability(
+        hub: hub,
+        slots: slots,
+        bookings: bookings,
+        date: day,
+      );
+      final s2 = a.firstWhere((x) => x.slot.id == 's2');
+      expect(s2.bookedMembers, 5);
+      expect(s2.isFull, isTrue);
+      expect(s2.hasSeat, isFalse);
+      expect(a.firstWhere((x) => x.slot.id == 's1').isFull, isFalse);
+    });
+
+    test('seats count members, not bookings, and not cancelled ones', () {
+      final a = slotAvailability(
+        hub: hub,
+        slots: slots,
+        bookings: [
+          _booking(slotId: 's2', userId: 'u1', date: day),
+          _booking(slotId: 's2', userId: 'u1', date: day, kwh: 1),
+          _booking(
+            slotId: 's2',
+            userId: 'u2',
+            date: day,
+            status: BookingStatus.cancelled,
+          ),
+        ],
+        date: day,
+      ).firstWhere((x) => x.slot.id == 's2');
+      expect(a.bookedMembers, 1);
+    });
+
+    test('three seats per slot work the same way', () {
+      final three = hub.copyWith(maxMembersPerSlot: 3);
+      final a = slotAvailability(
+        hub: three,
+        slots: slots,
+        bookings: [
+          for (int i = 0; i < 3; i++)
+            _booking(slotId: 's1', userId: 'u$i', date: day, kwh: 0.5),
+        ],
+        date: day,
+      ).firstWhere((x) => x.slot.id == 's1');
+      expect(a.isFull, isTrue);
+    });
+
+    test('no seat limit set means seats are not checked', () {
+      final open = hub.copyWith(maxMembersPerSlot: 0);
+      final a = slotAvailability(
+        hub: open,
+        slots: slots,
+        bookings: [
+          for (int i = 0; i < 12; i++)
+            _booking(slotId: 's1', userId: 'u$i', date: day, kwh: 0.5),
+        ],
+        date: day,
+      ).firstWhere((x) => x.slot.id == 's1');
+      expect(a.hasSeatLimit, isFalse);
+      expect(a.isFull, isFalse);
+    });
+
+    test('only live bookings on that day consume the day', () {
       final a = slotAvailability(
         hub: hub,
         slots: slots,
         bookings: [
           _booking(date: day, kwh: 5),
-          _booking(date: day, kwh: 7, status: BookingStatus.cancelled),
-          _booking(date: day.add(const Duration(days: 1)), kwh: 9),
+          _booking(
+            userId: 'u2',
+            date: day,
+            kwh: 7,
+            status: BookingStatus.cancelled,
+          ),
+          _booking(
+            userId: 'u3',
+            date: day.add(const Duration(days: 1)),
+            kwh: 9,
+          ),
         ],
         date: day,
       );
       final s2 = a.firstWhere((x) => x.slot.id == 's2');
       expect(s2.bookedKwh, 5);
       expect(dayCapacity(a).bookedKwh, 5);
+      expect(dayCapacity(a).capacityKwh, 17.5);
+      expect(a.first.fitsKwh(12.5), isTrue);
+      expect(a.first.fitsKwh(12.6), isFalse);
     });
 
-    test('recommends the roomiest slot that still fits', () {
+    test('recommends the least crowded slot that still fits', () {
       final a = slotAvailability(
         hub: hub,
         slots: slots,
-        bookings: [_booking(slotId: 's2', date: day, kwh: 25)],
+        bookings: [
+          _booking(slotId: 's1', userId: 'u1', date: day, kwh: 1),
+          _booking(slotId: 's1', userId: 'u2', date: day, kwh: 1),
+          _booking(slotId: 's2', userId: 'u3', date: day, kwh: 1),
+        ],
         date: day,
       );
       final pick = recommendSlot(a, 3);
       expect(pick, isNotNull);
-      expect(pick!.slot.id, isNot('s2'));
+      expect(pick!.slot.id, 's3');
       expect(recommendSlot(a, 1000), isNull);
     });
   });
@@ -184,6 +276,120 @@ void main() {
     expect(balance.givenKwh, 2);
     expect(balance.receivedKwh, 4);
     expect(balance.availableKwh, 27);
+  });
+
+  group('monthly quota: used, booked and what is left', () {
+    final month = DateTime(2026, 10);
+    QuotaBalance balance(List<HubBooking> bookings) => quotaBalance(
+      userId: 'u1',
+      month: month,
+      allocationKwh: 35,
+      bookings: bookings,
+      offers: const [],
+    );
+
+    test('a recorded session comes off the 35 kWh as used', () {
+      final b = balance([
+        _booking(
+          date: DateTime(2026, 10, 1),
+          kwh: 3,
+          status: BookingStatus.completed,
+        ),
+      ]);
+      expect(b.usedKwh, 3);
+      expect(b.reservedKwh, 0);
+      expect(b.availableKwh, 32);
+    });
+
+    test('a booking not used yet is reserved, and counted once', () {
+      final b = balance([
+        _booking(
+          slotId: 's1',
+          date: DateTime(2026, 10, 1),
+          kwh: 3,
+          status: BookingStatus.completed,
+        ),
+        _booking(slotId: 's2', date: DateTime(2026, 10, 5), kwh: 2),
+        _booking(
+          slotId: 's3',
+          date: DateTime(2026, 10, 6),
+          kwh: 4,
+          status: BookingStatus.cancelled,
+        ),
+        _booking(slotId: 's4', date: DateTime(2026, 9, 28), kwh: 9),
+      ]);
+      expect(b.usedKwh, 3);
+      expect(b.reservedKwh, 2);
+      expect(b.bookedKwh, 5);
+      expect(b.availableKwh, 30);
+      expect(b.usedFraction, closeTo(5 / 35, 1e-9));
+    });
+
+    test('quota received and given change the month\'s total', () {
+      final b = QuotaBalance(
+        allocationKwh: 35,
+        bookedKwh: 10,
+        usedKwh: 10,
+        givenKwh: 2,
+        receivedKwh: 5,
+      );
+      expect(b.totalKwh, 38);
+      expect(b.availableKwh, 28);
+    });
+
+    test('energy used today counts only what the hub recorded today', () {
+      final today = DateTime(2026, 10, 7);
+      final used = usedOnDay(
+        userId: 'u1',
+        day: today,
+        bookings: [
+          _booking(
+            slotId: 's1',
+            date: today,
+            kwh: 3,
+            status: BookingStatus.completed,
+          ),
+          _booking(slotId: 's2', date: today, kwh: 2),
+          _booking(
+            slotId: 's3',
+            date: today.subtract(const Duration(days: 1)),
+            kwh: 4,
+            status: BookingStatus.completed,
+          ),
+        ],
+      );
+      expect(used, 3);
+    });
+
+    test(
+      'days left count today, and the pace spreads what is left over them',
+      () {
+        final first = quotaPace(
+          now: DateTime(2026, 10, 1, 9),
+          availableKwh: 31,
+        );
+        expect(first.daysLeft, 31);
+        expect(first.lastDay, DateTime(2026, 10, 31));
+        expect(first.perDayKwh, closeTo(1, 1e-9));
+
+        final last = quotaPace(now: DateTime(2026, 10, 31), availableKwh: 4);
+        expect(last.daysLeft, 1);
+        expect(last.perDayKwh, 4);
+
+        expect(
+          quotaPace(now: DateTime(2026, 2, 10), availableKwh: 0).perDayKwh,
+          0,
+        );
+        expect(
+          quotaPace(now: DateTime(2026, 2, 10), availableKwh: 5).daysLeft,
+          19,
+        );
+        expect(
+          quotaPace(now: DateTime(2026, 2, 10), availableKwh: -3).perDayKwh,
+          0,
+        );
+      },
+    );
   });
 
   group('simultaneous load', () {
@@ -241,39 +447,42 @@ void main() {
       expect(a.fitsLoad(100), isTrue);
     });
 
-    test(
-      'recommendSlot skips closed slots and slots the load does not fit',
-      () {
-        final slots = [
-          SlotAvailability(
-            slot: HubSlot(
-              id: 'closed',
-              hubId: 'h',
-              startHour: 10,
-              endHour: 12,
-              sort: 1,
-              isOpen: false,
-            ),
-            capacityKwh: 10,
-            bookedKwh: 0,
-            maxLoadKw: 5,
+    test('recommendSlot skips closed, full and overloaded slots', () {
+      final slots = [
+        SlotAvailability(
+          slot: HubSlot(
+            id: 'closed',
+            hubId: 'h',
+            startHour: 10,
+            endHour: 12,
+            sort: 1,
+            isOpen: false,
           ),
-          SlotAvailability(
-            slot: _slot('busy', 12, 14, 2),
-            capacityKwh: 10,
-            bookedKwh: 0,
-            loadKw: 4.5,
-            maxLoadKw: 5,
-          ),
-          SlotAvailability(
-            slot: _slot('ok', 14, 16, 3),
-            capacityKwh: 4,
-            bookedKwh: 0,
-            maxLoadKw: 5,
-          ),
-        ];
-        expect(recommendSlot(slots, 2, neededKw: 2)?.slot.id, 'ok');
-      },
-    );
+          dayCapacityKwh: 10,
+          maxLoadKw: 5,
+        ),
+        SlotAvailability(
+          slot: _slot('busy', 12, 14, 2),
+          dayCapacityKwh: 10,
+          loadKw: 4.5,
+          maxLoadKw: 5,
+        ),
+        SlotAvailability(
+          slot: _slot('full', 14, 16, 3),
+          dayCapacityKwh: 10,
+          seatLimit: 2,
+          bookedMembers: 2,
+          maxLoadKw: 5,
+        ),
+        SlotAvailability(
+          slot: _slot('ok', 16, 18, 4),
+          dayCapacityKwh: 10,
+          seatLimit: 2,
+          bookedMembers: 1,
+          maxLoadKw: 5,
+        ),
+      ];
+      expect(recommendSlot(slots, 2, neededKw: 2)?.slot.id, 'ok');
+    });
   });
 }

@@ -64,6 +64,20 @@ class HubRequestsScreen extends ConsumerWidget {
                               '${b.applianceName} · ${formatKwh(b.estKwh)} · '
                               '${data.slot(b.slotId)?.label ?? ''}',
                         ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: AppSpacing.xs),
+                          child: Text(
+                            l10n.hubRequestQuotaLeft(
+                              formatKwh(
+                                data
+                                    .quotaOf(b.userId, b.bookingDate)
+                                    .availableKwh,
+                              ),
+                              data.nameOf(b.userId),
+                            ),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
                         const SizedBox(height: AppSpacing.md),
                         Row(
                           children: [

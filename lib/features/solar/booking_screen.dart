@@ -31,7 +31,11 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   static const _custom = '__custom__';
 
   late DateTime _day = dayOf(ref.read(clockProvider)());
-  String? _applianceId;
+
+  /// Registered appliances picked for this session, by id, plus [_custom] for
+  /// one she types in. One booking can carry several; the energy is their
+  /// watts added up × the slot's hours.
+  final Set<String> _picked = {};
   String? _slotId;
   bool _busy = false;
   HubBooking? _done;
@@ -46,10 +50,11 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     if (me == null) return;
     final list = s.data.appliancesOf(me.id);
     final wanted = widget.applianceName?.toLowerCase();
-    _applianceId =
-        list.where((a) => a.name.toLowerCase() == wanted).firstOrNull?.id ??
-        list.firstOrNull?.id ??
-        _custom;
+    _picked.add(
+      list.where((a) => a.name.toLowerCase() == wanted).firstOrNull?.id ??
+          list.firstOrNull?.id ??
+          _custom,
+    );
   }
 
   @override
@@ -95,11 +100,20 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 label: l10n.solarBookingAppliance,
                 value: done.applianceName,
               ),
-              KeyValueRow(label: l10n.energyKwh, value: formatKwh(done.estKwh)),
+              KeyValueRow(
+                label: l10n.bookingEnergyLabel,
+                value: formatKwh(done.estKwh),
+              ),
               KeyValueRow(
                 label: l10n.labelEstimation,
                 value: '± ${formatRupiah(done.estKwh * me.tariffIdrPerKwh)}',
                 valueColor: AppColors.primaryDark,
+              ),
+              KeyValueRow(
+                label: l10n.solarQuotaThisMonth,
+                value: l10n.solarQuotaRemaining(
+                  formatKwh(data.quotaOf(me.id, done.bookingDate).availableKwh),
+                ),
               ),
             ],
           ),
@@ -121,13 +135,18 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     }
 
     final appliances = data.appliancesOf(me.id);
-    final selected = appliances.where((a) => a.id == _applianceId).firstOrNull;
-    final watts = _applianceId == _custom
-        ? double.tryParse(_customWatts.text) ?? 0
-        : selected?.watts ?? 0;
-    final applianceName = _applianceId == _custom
-        ? _customName.text.trim()
-        : selected?.name ?? '';
+    final chosenAppliances = appliances
+        .where((a) => _picked.contains(a.id))
+        .toList();
+    final useCustom = _picked.contains(_custom);
+    final watts =
+        chosenAppliances.fold<double>(0, (sum, a) => sum + a.watts) +
+        (useCustom ? double.tryParse(_customWatts.text) ?? 0 : 0);
+    final applianceName = [
+      for (final a in chosenAppliances) a.name,
+      if (useCustom && _customName.text.trim().isNotEmpty)
+        _customName.text.trim(),
+    ].join(', ');
 
     double need(HubSlot slot) => watts / 1000 * slot.hours;
     final loadKw = watts / 1000;
@@ -135,19 +154,29 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         sameDay(_day, today) && now.hour >= slot.endHour;
 
     final slots = data.availabilityOn(_day);
+    // One seat per member: she adds appliances to her booking instead.
+    bool mine(SlotAvailability a) => data.bookings.any(
+      (b) =>
+          b.userId == me.id &&
+          b.slotId == a.slot.id &&
+          b.countsAgainstCapacity &&
+          sameDay(b.bookingDate, _day),
+    );
     final usable = slots
         .where(
           (a) =>
               !passed(a.slot) &&
               watts > 0 &&
               a.isOpen &&
+              a.hasSeat &&
+              !mine(a) &&
               a.fitsLoad(loadKw) &&
-              a.remainingKwh + 1e-9 >= need(a.slot),
+              a.fitsKwh(need(a.slot)),
         )
         .toList();
     // Smart scheduling: for today/tomorrow, hours overlapping BMKG's best
-    // production window are preferred; free capacity balances the load
-    // between equally good slots.
+    // production window are preferred; the least crowded slot balances the
+    // load between equally good ones.
     final code = (hub.weatherAdm4Code ?? '').trim();
     final outlooks = code.isEmpty
         ? null
@@ -170,7 +199,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           best == null ||
           (inBestWeather(a.slot) && !inBestWeather(best.slot)) ||
           (inBestWeather(a.slot) == inBestWeather(best.slot) &&
-              a.remainingKwh > best.remainingKwh);
+              a.bookedMembers < best.bookedMembers);
       if (better) best = a;
     }
     final chosen = slots.where((a) => a.slot.id == _slotId).firstOrNull;
@@ -196,7 +225,10 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           Text('1. ${l10n.solarBookingDate}', style: text.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           SizedBox(
-            height: 72,
+            // Grows with the text size so the day number is never clipped.
+            height: MediaQuery.textScalerOf(
+              context,
+            ).scale(72).clamp(72.0, 120.0),
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: 15,
@@ -207,7 +239,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 return _DateChip(
                   date: d,
                   label: i == 0
-                      ? 'Hari ini'
+                      ? l10n.dateToday
                       : formatShortDayDate(d, l10n: l10n).split(',').first,
                   selected: on,
                   onTap: () => setState(() {
@@ -220,14 +252,16 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           ),
           const SizedBox(height: AppSpacing.xl),
           Text('2. ${l10n.solarBookingAppliance}', style: text.titleMedium),
+          const SizedBox(height: AppSpacing.xs),
+          Text(l10n.solarBookingApplianceHint, style: text.bodySmall),
           const SizedBox(height: AppSpacing.sm),
           for (final a in appliances) ...[
             SelectableTile(
               icon: applianceIcon(a.kind),
               label: a.name,
               sublabel: '${a.watts.round()} W',
-              selected: _applianceId == a.id,
-              onTap: () => setState(() => _applianceId = a.id),
+              selected: _picked.contains(a.id),
+              onTap: () => setState(() => _toggle(a.id)),
             ),
             const SizedBox(height: AppSpacing.sm),
           ],
@@ -235,10 +269,10 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             icon: Icons.add_rounded,
             label: l10n.appliancePresetLainnya,
             sublabel: l10n.bookingCustomApplianceSublabel,
-            selected: _applianceId == _custom,
-            onTap: () => setState(() => _applianceId = _custom),
+            selected: _picked.contains(_custom),
+            onTap: () => setState(() => _toggle(_custom)),
           ),
-          if (_applianceId == _custom) ...[
+          if (_picked.contains(_custom)) ...[
             const SizedBox(height: AppSpacing.md),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -274,8 +308,16 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           Text('3. ${l10n.solarBookingSlot}', style: text.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           if (watts <= 0)
-            Text(l10n.solarBookingSlot, style: text.bodyMedium)
-          else
+            Text(l10n.solarBookingApplianceHint, style: text.bodyMedium)
+          else ...[
+            Text(
+              l10n.solarBookingDayEnergy(
+                formatKwh(dayCapacity(slots).remainingKwh),
+                formatKwh(dayCapacity(slots).capacityKwh),
+              ),
+              style: text.bodySmall,
+            ),
+            const SizedBox(height: AppSpacing.sm),
             for (final a in slots) ...[
               SelectableTile(
                 icon: Icons.schedule_rounded,
@@ -284,12 +326,21 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                     ? l10n.solarSlotPassed
                     : !a.isOpen
                     ? l10n.solarSlotClosed
+                    : mine(a)
+                    ? l10n.solarSlotMine
+                    : a.isFull
+                    ? l10n.solarSlotSeats(a.bookedMembers, a.seatLimit)
                     : !a.fitsLoad(loadKw)
                     ? l10n.solarSlotLoadFull(
-                        a.loadKw.toStringAsFixed(1),
-                        a.maxLoadKw.toStringAsFixed(1),
+                        formatKwhValue(a.loadKw),
+                        formatKwhValue(a.maxLoadKw),
                       )
-                    : '${l10n.solarQuotaRemaining(formatKwh(a.remainingKwh))} · ${formatKwh(need(a.slot))}',
+                    : !a.fitsKwh(need(a.slot))
+                    ? l10n.solarBookingDayEnergy(
+                        formatKwh(a.dayRemainingKwh),
+                        formatKwh(a.dayCapacityKwh),
+                      )
+                    : '${a.hasSeatLimit ? '${l10n.solarSlotSeatsLeft(a.remainingSeats)} · ' : ''}${formatKwh(need(a.slot))}',
                 selected: _slotId == a.slot.id,
                 disabled: !usable.contains(a),
                 badge: identical(a, best) && inBestWeather(a.slot)
@@ -299,6 +350,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                     : (!passed(a.slot) && !usable.contains(a)
                           ? (!a.isOpen
                                 ? l10n.solarSlotClosed
+                                : mine(a)
+                                ? l10n.solarSlotMine
                                 : l10n.solarSlotFull)
                           : null),
                 badgeColor: identical(a, best)
@@ -308,24 +361,25 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               ),
               const SizedBox(height: AppSpacing.sm),
             ],
+          ],
           if (chosenUsable) ...[
             const SizedBox(height: AppSpacing.lg),
             SectionCard(
               tone: CardTone.mint,
-              title: l10n.energyKwh,
+              title: l10n.bookingSummaryTitle,
               child: Column(
                 children: [
                   KeyValueRow(
-                    label: l10n.energyKwh,
+                    label: l10n.bookingEnergyLabel,
                     value:
-                        '${formatKwh(estKwh)} (${watts.round()} W × ${chosen.slot.hours}h)',
+                        '${formatKwh(estKwh)} (${l10n.bookingEnergyFormula(watts.round().toString(), chosen.slot.hours)})',
                   ),
                   KeyValueRow(
                     label: l10n.labelEstimation,
                     value: '± ${formatRupiah(estKwh * me.tariffIdrPerKwh)}',
                   ),
                   KeyValueRow(
-                    label: l10n.solarQuotaThisMonth,
+                    label: l10n.solarQuotaAfterBooking,
                     value: formatKwh(quota.availableKwh - estKwh),
                     valueColor: quota.availableKwh - estKwh < 0
                         ? AppColors.dangerText
@@ -345,6 +399,10 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         ],
       ),
     );
+  }
+
+  void _toggle(String id) {
+    if (!_picked.add(id)) _picked.remove(id);
   }
 
   Future<void> _book(

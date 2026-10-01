@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -7,6 +8,7 @@ import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
 import '../../core/l10n/l10n.dart';
+import '../../core/logic/hub_capacity.dart';
 import '../../core/models/models.dart';
 import '../../core/paths.dart';
 import '../../core/state/actions.dart';
@@ -34,13 +36,18 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
         : '',
   );
   late final _quota = TextEditingController(
-    text: decimalText(_coop?.memberMonthlyQuotaKwh ?? 30),
+    text: decimalText(
+      _coop?.memberMonthlyQuotaKwh ?? kDefaultMemberMonthlyQuotaKwh,
+    ),
   );
   late final _weatherCode = TextEditingController(
     text: _hub?.weatherAdm4Code ?? '',
   );
   late final _maxLoad = TextEditingController(
     text: (_hub?.maxLoadKw ?? 0) > 0 ? decimalText(_hub!.maxLoadKw) : '',
+  );
+  late final _slotMembers = TextEditingController(
+    text: '${_hub?.maxMembersPerSlot ?? kDefaultMembersPerSlot}',
   );
   final _kwp = TextEditingController();
   bool _busy = false;
@@ -54,6 +61,7 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
       _quota,
       _weatherCode,
       _maxLoad,
+      _slotMembers,
       _kwp,
     ]) {
       c.dispose();
@@ -74,6 +82,7 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
           location: _location.text,
           dailyCapacityKwh: parseDecimal(_capacity.text) ?? 0,
           maxLoadKw: parseDecimal(_maxLoad.text) ?? 0,
+          maxMembersPerSlot: int.tryParse(_slotMembers.text.trim()) ?? 0,
           weatherAdm4Code: _weatherCode.text.trim(),
         ),
       );
@@ -101,7 +110,7 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
                   value: start,
                   decoration: InputDecoration(labelText: l10n.hubSlotStart),
                   items: [
-                    for (int h = 5; h < 19; h++)
+                    for (int h = 6; h < 18; h++)
                       DropdownMenuItem(
                         value: h,
                         child: Text('${h.toString().padLeft(2, '0')}.00'),
@@ -119,7 +128,7 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
                   value: end,
                   decoration: InputDecoration(labelText: l10n.hubSlotEnd),
                   items: [
-                    for (int h = start + 1; h <= 19; h++)
+                    for (int h = start + 1; h <= 18; h++)
                       DropdownMenuItem(
                         value: h,
                         child: Text('${h.toString().padLeft(2, '0')}.00'),
@@ -174,6 +183,15 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
 
     final kwp = parseDecimal(_kwp.text);
     final suggested = kwp == null ? null : kwp * 4 * 0.8;
+    // What daily capacity lets every member use her whole monthly quota. A
+    // planning hint only; booking rules use the capacity the admin saves.
+    final memberCount = data.memberProfiles.length;
+    final quota = parseDecimal(_quota.text);
+    final needed = memberCount == 0 || quota == null || quota <= 0
+        ? null
+        : dailyCapacityForQuota(members: memberCount, monthlyQuotaKwh: quota);
+    final belowNeeded =
+        needed != null && (parseDecimal(_capacity.text) ?? 0) + 0.05 < needed;
     final toConfirm =
         data.bookings
             .where(
@@ -215,6 +233,7 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
               ),
               inputFormatters: [decimalInput],
               helper: l10n.hubFieldCapacityHelper,
+              onChanged: (_) => setState(() {}),
               validator: (v) => parseDecimal(v ?? '') == null
                   ? l10n.hubFieldCapacityRequired
                   : null,
@@ -277,6 +296,23 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
             ),
             const SizedBox(height: AppSpacing.lg),
             AppTextField(
+              label: l10n.hubFieldSlotMembers,
+              controller: _slotMembers,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(3),
+              ],
+              helper: l10n.hubFieldSlotMembersHelper,
+              validator: (v) {
+                final n = int.tryParse((v ?? '').trim());
+                return n == null || n < 0 || n > 100
+                    ? l10n.hubFieldSlotMembersInvalid
+                    : null;
+              },
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            AppTextField(
               label: l10n.hubFieldWeatherCode,
               controller: _weatherCode,
               helper: l10n.hubFieldWeatherCodeHelper,
@@ -291,10 +327,36 @@ class _HubSettingsScreenState extends ConsumerState<HubSettingsScreen> {
               ),
               inputFormatters: [decimalInput],
               helper: l10n.hubFieldQuotaHelper,
+              onChanged: (_) => setState(() {}),
               validator: (v) => (parseDecimal(v ?? '') ?? -1) < 0
                   ? l10n.hubFieldQuotaRequired
                   : null,
             ),
+            if (needed != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              InfoBanner(
+                tone: belowNeeded ? InfoTone.warning : InfoTone.info,
+                message: belowNeeded
+                    ? '${l10n.hubQuotaSizing(memberCount, formatKwh(quota ?? 0), formatKwh(needed))} '
+                          '${l10n.hubQuotaSizingLow}'
+                    : l10n.hubQuotaSizing(
+                        memberCount,
+                        formatKwh(quota ?? 0),
+                        formatKwh(needed),
+                      ),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => setState(
+                    () => _capacity.text = decimalText(
+                      double.parse(needed.toStringAsFixed(1)),
+                    ),
+                  ),
+                  child: Text(l10n.hubCapacityUse),
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.xl),
             SectionHeader(
               title: l10n.hubSlotsSection,

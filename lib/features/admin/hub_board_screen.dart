@@ -7,6 +7,7 @@ import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
 import '../../core/l10n/l10n.dart';
+import '../../core/logic/hub_capacity.dart';
 import '../../core/models/models.dart';
 import '../../core/state/actions.dart';
 import '../../core/state/app_state.dart';
@@ -14,7 +15,7 @@ import '../../core/state/selectors.dart';
 import '../../core/state/snapshot.dart';
 import '../shared/labels.dart';
 
-/// Who is using the hub, slot by slot: energy booked, simultaneous load
+/// Who is using the hub, slot by slot: seats taken, simultaneous load
 /// against the inverter limit, and a switch to close a slot (maintenance, bad
 /// weather). Closing stops new bookings; it never cancels existing ones.
 class HubBoardScreen extends ConsumerStatefulWidget {
@@ -97,6 +98,33 @@ class _HubBoardScreenState extends ConsumerState<HubBoardScreen> {
               tone: InfoTone.warning,
               message: l10n.adminBoardNoLoadLimit,
             ),
+          if (slots.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            SectionCard(
+              tone: CardTone.solar,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(l10n.adminBoardDayEnergy, style: text.titleSmall),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    l10n.adminBoardEnergy(
+                      formatKwh(dayCapacity(slots).bookedKwh),
+                      formatKwh(dayCapacity(slots).capacityKwh),
+                    ),
+                    style: text.bodySmall,
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  AppProgressBar(
+                    value: dayCapacity(slots).capacityKwh <= 0
+                        ? 0
+                        : dayCapacity(slots).bookedKwh /
+                              dayCapacity(slots).capacityKwh,
+                  ),
+                ],
+              ),
+            ),
+          ],
           for (final a in slots) ...[
             const SizedBox(height: AppSpacing.md),
             SectionCard(
@@ -120,20 +148,23 @@ class _HubBoardScreenState extends ConsumerState<HubBoardScreen> {
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    l10n.adminBoardEnergy(
-                      formatKwh(a.bookedKwh),
-                      formatKwh(a.capacityKwh),
-                    ),
+                    '${l10n.adminBoardSeats(a.bookedMembers, a.seatLimit)} · '
+                    '${formatKwh(a.bookedKwh)}',
                     style: text.bodySmall,
                   ),
-                  const SizedBox(height: AppSpacing.xs),
-                  AppProgressBar(value: a.usedFraction),
+                  if (a.hasSeatLimit) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    AppProgressBar(
+                      value: a.seatFraction,
+                      color: a.isFull ? AppColors.warning : AppColors.primary,
+                    ),
+                  ],
                   if (a.hasLoadLimit) ...[
                     const SizedBox(height: AppSpacing.sm),
                     Text(
                       l10n.adminBoardLoad(
-                        a.loadKw.toStringAsFixed(1),
-                        a.maxLoadKw.toStringAsFixed(1),
+                        formatKwhValue(a.loadKw),
+                        formatKwhValue(a.maxLoadKw),
                       ),
                       style: text.bodySmall,
                     ),
@@ -184,15 +215,19 @@ class _HubBoardScreenState extends ConsumerState<HubBoardScreen> {
           child: Row(
             children: [
               Expanded(
+                flex: 3,
                 child: Text(
                   '${data.nameOf(b.userId)} · ${b.applianceName}',
                   style: text.bodyMedium,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              StatusPill(
-                label: b.status.localizedLabel(l10n),
-                tone: bookingTone(b.status),
+              Flexible(
+                flex: 2,
+                child: StatusPill(
+                  label: b.status.localizedLabel(l10n),
+                  tone: bookingTone(b.status),
+                ),
               ),
             ],
           ),
