@@ -12,7 +12,9 @@ their individual PLN connection for those registered appliances. The app:
    (`kSolarHubQr` in `lib/core/hub_qr.dart`); the admin never scans or edits
    it. A member scanning it (while logged in, so the app knows who) sends
    the admin a **usage verification request**, then may use the rest of the app
-   while waiting; the request shows up on the admin's dashboard and in
+   while waiting. **She must have booked a slot for today first** — the scan is
+   her arrival at that booking (`kQrRequiresBooking`); without one the scan is
+   refused with "Booking slot dulu sebelum scan QR"; the request shows up on the admin's dashboard and in
    "Verifikasi Penggunaan Hub". Only after the admin approves does the session
    count. The request covers all of the member's registered appliances (no
    picker); its kWh is their total watts × the current slot's hours, within her
@@ -30,6 +32,13 @@ their individual PLN connection for those registered appliances. The app:
 5. Gives a transparent **Skor Kredit Energi** and lets a member **apply for a
    loan** that a **cooperative admin reviews, approves/rejects, disburses and
    tracks**.
+   Once disbursed, the **installment schedule** (Jadwal Cicilan, member and
+   admin) works like arisan dues: the borrower taps "Saya sudah bayar", an admin
+   confirms or rejects it with a reason, and only a confirmation records it as
+   paid (`submitInstallmentPayment` / `markInstallmentPaid` /
+   `rejectInstallmentPayment`). Installments are sent in order; on-time is
+   judged on the day she sent it, not the day the admin confirmed. The payment
+   instructions reuse the cooperative's `arisanBankAccount`.
    The **business-activity** part of the score is productivity-based: registered
    appliances, completed hub sessions, kWh used and weekly regularity over the
    last 8 weeks (see `_business` in `credit_signals.dart`).
@@ -69,25 +78,74 @@ The users are financially vulnerable. Breaking one of these causes real harm.
   are enforced in the repository layer (and in SQL functions for Supabase),
   never only in the UI.
 - **Score needs history.** Withheld until `kMinMonthsForScore` months recorded.
-- **Label assumptions.** CO₂ factor (0.87 kg/kWh), roof assumptions, hub
-  sun-curve split and appliance estimates are stated where they appear.
+- **Label assumptions.** CO₂ factor (0.87 kg/kWh), roof assumptions,
+  and appliance estimates are stated where they appear.
+- **Members cannot record their own usage.** Only an admin can set a booking to
+  completed (`LocalSolarRepository.setBookingStatus`): approving a scan does it
+  automatically, or an admin confirms a session. A member can only book, scan
+  and cancel; otherwise she could write her own energy history and credit
+  score. The bookings screen has a scan button for today's booking, not a
+  "done" button.
 - **Automatic readings stay correctable.** A hub session's `estKwh` is a
   software estimate (appliance watts × slot hours), not a physical sensor
   reading yet (see Known limits). The admin confirms each session before it is
   recorded, and the records screen tells members to contact the admin if
   something looks wrong. There is no in-app way yet for an admin to correct or
   void a completed session — add one before real use.
-- **Hub limits are physical, so they are enforced in the repository.** Two
-  limits: energy (kWh per slot, split by the sun's arc) and simultaneous load
-  (`SolarHub.maxLoadKw`, the inverter — set by the admin; 0 = not set, not
-  checked). A booking or QR request carries `loadKw` (appliance watts / 1000)
-  and is refused when the slot's booked load plus it exceeds the limit, with the
-  numbers in the message. An admin can close a slot (`HubSlot.isOpen`); closing
+- **Hub limits are physical, so they are enforced in the repository.** Three
+  limits plus the member's own quota: **seats** (`SolarHub.maxMembersPerSlot`,
+  default 5, every slot alike, 0 = no limit — a slot is full when its seats are
+  taken, never because one booking uses a lot of energy), the hub's **energy for
+  the whole day** (`dailyCapacityKwh`, shared by every slot because the hub has
+  a battery; there is no per-slot kWh and no sun-curve split any more) and
+  **simultaneous load** (`SolarHub.maxLoadKw`, the inverter — set by the admin;
+  0 = not set, not checked). A member holds one seat per slot and day: she adds
+  appliances to that booking (the booking screen takes several; its energy is
+  their watts added up × the slot's hours). A booking or QR request carries
+  `loadKw` (appliance watts / 1000) and is refused when the slot's booked load
+  plus it exceeds the limit, with the numbers in the message. **Exhibition demo exception:** `kQrIgnoresHubLimits`
+  and `kQrIgnoresOperatingHours` in `lib/core/hub_qr.dart` are both `true`, so a
+  QR scan is never refused for slot energy, the member's quota, inverter load,
+  a closed slot or the hour of day (the admin still approves it; booking-screen bookings keep the
+  limits). `kQrRequiresBooking` (true) is separate and is the real rule: no
+  booking for today, no scan — but bookings for today can only be made for slots
+  that have not ended, so after the last slot a scan has nothing to attach to.
+  **Set the two limit switches to `false` before a real pilot.** An admin can close a slot (`HubSlot.isOpen`); closing
   stops new bookings and QR requests but never cancels existing ones. A QR scan
   for a slot the member already booked attaches to that booking rather than
   reserving capacity twice (`HubBooking.requestedAt` marks scans). The weather
   card's "kapasitas ±N%" is an estimate from the BMKG rule and does NOT change
   booking rules (they must not depend on a network call).
+- **The monthly quota is shown as it is spent.** `quotaBalance` splits what a
+  member has booked into **used** (sessions the hub recorded after the admin
+  approved the scan) and **reserved** (booked, not used yet); both come off
+  what is left the moment they exist, a rejected scan or cancelled booking
+  gives it back, and a session never counts twice. The member dashboard
+  (Beranda) shows what is left of the 35 kWh, used, booked, today's use, quota
+  shared/received, **days left in the month** (today included, `quotaPace`) and
+  the per-day pace that makes the rest last. The approval notification says
+  how much quota is left. The month-on-month comparison on the dashboard
+  compares a month still in progress with the same share of last month and
+  says nothing before day 10, so day 1 never reads as "86% lower".
+- **Sizing: 35 kWh per member per month** (`kMemberMonthlyKwh`, which is
+  `kDefaultMemberMonthlyQuotaKwh`). Quota is counted per calendar month; the
+  admin can change the cooperative default or one member's allocation. The
+  hub is planned as members × quota ÷ 30 days (`dailyCapacityForQuota`; Hub
+  Settings shows it as a hint and never enforces it): the sample hub is built for a full
+  cooperative of 15 (15 × 35 ÷ 30 = 17.5 kWh/day) (≈ 5.5 kWp at 4 sun hours × 80%) with
+  a 5 kW inverter. At this size one 1.5 kW oven for 3 hours (4.5 kWh) is a
+  quarter of the hub's day, so the day's energy runs out before the seats do
+  — that is the real constraint, not a bug. The sample seeder creates five members and one admin,
+  each a different thing to explore: Clara (clean account, free to apply for a
+  loan), Siti (application waiting for review, arisan payment waiting for the
+  admin), Lina (no arisan payment, overdue installment), Putri (near her
+  35 kWh, repaying a loan with one installment waiting for the admin) and Dewi
+  (joined last month: no score yet, not in the arisan, scans the hub QR). It
+  places each session
+  (appliance watts × slot hours) only where the slot's energy, the inverter and
+  the member's own month have room; `workflow_test.dart` checks that no month
+  exceeds 35 kWh and no slot its capacity. Quota trades are a few kWh (the
+  1/2/3/5 kWh choices).
 - **Quota sharing moves no electricity.** It records an agreement (Tukar
   Kuota). Two ways to share: to anyone (a market post — the first member who
   takes it completes the trade at once, the post being the owner's consent) or
@@ -148,7 +206,22 @@ Widgets must not touch repositories or the database directly — go through
 
 ## UI Rules
 
-- Indonesian is the only user-facing language; short, concrete sentences.
+- Two user-facing languages, **Indonesian (default) and English**, switched in
+  Profil → Bahasa and applied at once. Short, concrete sentences in both. Every
+  string a person can read must exist in both:
+  - Screen text: a getter on `AppLocalizations` (`lib/core/l10n/`), implemented
+    in `_IdStrings` and `_EnStrings`. `AppLocalizations.current` is the language
+    in use for code with no `BuildContext` (date/rupiah/kWh formatters).
+  - Errors: `AppException('Indonesia', en: 'English')`. `test/unit/i18n_guard_test.dart`
+    fails on an `AppException` without `en:`; the UI shows `e.localized(english: …)`.
+  - Texts stored at write time (notifications, system chat messages, score
+    factor labels) keep both versions (`titleEn`/`bodyEn`, `labelEn`…) because
+    the writer cannot know the reader's language; `notify`/`postSystemMessage`
+    require the English half.
+  - `test/widget/english_screens_test.dart` opens every screen in English and
+    fails on Indonesian interface words. What people type, and the Indonesian
+    demo content the sample seeder creates (names, businesses, chat lines), are
+    content, not interface text, and stay as written.
 - Green identity; use `lib/core/design` tokens and components (`ui_kit.dart`,
   `SuccessPanel`, `AppScaffold` with centred titles). Never inline a hex,
   radius or spacing value in feature code.
@@ -193,6 +266,11 @@ Never mark a task complete while `flutter analyze` fails.
   it is never an approval. The Laporan Kredit Energi is copied only after an
   explicit consent dialog and the app sends nothing anywhere.
 
+- **TODO(supabase-migration)** for bilingual stored text: `notifications` needs
+  `title_en` / `body_en` and `messages` needs `body_en`; `ScoreFactorSnapshot`
+  already keeps `label_en` inside the existing jsonb. Errors raised by SQL
+  functions are Indonesian only until they are given an English counterpart
+  (the app shows them as written).
 - Until Supabase is connected, data lives on one phone: admin and members only
   "meet" when they use the same device (e.g. the sample cooperative).
 - The Supabase migration in `supabase/migrations/` covers the pre-Communal-Hub

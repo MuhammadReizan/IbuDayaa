@@ -22,7 +22,7 @@
 | F01 | Android Flutter app, Material 3, portrait, 360 dp+ widths | P0 | iOS is P2. App id `com.baswaramusi.ibudaya`, name "IbuDaya" (decision #5). |
 | F02 | Offline **Demo Mode** — all data from bundled JSON assets, zero network | P0 | Must run fully in airplane mode. |
 | F03 | Demo reset (restore seed state to a known point) | P0 | Between demo runs; see `DEMO_SCRIPT.md`. |
-| F04 | Indonesian (`id`) as the only user-facing locale | P0 | Centralised strings; multi-language is P2. |
+| F04 | Indonesian (`id`, default) and English (`en`), switchable in Profil → Bahasa | P0 | Centralised strings; every user-readable string exists in both (see CLAUDE.md UI Rules). |
 | F05 | Centralised design system (tokens + shared components), all values labelled `PROTOTYPE_DECISION` | P0 | No Figma source exists; screenshots are the provisional source (decision #4). |
 | F06 | Bottom-nav app shell (Beranda, Solar Hub, Pesan, Profil) + pushed routes | P0 | GoRouter `ShellRoute`. |
 | F07 | Global loading / empty / error state widgets | P0 | Every async screen uses them. |

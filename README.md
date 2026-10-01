@@ -14,7 +14,7 @@ IbuDaya adalah aplikasi mobile *offline-first* berbasis Flutter yang dirancang u
 
 ### ⚡ Arisan Kuota Energi
 - **Berbagi Kuota Listrik**: Sistem arisan dan transfer kuota energi antar-anggota usaha mikro.
-- **Pasar Kuota Usaha**: Fasilitas pertukaran dan pemberian hibah kuota daya harian bagi anggota yang membutuhkan.
+- **Pasar Kuota Usaha**: Fasilitas pertukaran dan pemberian hibah kuota energi bulanan (35 kWh per anggota) bagi anggota yang membutuhkan.
 
 ### 📊 Skor Kredit Energi (Alternative Credit Scoring)
 - **Penilaian Transparan**: Sistem pemeringkatan kredit berbasis aturan (*rule-based engine*) yang terukur dan deterministik (Bukan Black-box AI/ML).
