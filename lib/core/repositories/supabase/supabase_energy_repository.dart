@@ -25,13 +25,24 @@ class SupabaseEnergyRepository extends SupabaseRepo
     String? replaceId,
     String? bookingId,
   }) => guard(() async {
-    if (kwh <= 0) throw const AppException('Jumlah kWh harus lebih dari 0.');
+    if (kwh <= 0) {
+      throw const AppException(
+        'Jumlah kWh harus lebih dari 0.',
+        en: 'The kWh amount must be more than 0.',
+      );
+    }
     if (totalIdr <= 0) {
-      throw const AppException('Total pembayaran harus lebih dari 0.');
+      throw const AppException(
+        'Total pembayaran harus lebih dari 0.',
+        en: 'The total payment must be more than 0.',
+      );
     }
     final month = monthOf(periodMonth);
     if (month.isAfter(monthOf(DateTime.now()))) {
-      throw const AppException('Bulan tagihan tidak boleh di masa depan.');
+      throw const AppException(
+        'Bulan tagihan tidak boleh di masa depan.',
+        en: 'The bill month can\'t be in the future.',
+      );
     }
 
     String? targetId = replaceId;
@@ -85,15 +96,29 @@ class SupabaseEnergyRepository extends SupabaseRepo
     required double hoursPerDay,
     required int daysPerWeek,
   }) => guard(() async {
-    if (name.trim().isEmpty) throw const AppException('Nama alat wajib diisi.');
+    if (name.trim().isEmpty) {
+      throw const AppException(
+        'Nama alat wajib diisi.',
+        en: 'Enter the appliance name.',
+      );
+    }
     if (watts <= 0 || watts > 20000) {
-      throw const AppException('Daya alat harus antara 1 dan 20.000 watt.');
+      throw const AppException(
+        'Daya alat harus antara 1 dan 20.000 watt.',
+        en: 'Appliance power must be between 1 and 20,000 watts.',
+      );
     }
     if (hoursPerDay <= 0 || hoursPerDay > 24) {
-      throw const AppException('Jam pemakaian harus antara 0 dan 24.');
+      throw const AppException(
+        'Jam pemakaian harus antara 0 dan 24.',
+        en: 'Hours of use must be between 0 and 24.',
+      );
     }
     if (daysPerWeek < 1 || daysPerWeek > 7) {
-      throw const AppException('Hari pemakaian harus 1 sampai 7.');
+      throw const AppException(
+        'Hari pemakaian harus 1 sampai 7.',
+        en: 'Days of use must be 1 to 7.',
+      );
     }
     final payload = {
       'user_id': me.id,
@@ -123,6 +148,7 @@ class SupabaseEnergyRepository extends SupabaseRepo
         if (draft.lengthM <= 0 || draft.widthM <= 0) {
           throw const AppException(
             'Panjang dan lebar atap harus lebih dari 0.',
+            en: 'The roof length and width must be more than 0.',
           );
         }
         final row = await table('roof_assessments')

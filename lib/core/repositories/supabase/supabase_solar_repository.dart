@@ -15,10 +15,16 @@ class SupabaseSolarRepository extends SupabaseRepo implements SolarRepository {
   @override
   Future<SolarHub> updateHub(Profile admin, SolarHub hub) => guard(() async {
     if (hub.name.trim().isEmpty) {
-      throw const AppException('Nama hub wajib diisi.');
+      throw const AppException(
+        'Nama hub wajib diisi.',
+        en: 'Enter the hub name.',
+      );
     }
     if (hub.dailyCapacityKwh < 0 || hub.dailyCapacityKwh > 100000) {
-      throw const AppException('Kapasitas harian tidak masuk akal.');
+      throw const AppException(
+        'Kapasitas harian tidak masuk akal.',
+        en: 'The daily capacity isn\'t realistic.',
+      );
     }
     final row = await table('solar_hubs')
         .update({
@@ -43,7 +49,10 @@ class SupabaseSolarRepository extends SupabaseRepo implements SolarRepository {
     int endHour,
   ) => guard(() async {
     if (startHour < 5 || endHour > 19 || endHour <= startHour) {
-      throw const AppException('Jam slot harus di antara 05.00 dan 19.00.');
+      throw const AppException(
+        'Jam slot harus di antara 05.00 dan 19.00.',
+        en: 'Slot hours must be between 05.00 and 19.00.',
+      );
     }
     final existing = await table('hub_slots').select().eq('hub_id', hubId);
     final slots = (existing as List).cast<Map<String, dynamic>>().map(
@@ -53,7 +62,10 @@ class SupabaseSolarRepository extends SupabaseRepo implements SolarRepository {
       (s) => startHour < s.endHour && endHour > s.startHour,
     );
     if (overlaps) {
-      throw const AppException('Slot ini bertabrakan dengan slot lain.');
+      throw const AppException(
+        'Slot ini bertabrakan dengan slot lain.',
+        en: 'This slot overlaps another slot.',
+      );
     }
     final row = await table('hub_slots')
         .insert({
@@ -158,7 +170,10 @@ class SupabaseSolarRepository extends SupabaseRepo implements SolarRepository {
   }) => guard(() async {
     if (allocationKwh != null &&
         (allocationKwh < 0 || allocationKwh > 100000)) {
-      throw const AppException('Alokasi kapasitas tidak masuk akal.');
+      throw const AppException(
+        'Alokasi kapasitas tidak masuk akal.',
+        en: 'The capacity allocation isn\'t realistic.',
+      );
     }
     final row = await table('profiles')
         .update({'hub_allocation_kwh': allocationKwh})

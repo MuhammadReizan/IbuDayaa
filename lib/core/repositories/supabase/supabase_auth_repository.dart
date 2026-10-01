@@ -28,28 +28,42 @@ class SupabaseAuthRepository extends SupabaseRepo implements AuthRepository {
     if (p == null) {
       throw const AppException(
         'Nomor HP tidak valid. Contoh yang benar: 0812-3456-7890.',
+        en: 'Invalid phone number. A correct example: 0812-3456-7890.',
       );
     }
     return p;
   }
 
   void _checkPin(String pin) {
-    if (!isValidPin(pin)) throw const AppException('PIN harus 6 angka.');
+    if (!isValidPin(pin)) {
+      throw const AppException(
+        'PIN harus 6 angka.',
+        en: 'The PIN must be 6 digits.',
+      );
+    }
     if (isWeakPin(pin)) {
       throw const AppException(
         'PIN terlalu mudah ditebak. Hindari angka yang sama semua atau '
         'berurutan.',
+        en: 'That PIN is too easy to guess. Avoid all-identical or sequential digits.',
       );
     }
   }
 
-  void _required(String value, String label) {
-    if (value.trim().isEmpty) throw AppException('$label wajib diisi.');
+  void _required(String value, String label, String labelEn) {
+    if (value.trim().isEmpty) {
+      throw AppException('$label wajib diisi.', en: '$labelEn is required.');
+    }
   }
 
   Future<Profile> _fetchProfile(String userId) async {
     final row = await table('profiles').select().eq('id', userId).maybeSingle();
-    if (row == null) throw const AppException('Akun tidak ditemukan.');
+    if (row == null) {
+      throw const AppException(
+        'Akun tidak ditemukan.',
+        en: 'Account not found.',
+      );
+    }
     return Profile.fromRow(row);
   }
 
@@ -101,14 +115,17 @@ class SupabaseAuthRepository extends SupabaseRepo implements AuthRepository {
   }) => guard(() async {
     final p = _phone(phone);
     _checkPin(pin);
-    _required(fullName, 'Nama');
-    _required(cooperativeName, 'Nama koperasi');
-    _required(city, 'Kota');
+    _required(fullName, 'Nama', 'Name');
+    _required(cooperativeName, 'Nama koperasi', 'Cooperative name');
+    _required(city, 'Kota', 'City');
 
     await client.auth.signUp(email: _syntheticEmail(p), password: pin);
     final uid = client.auth.currentUser?.id;
     if (uid == null) {
-      throw const AppException('Pendaftaran gagal. Coba lagi.');
+      throw const AppException(
+        'Pendaftaran gagal. Coba lagi.',
+        en: 'Sign-up failed. Try again.',
+      );
     }
     final row = await client.rpc(
       'register_admin',
@@ -133,14 +150,17 @@ class SupabaseAuthRepository extends SupabaseRepo implements AuthRepository {
   }) => guard(() async {
     final p = _phone(phone);
     _checkPin(pin);
-    _required(fullName, 'Nama');
-    _required(businessName, 'Nama usaha');
-    _required(city, 'Kota');
+    _required(fullName, 'Nama', 'Name');
+    _required(businessName, 'Nama usaha', 'Business name');
+    _required(city, 'Kota', 'City');
 
     await client.auth.signUp(email: _syntheticEmail(p), password: pin);
     final uid = client.auth.currentUser?.id;
     if (uid == null) {
-      throw const AppException('Pendaftaran gagal. Coba lagi.');
+      throw const AppException(
+        'Pendaftaran gagal. Coba lagi.',
+        en: 'Sign-up failed. Try again.',
+      );
     }
     final row = await client.rpc(
       'join_cooperative',
@@ -168,10 +188,18 @@ class SupabaseAuthRepository extends SupabaseRepo implements AuthRepository {
         // Supabase does not distinguish "no such account" from "wrong
         // password" in its error — neither should this message, so a wrong
         // guess cannot be used to find out which phone numbers are registered.
-        throw const AppException('Nomor HP atau PIN salah.');
+        throw const AppException(
+          'Nomor HP atau PIN salah.',
+          en: 'Wrong phone number or PIN.',
+        );
       }
       final uid = client.auth.currentUser?.id;
-      if (uid == null) throw const AppException('Nomor HP atau PIN salah.');
+      if (uid == null) {
+        throw const AppException(
+          'Nomor HP atau PIN salah.',
+          en: 'Wrong phone number or PIN.',
+        );
+      }
       return _fetchProfile(uid);
     },
   );
@@ -187,23 +215,34 @@ class SupabaseAuthRepository extends SupabaseRepo implements AuthRepository {
   }) => guard(() async {
     _checkPin(newPin);
     if (newPin == currentPin) {
-      throw const AppException('PIN baru harus berbeda dari PIN lama.');
+      throw const AppException(
+        'PIN baru harus berbeda dari PIN lama.',
+        en: 'The new PIN must differ from the old PIN.',
+      );
     }
     final email = client.auth.currentUser?.email;
-    if (email == null) throw const AppException('Sesi tidak ditemukan.');
+    if (email == null) {
+      throw const AppException(
+        'Sesi tidak ditemukan.',
+        en: 'Session not found.',
+      );
+    }
     try {
       await client.auth.signInWithPassword(email: email, password: currentPin);
     } on AuthException {
-      throw const AppException('PIN lama salah.');
+      throw const AppException('PIN lama salah.', en: 'The old PIN is wrong.');
     }
     await client.auth.updateUser(UserAttributes(password: newPin));
   });
 
   @override
   Future<Profile> updateProfile(Profile profile) => guard(() async {
-    _required(profile.fullName, 'Nama');
+    _required(profile.fullName, 'Nama', 'Name');
     if (profile.tariffIdrPerKwh <= 0) {
-      throw const AppException('Tarif listrik harus lebih dari 0.');
+      throw const AppException(
+        'Tarif listrik harus lebih dari 0.',
+        en: 'The electricity tariff must be more than 0.',
+      );
     }
     await table('profiles')
         .update({

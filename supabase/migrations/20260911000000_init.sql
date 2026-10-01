@@ -33,7 +33,7 @@ create table public.cooperatives (
   loan_max_amount_idr bigint not null default 5000000 check (loan_max_amount_idr >= 500000),
   loan_min_score int not null default 60 check (loan_min_score between 0 and 100),
   loan_tenors int[] not null default '{3,6,12}',
-  member_monthly_quota_kwh numeric not null default 30 check (member_monthly_quota_kwh >= 0),
+  member_monthly_quota_kwh numeric not null default 35 check (member_monthly_quota_kwh >= 0),
   solar_cost_per_kwp_idr bigint not null default 15000000 check (solar_cost_per_kwp_idr > 0),
   created_at timestamptz not null default now()
 );

@@ -32,9 +32,17 @@ class SupabaseMessageRepository extends SupabaseRepo
     required String body,
   }) => guard(() async {
     final text = body.trim();
-    if (text.isEmpty) throw const AppException('Pesan masih kosong.');
+    if (text.isEmpty) {
+      throw const AppException(
+        'Pesan masih kosong.',
+        en: 'The message is empty.',
+      );
+    }
     if (text.length > 2000) {
-      throw const AppException('Pesan terlalu panjang (maks. 2.000 huruf).');
+      throw const AppException(
+        'Pesan terlalu panjang (maks. 2.000 huruf).',
+        en: 'The message is too long (max. 2,000 characters).',
+      );
     }
     final row = await table('messages')
         .insert({'thread_id': threadId, 'sender_id': me.id, 'body': text})
@@ -81,26 +89,42 @@ class SupabaseMessageRepository extends SupabaseRepo
   Future<Cooperative> updateSettings(Profile admin, Cooperative updated) =>
       guard(() async {
         if (updated.name.trim().isEmpty) {
-          throw const AppException('Nama koperasi wajib diisi.');
+          throw const AppException(
+            'Nama koperasi wajib diisi.',
+            en: 'Enter the cooperative name.',
+          );
         }
         if (updated.loanFlatMonthlyRatePct < 0 ||
             updated.loanFlatMonthlyRatePct > 10) {
-          throw const AppException('Bunga per bulan harus antara 0% dan 10%.');
+          throw const AppException(
+            'Bunga per bulan harus antara 0% dan 10%.',
+            en: 'The monthly interest must be between 0% and 10%.',
+          );
         }
         if (updated.loanMaxAmountIdr < 500000) {
-          throw const AppException('Plafon maksimum minimal Rp 500.000.');
+          throw const AppException(
+            'Plafon maksimum minimal Rp 500.000.',
+            en: 'The maximum limit must be at least Rp 500,000.',
+          );
         }
         if (updated.loanMinScore < 0 || updated.loanMinScore > 100) {
-          throw const AppException('Skor minimum harus 0 sampai 100.');
+          throw const AppException(
+            'Skor minimum harus 0 sampai 100.',
+            en: 'The minimum score must be 0 to 100.',
+          );
         }
         if (updated.loanTenors.isEmpty ||
             updated.loanTenors.any((t) => t < 1 || t > 36)) {
           throw const AppException(
             'Pilih minimal satu tenor antara 1–36 bulan.',
+            en: 'Choose at least one term between 1 and 36 months.',
           );
         }
         if (updated.memberMonthlyQuotaKwh < 0) {
-          throw const AppException('Kuota anggota tidak boleh negatif.');
+          throw const AppException(
+            'Kuota anggota tidak boleh negatif.',
+            en: 'The member quota can\'t be negative.',
+          );
         }
         final row = await table('cooperatives')
             .update({

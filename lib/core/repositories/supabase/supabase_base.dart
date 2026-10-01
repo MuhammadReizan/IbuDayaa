@@ -36,12 +36,16 @@ abstract class SupabaseRepo {
         looksLikeUserMessage
             ? msg
             : 'Permintaan tidak bisa diproses. Coba lagi.',
+        en: looksLikeUserMessage
+            ? msg
+            : "The request couldn't be processed. Try again.",
       );
     } on AuthException catch (e) {
-      throw AppException(e.message);
+      throw AppException(e.message, en: e.message);
     } catch (e) {
       throw const AppException(
         'Tidak bisa terhubung ke server. Periksa koneksi internet Anda.',
+        en: "Can't reach the server. Check your internet connection.",
       );
     }
   }

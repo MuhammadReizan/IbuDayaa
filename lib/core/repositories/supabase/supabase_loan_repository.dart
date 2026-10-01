@@ -87,4 +87,28 @@ class SupabaseLoanRepository extends SupabaseRepo implements LoanRepository {
       params: {'p_installment': installmentId},
     ),
   );
+
+  @override
+  Future<void> submitInstallmentPayment({
+    required Profile me,
+    required String installmentId,
+    String? note,
+  }) => guard(
+    () => client.rpc(
+      'submit_installment_payment',
+      params: {'p_installment': installmentId, 'p_note': note},
+    ),
+  );
+
+  @override
+  Future<void> rejectInstallmentPayment({
+    required Profile admin,
+    required String installmentId,
+    required String reason,
+  }) => guard(
+    () => client.rpc(
+      'reject_installment_payment',
+      params: {'p_installment': installmentId, 'p_reason': reason},
+    ),
+  );
 }
