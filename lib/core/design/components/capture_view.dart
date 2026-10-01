@@ -361,10 +361,12 @@ class _CaptureViewState extends State<CaptureView>
                             color: AppColors.accentLeaf,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            t,
-                            style: text.labelSmall?.copyWith(
-                              color: AppColors.textOnDarkDim,
+                          Flexible(
+                            child: Text(
+                              t,
+                              style: text.labelSmall?.copyWith(
+                                color: AppColors.textOnDarkDim,
+                              ),
                             ),
                           ),
                         ],

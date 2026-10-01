@@ -400,7 +400,7 @@ class _MemberRow extends StatelessWidget {
                 ),
                 Text(
                   '${l10n.arisanTurnFormat(turn, shortMonthYear(turnMonth, l10n: l10n))}'
-                  '${isRecipient ? ' · ${l10n.arisanReceivingThisMonth}' : ''}',
+                  '${isRecipient ? l10n.arisanReceivingThisMonth : ''}',
                   style: text.bodySmall,
                 ),
               ],
