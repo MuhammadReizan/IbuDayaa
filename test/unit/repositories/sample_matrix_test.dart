@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ibudaya/core/db/local_database.dart';
+import 'package:ibudaya/core/hub_qr.dart';
 import 'package:ibudaya/core/db/row.dart';
 import 'package:ibudaya/core/models/models.dart';
 import 'package:ibudaya/core/repositories/local/local_auth_repository.dart';
@@ -120,9 +121,14 @@ void main() {
       expect(data.groupMembers, hasLength(4));
 
       // Dewi's scan waits for the admin while her slot has not ended.
-      expect(data.hubRequests.length, lessThanOrEqualTo(1));
-      if (at.hour < 17) {
-        expect(data.hubRequests, hasLength(1), reason: 'the demo scan');
+      // Her scan is real: refused before 07.00 and from 17.00, so no request.
+      final open = at.hour >= kHubOpensHour && at.hour < kHubClosesHour;
+      expect(
+        data.hubRequests,
+        hasLength(open ? 1 : 0),
+        reason: 'the demo scan',
+      );
+      if (open) {
         expect(data.hubRequests.single.userId, byName['Ibu Dewi']!.id);
       }
       // The four demo logins start with nothing booked today or tomorrow.

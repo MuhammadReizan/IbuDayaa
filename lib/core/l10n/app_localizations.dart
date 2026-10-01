@@ -590,6 +590,8 @@ abstract class AppLocalizations {
   String get bookingCancelledToast;
   String get bookingRecordedToast;
   String get bookingNoScanYet;
+  String hubClosedAfterNotice(String hours);
+  String hubClosedBeforeNotice(String hours, String opens);
   String get bookingScanBtn;
   String get bookingSummaryTitle;
   String get bookingEnergyLabel;
@@ -2204,6 +2206,12 @@ class _IdStrings extends AppLocalizations {
   String get bookingRecordedToast => 'Tercatat.';
   @override
   String get bookingNoScanYet => 'Belum ada scan';
+  @override
+  String hubClosedAfterNotice(String hours) =>
+      'Sudah lewat jam kerja Solar Hub ($hours). Booking untuk hari ini dan scan QR tidak bisa lagi; bisa lagi besok.';
+  @override
+  String hubClosedBeforeNotice(String hours, String opens) =>
+      'Solar Hub belum buka (jam kerja $hours). Scan QR bisa mulai pukul $opens; booking untuk hari ini sudah bisa.';
   @override
   String get bookingScanBtn => 'Scan QR';
   @override
@@ -4500,6 +4508,12 @@ class _EnStrings extends AppLocalizations {
   String get bookingRecordedToast => 'Recorded.';
   @override
   String get bookingNoScanYet => 'No scan yet';
+  @override
+  String hubClosedAfterNotice(String hours) =>
+      'The Solar Hub is closed for the day (working hours $hours). Booking for today and QR scans are no longer possible; they open again tomorrow.';
+  @override
+  String hubClosedBeforeNotice(String hours, String opens) =>
+      'The Solar Hub isn\x27t open yet (working hours $hours). You can scan from $opens; booking for today is already possible.';
   @override
   String get bookingScanBtn => 'Scan QR';
   @override

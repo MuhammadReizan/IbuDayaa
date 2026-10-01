@@ -9,6 +9,7 @@ import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/typography.dart';
 import '../../core/format/format.dart';
+import '../../core/hub_qr.dart';
 import '../../core/l10n/l10n.dart';
 import '../../core/logic/hub_capacity.dart';
 import '../../core/logic/quota_ledger.dart';
@@ -133,6 +134,21 @@ class SolarHubScreen extends ConsumerWidget {
               ],
             ),
           ),
+          if (hub != null &&
+              hub.isConfigured &&
+              !kQrIgnoresOperatingHours &&
+              (now.hour >= kHubClosesHour || now.hour < kHubOpensHour)) ...[
+            const SizedBox(height: AppSpacing.lg),
+            InfoBanner(
+              tone: InfoTone.warning,
+              message: now.hour >= kHubClosesHour
+                  ? l10n.hubClosedAfterNotice(hubHoursLabel)
+                  : l10n.hubClosedBeforeNotice(
+                      hubHoursLabel,
+                      '${kHubOpensHour.toString().padLeft(2, "0")}.00',
+                    ),
+            ),
+          ],
           if (request != null) ...[
             const SizedBox(height: AppSpacing.lg),
             TintedRow(

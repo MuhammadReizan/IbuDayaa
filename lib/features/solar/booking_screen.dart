@@ -7,6 +7,7 @@ import '../../core/db/row.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens.dart';
 import '../../core/format/format.dart';
+import '../../core/hub_qr.dart';
 import '../../core/l10n/l10n.dart';
 import '../../core/logic/hub_capacity.dart';
 import '../../core/models/models.dart';
@@ -30,7 +31,14 @@ class BookingScreen extends ConsumerStatefulWidget {
 class _BookingScreenState extends ConsumerState<BookingScreen> {
   static const _custom = '__custom__';
 
-  late DateTime _day = dayOf(ref.read(clockProvider)());
+  // After closing time today has nothing left to book, so start on tomorrow.
+  late DateTime _day = () {
+    final now = ref.read(clockProvider)();
+    final today = dayOf(now);
+    return now.hour >= kHubClosesHour
+        ? today.add(const Duration(days: 1))
+        : today;
+  }();
 
   /// Registered appliances picked for this session, by id, plus [_custom] for
   /// one she types in. One booking can carry several; the energy is their
@@ -307,6 +315,13 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           const SizedBox(height: AppSpacing.xl),
           Text('3. ${l10n.solarBookingSlot}', style: text.titleMedium),
           const SizedBox(height: AppSpacing.sm),
+          if (sameDay(_day, today) && now.hour >= kHubClosesHour) ...[
+            InfoBanner(
+              tone: InfoTone.warning,
+              message: l10n.hubClosedAfterNotice(hubHoursLabel),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
           if (watts <= 0)
             Text(l10n.solarBookingApplianceHint, style: text.bodyMedium)
           else ...[

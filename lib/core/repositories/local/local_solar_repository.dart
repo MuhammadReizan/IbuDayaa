@@ -301,6 +301,31 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
     return booking;
   }
 
+  /// After closing time: no booking for today and no scan, and she is told it is
+  /// the working hours, not something she did wrong.
+  AppException _closedForTheDay({required bool scan}) => AppException(
+    scan
+        ? 'Sudah lewat jam kerja Solar Hub ($hubHoursLabel), jadi scan QR tidak '
+              'bisa lagi hari ini. Booking dan scan bisa dilakukan lagi besok.'
+        : 'Sudah lewat jam kerja Solar Hub ($hubHoursLabel), jadi booking untuk '
+              'hari ini tidak bisa lagi. Pilih tanggal besok atau sesudahnya.',
+    en: scan
+        ? 'The Solar Hub is closed for the day (working hours $hubHoursLabel), so '
+              'QR scans are no longer possible today. Booking and scanning open '
+              'again tomorrow.'
+        : 'The Solar Hub is closed for the day (working hours $hubHoursLabel), so '
+              'booking for today is no longer possible. Choose tomorrow or later.',
+  );
+
+  /// Before opening time: a scan has nothing to attach to yet.
+  AppException _notOpenYet() => AppException(
+    'Solar Hub belum buka. Jam kerja $hubHoursLabel; scan QR bisa dilakukan '
+    'mulai pukul ${kHubOpensHour.toString().padLeft(2, "0")}.00.',
+    en:
+        'The Solar Hub isn\x27t open yet. Working hours are $hubHoursLabel; you can '
+        'scan from ${kHubOpensHour.toString().padLeft(2, "0")}.00.',
+  );
+
   @override
   Future<HubBooking> book({
     required Profile me,
@@ -317,6 +342,9 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
     }
     final slot = HubSlot.fromRow(slotRow);
 
+    if (sameDay(dayOf(date), dayOf(now())) && now().hour >= kHubClosesHour) {
+      throw _closedForTheDay(scan: false);
+    }
     final today = dayOf(now());
     final day = dayOf(date);
     if (day.isBefore(today) ||
@@ -359,6 +387,14 @@ class LocalSolarRepository extends LocalRepo implements SolarRepository {
         'QR ini bukan QR Solar Hub koperasi Anda.',
         en: 'This QR isn\'t your cooperative\'s Solar Hub QR.',
       );
+    }
+
+    // Hours come before the booking rule: after closing there is nothing left
+    // to book, so "book first" would be the wrong thing to tell her.
+    if (!kQrIgnoresOperatingHours) {
+      final hour = now().hour;
+      if (hour >= kHubClosesHour) throw _closedForTheDay(scan: true);
+      if (hour < kHubOpensHour) throw _notOpenYet();
     }
 
     final slots =

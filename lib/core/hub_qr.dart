@@ -5,11 +5,23 @@
 /// than in settings. When several hubs exist, move it to a column on the hub.
 const String kSolarHubQr = 'https://q.me-qr.com/6vovs0mu';
 
-/// DEMO SWITCH — while true, a QR request outside the hub's opening hours is
-/// attached to the nearest slot instead of being refused, so the flow can be
-/// shown at any time of day. Set to false before a real pilot: the hub's
-/// operating hours are a real rule (capacity is defined per slot).
-const bool kQrIgnoresOperatingHours = true;
+/// The hub works from 07.00 to 17.00. Booking for today after closing, and a QR
+/// scan before opening or after closing, are refused with a message that says
+/// which of the two it is (see `LocalSolarRepository`). Booking ahead for a
+/// later day, or for later today before opening, is fine.
+const int kHubOpensHour = 7;
+const int kHubClosesHour = 17;
+
+/// "07.00–17.00", for messages.
+String get hubHoursLabel =>
+    '${kHubOpensHour.toString().padLeft(2, "0")}.00–'
+    '${kHubClosesHour.toString().padLeft(2, "0")}.00';
+
+/// DEMO SWITCH — while true, a QR request outside the hub's hours is attached to
+/// the nearest slot instead of being refused, so the flow can be shown at any
+/// time of day. It is false: the hours are a real rule now. Only turn it on for
+/// an exhibition demo that has to run in the evening.
+const bool kQrIgnoresOperatingHours = false;
 
 /// DEMO SWITCH — while true, a QR request is never refused for lack of energy
 /// (slot capacity, the member's quota), simultaneous load or a slot the admin

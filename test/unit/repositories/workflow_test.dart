@@ -1064,6 +1064,113 @@ void main() {
     });
   });
 
+  group('working hours 07.00–17.00', () {
+    LocalSolarRepository at(int hour, [int minute = 0]) =>
+        LocalSolarRepository(db, () => DateTime(2026, 9, 11, hour, minute));
+
+    Future<Profile> clara() => login(SampleSeeder.memberPhone);
+
+    test(
+      'a scan with no booking is told to book first, within hours',
+      () async {
+        await expectLater(
+          at(9).requestConnection(
+            me: await clara(),
+            scannedCode: kSolarHubQr,
+            applianceName: 'Oven',
+            estKwh: 3,
+          ),
+          throwsA(
+            isA<AppException>().having(
+              (e) => e.message,
+              'message',
+              contains('Booking slot dulu'),
+            ),
+          ),
+        );
+      },
+    );
+
+    test('after 17.00 the message is about working hours, not about booking, '
+        'in both languages', () async {
+      for (final h in [17, 18, 23]) {
+        await expectLater(
+          at(h).requestConnection(
+            me: await clara(),
+            scannedCode: kSolarHubQr,
+            applianceName: 'Oven',
+            estKwh: 3,
+          ),
+          throwsA(
+            isA<AppException>()
+                .having(
+                  (e) => e.message,
+                  'message',
+                  allOf(contains('lewat jam kerja'), contains('07.00–17.00')),
+                )
+                .having((e) => e.en, 'en', contains('closed for the day')),
+          ),
+          reason: 'at $h.00',
+        );
+      }
+    });
+
+    test('before 07.00 the hub is not open yet', () async {
+      await expectLater(
+        at(6, 45).requestConnection(
+          me: await clara(),
+          scannedCode: kSolarHubQr,
+          applianceName: 'Oven',
+          estKwh: 3,
+        ),
+        throwsA(
+          isA<AppException>()
+              .having((e) => e.message, 'message', contains('belum buka'))
+              .having((e) => e.en, 'en', contains('open yet')),
+        ),
+      );
+    });
+
+    test('booking for today after closing is refused; tomorrow and booking '
+        'before opening are fine', () async {
+      final member = await clara();
+      final slots = (await snapshots.load(member)).orderedSlots;
+      final today = DateTime(2026, 9, 11);
+      await expectLater(
+        at(17, 30).book(
+          me: member,
+          slotId: slots.last.id,
+          date: today,
+          applianceName: 'Oven',
+          estKwh: 1,
+        ),
+        throwsA(
+          isA<AppException>().having(
+            (e) => e.message,
+            'message',
+            contains('lewat jam kerja'),
+          ),
+        ),
+      );
+      final tomorrow = await at(17, 30).book(
+        me: member,
+        slotId: slots.first.id,
+        date: DateTime(2026, 9, 14),
+        applianceName: 'Oven',
+        estKwh: 1,
+      );
+      expect(tomorrow.status, BookingStatus.booked);
+      final early = await at(6, 30).book(
+        me: member,
+        slotId: slots.last.id,
+        date: today,
+        applianceName: 'Blender',
+        estKwh: 0.5,
+      );
+      expect(early.status, BookingStatus.booked);
+    });
+  });
+
   group('hub load and slots', () {
     test('simultaneous load may not exceed the inverter limit', () async {
       final solar = LocalSolarRepository(db, clock);

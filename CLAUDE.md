@@ -104,13 +104,19 @@ The users are financially vulnerable. Breaking one of these causes real harm.
   their watts added up × the slot's hours). A booking or QR request carries
   `loadKw` (appliance watts / 1000) and is refused when the slot's booked load
   plus it exceeds the limit, with the numbers in the message. **Exhibition demo exception:** `kQrIgnoresHubLimits`
-  and `kQrIgnoresOperatingHours` in `lib/core/hub_qr.dart` are both `true`, so a
-  QR scan is never refused for slot energy, the member's quota, inverter load,
-  a closed slot or the hour of day (the admin still approves it; booking-screen bookings keep the
-  limits). `kQrRequiresBooking` (true) is separate and is the real rule: no
-  booking for today, no scan — but bookings for today can only be made for slots
-  that have not ended, so after the last slot a scan has nothing to attach to.
-  **Set the two limit switches to `false` before a real pilot.** An admin can close a slot (`HubSlot.isOpen`); closing
+  in `lib/core/hub_qr.dart` is `true`, so a QR scan is never refused for slot
+  energy, the member's quota, inverter load or a closed slot (the admin still
+  approves it; booking-screen bookings keep the limits). **Working hours:** the
+  hub works 07.00–17.00 (`kHubOpensHour`/`kHubClosesHour`;
+  `kQrIgnoresOperatingHours` is `false`). Outside them, scan and booking say so
+  and say nothing about booking: from 17.00 "sudah lewat jam kerja" (scan and
+  booking for today, in `requestConnection` and `book`), before 07.00 the scan
+  says the hub is not open yet; the Solar Hub and booking screens show the same
+  notice, and the booking screen then defaults to tomorrow. The hours check
+  comes first, so within hours a scan without a booking gets the separate
+  `kQrRequiresBooking` (true) message "Booking slot dulu sebelum scan QR". The
+  sample seeder's demo scan (Dewi) is therefore only created within hours.
+  **Set `kQrIgnoresHubLimits` to `false` before a real pilot.** An admin can close a slot (`HubSlot.isOpen`); closing
   stops new bookings and QR requests but never cancels existing ones. A QR scan
   for a slot the member already booked attaches to that booking rather than
   reserving capacity twice (`HubBooking.requestedAt` marks scans). The weather
